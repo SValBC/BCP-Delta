@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BuildCrew.AI — Pre-construction</title>
+  <link rel="stylesheet" href="app.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@400;700&family=Figtree:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* extra inline styles specific to App shell */
+    .ai-pill[disabled] { opacity: 0.6; cursor: not-allowed; }
+    .greet .ai-pill { background: var(--gradient-ai); }
+    .feed-item .body b { font-weight: 700; }
+  </style>
+</head>
+<body data-theme="dark">
+  <div id="root"></div>
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Data + components -->
+  <script src="data.js"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="screens-1.jsx"></script>
+  <script type="text/babel" src="screens-2.jsx"></script>
+  <script type="text/babel" src="screens-3.jsx"></script>
+  <script type="text/babel" src="screens-4.jsx"></script>
+  <script type="text/babel" src="screens-modals.jsx"></script>
+  <script type="text/babel" src="screens-tabs.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "theme": "hybrid",
+      "density": "regular",
+      "aiPlacement": "floating",
+      "homeAccent": "raisin"
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      // ---- TABS — every navigable destination is a tab ----
+      // Each tab: { id, kind, screen, ctx, label, icon, projectId?, runStatus?, runProgress? }
+      const initialTab = {
+        id: "t-home",
+        kind: "static",
+        screen: "home",
+        ctx: { section: "overview" },
+        label: "Home",
+        icon: "home"
+      };
+      const [tabs, setTabs] = useState([initialTab]);
+      const [activeTabId, setActiveTabId] = useState("t-home");
+      const [tabHistory, setTabHistory] = useState([]); // recently visited stack
+      const [aiOpen, setAiOpen] = useState(true);
+      const [pinned, setPinned] = useState(new Set(["rec-wellness", "rivergrove"]));
+      const [showNewProject, setShowNewProject] = useState(false);
+      const [showDailyReport, setShowDailyReport] = useState(false);
+      const [ctxMenu, setCtxMenu] = useState(null); // { x, y, items }
+      const openCtxMenu = (items, e) => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, items }); };
+      const closeCtxMenu = () => setCtxMenu(null);
+      const [drawingViewer, setDrawingViewer] = useState(null); // { drawing, project }
+
+      const data = window.BC_DATA;
+      const [projects, setProjects] = useState(data.projects);
+      const skills = data.skills;
+      const runs = data.runs;
+
+      const activeTab = tabs.find(tb => tb.id === activeTabId) || tabs[0];
+
+      useEffect(() => { document.body.dataset.theme = t.theme; }, [t.theme]);
+
+      // ---- Track tab history (for "Recently visited" in nav) ----
+      useEffect(() => {
+        if (!activeTab) return;
+        setTabHistory(prev => {
+          const key = activeTab.id;
+          const filtered = prev.filter(h => h.key !== key);
+          return [{
+            key,
+            label: activeTab.label,
+            subLabel: activeTab.subLabel,
+            icon: activeTab.icon,
+            running: activeTab.runStatus === "running",
+            onClick: () => setActiveTabId(activeTab.id)
+          }, ...filtered].slice(0, 8);
+        });
+      }, [activeTabId, activeTab && activeTab.runStatus, activeTab && activeTab.label]);
+
+      // ---- Tab operations ----
+      const addTab = (tab) => {
+        // Dedupe by signature (kind + screen + ctx.projectId + ctx.tab) unless force=true
+        if (!tab.force) {
+          const sig = tab.kind + "|" + tab.screen + "|" + (tab.ctx?.projectId || "") + "|" + (tab.ctx?.tab || "") + "|" + (tab.ctx?.drawingId || "");
+          const existing = tabs.find(tb => {
+            const tbSig = tb.kind + "|" + tb.screen + "|" + (tb.ctx?.projectId || "") + "|" + (tb.ctx?.tab || "") + "|" + (tb.ctx?.drawingId || "");
+            return tbSig === sig;
+          });
+          if (existing) {
+            setActiveTabId(existing.id);
+            return existing.id;
+          }
+        }
+        const { force, ...clean } = tab;
+        const id = clean.id || ("t-" + Date.now().toString(36));
+        const next = { ...clean, id };
+        setTabs(prev => [...prev, next]);
+        setActiveTabId(id);
+        return id;
+      };
+
+      const updateActiveTab = (patch) => {
+        setTabs(prev => prev.map(tb => tb.id === activeTabId ? { ...tb, ...patch, ctx: patch.ctx || tb.ctx } : tb));
+      };
+
+      const updateTab = (tabId, patch) => {
+        setTabs(prev => prev.map(tb => tb.id === tabId ? { ...tb, ...patch } : tb));
+      };
+
+      const closeTab = (tabId) => {
+        setTabs(prev => {
+          const idx = prev.findIndex(tb => tb.id === tabId);
+          const next = prev.filter(tb => tb.id !== tabId);
+          if (next.length === 0) {
+            // never empty — re-add home
+            const home = { ...initialTab, id: "t-home-" + Date.now().toString(36) };
+            setActiveTabId(home.id);
+            return [home];
+          }
+          if (tabId === activeTabId) {
+            const fallback = next[Math.max(0, idx - 1)];
+            setActiveTabId(fallback.id);
+          }
+          return next;
+        });
+      };
+
+      // ---- Setters used by NavRail (replace current tab if static, else create new) ----
+      const goToScreen = (screenId) => {
+        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "settings"].includes(screenId);
+        if (!isStaticScreen) return;
+        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", settings:"Settings" };
+        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", settings:"tune" };
+        // Workspace nav items don't open as separate tabs — they replace
+        // the content of the current active tab (unless that tab is a
+        // project / skill-run / drawing, which we want to preserve).
+        const active = tabs.find(tb => tb.id === activeTabId);
+        const preserveKinds = ["project", "skill", "drawing"];
+        if (active && !preserveKinds.includes(active.kind)) {
+          setTabs(prev => prev.map(tb => tb.id === activeTabId ? {
+            ...tb,
+            kind: "static",
+            screen: screenId,
+            ctx: { section: "overview", filter: "all" },
+            label: labels[screenId],
+            icon: icons[screenId]
+          } : tb));
+          return;
+        }
+        // If active tab is a project/skill/drawing, find or create the static tab
+        const existing = tabs.find(tb => tb.kind === "static" && tb.screen === screenId);
+        if (existing) { setActiveTabId(existing.id); return; }
+        addTab({
+          kind: "static",
+          screen: screenId,
+          ctx: { section: "overview", filter: "all" },
+          label: labels[screenId],
+          icon: icons[screenId]
+        });
+      };
+
+      // Open a workspace screen in a brand-new tab (bypasses goToScreen's replace/switch logic)
+      const openScreenInNewTab = (screenId) => {
+        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "settings"].includes(screenId);
+        if (!isStaticScreen) return;
+        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", settings:"Settings" };
+        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", settings:"tune" };
+        addTab({
+          kind: "static",
+          screen: screenId,
+          ctx: { section: "overview", filter: "all" },
+          label: labels[screenId],
+          icon: icons[screenId],
+          force: true
+        });
+      };
+
+      const onPin = (id) => {
+        setPinned(prev => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id); else next.add(id);
+          return next;
+        });
+      };
+
+      // ---- Open project — opens a dedicated project tab ----
+      const openProject = (id, opts = {}) => {
+        const proj = projects.find(p => p.id === id);
+        if (!proj) return;
+        const tab = opts.tab || "overview";
+        // Skill results show only the skill name in the tab; other tabs append the section to the project name.
+        const skillLabels = {
+          estimation: "Rough Order of Magnitude (ROM) Estimate",
+          rfc: "Clarifications & Potential RFIs",
+          bid: "Bid Level Analysis"
+        };
+        const tabLabels = { overview:"", files:" — Files", skills:" — Skills", reports:" — Reports", schedule:" — Schedule" };
+        const label = skillLabels[tab] || (proj.name + (tabLabels[tab] || ""));
+        addTab({
+          kind: "project",
+          screen: "project",
+          ctx: { projectId: id, tab },
+          label,
+          subLabel: proj.kind,
+          icon: proj.icon || "folder_open",
+          projectId: id,
+          force: !!opts.force
+        });
+      };
+
+      // ---- Switch active project tab to a different project (in place) ----
+      const switchProjectInTab = (newProjectId) => {
+        const proj = projects.find(p => p.id === newProjectId);
+        if (!proj || activeTab.kind !== "project") {
+          openProject(newProjectId);
+          return;
+        }
+        updateActiveTab({
+          label: proj.name,
+          subLabel: proj.kind,
+          icon: proj.icon || "folder_open",
+          projectId: newProjectId,
+          ctx: { ...activeTab.ctx, projectId: newProjectId }
+        });
+      };
+
+      const openProjectInNewTab = (id) => openProject(id, { force: true });
+
+      const openProjectTab = (tabId) => {
+        // Open the project sub-tab in its own dedicated tab (dedupes via addTab).
+        if (!activeTab.projectId) return;
+        openProject(activeTab.projectId, { tab: tabId });
+      };
+
+      const openNewProject = () => setShowNewProject(true);
+
+      const createProject = ({ name, kind, address, scope }) => {
+        const id = "proj-" + Date.now().toString(36);
+        const newProject = {
+          id, name,
+          kind: kind + " · New",
+          icon: kind === "Multifamily" ? "apartment" : kind === "Education" ? "school" : kind === "Healthcare" ? "local_hospital" : kind === "Industrial" ? "warehouse" : "business",
+          status: "draft", statusLabel: "Draft",
+          lastEdit: "Just now", progress: 0,
+          address: address || "—", stage: "Pre-design", scope: scope || "", estimate: "—"
+        };
+        setProjects(prev => [newProject, ...prev]);
+        setShowNewProject(false);
+        openProject(id);
+      };
+
+      // ---- Skill run as its own tab (with progress in tab title) ----
+      const runSkill = (skillId, projectId) => {
+        const skill = skills.find(s => s.id === skillId);
+        const proj = projects.find(p => p.id === projectId) || projects[0];
+        if (!skill) return;
+        const tabId = "t-run-" + Date.now().toString(36);
+        const newTab = {
+          id: tabId,
+          kind: "skill",
+          screen: "skill-run",
+          ctx: { projectId: proj.id, skillId, tab: skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : "bid" },
+          label: skill.title + " — " + proj.name,
+          subLabel: "Running…",
+          icon: skill.icon || "auto_awesome",
+          projectId: proj.id,
+          runStatus: "running",
+          runProgress: 0
+        };
+        setTabs(prev => [...prev, newTab]);
+        setActiveTabId(tabId);
+        // Simulate progress
+        let p = 0;
+        const tick = () => {
+          p += 0.04 + Math.random() * 0.06;
+          if (p >= 1) {
+            const subTab = skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : "bid";
+            const skillLabels = { estimation: "Rough Order of Magnitude (ROM) Estimate", rfc: "Clarifications & Potential RFIs", bid: "Bid Level Analysis" };
+            updateTab(tabId, { runProgress: 1, runStatus: "done", subLabel: "Done", screen: "project", kind: "project", ctx: { projectId: proj.id, tab: subTab }, label: skillLabels[subTab] });
+            return;
+          }
+          updateTab(tabId, { runProgress: p });
+          setTimeout(tick, 700 + Math.random() * 600);
+        };
+        setTimeout(tick, 600);
+      };
+
+      // ---- Drawings ----
+      const openDrawing = (drawingId, projectId) => {
+        const proj = projects.find(p => p.id === (projectId || activeTab.projectId)) || projects[0];
+        const drawing = data.drawings.find(d => d.id === drawingId);
+        if (!drawing) return;
+        addTab({
+          kind: "drawing",
+          screen: "drawing",
+          ctx: { projectId: proj.id, drawingId },
+          label: drawing.id + " — " + drawing.title,
+          subLabel: drawing.trade,
+          icon: "architecture",
+          projectId: proj.id
+        });
+      };
+
+      const switchDrawing = (drawing) => {
+        const proj = projects.find(p => p.id === activeTab.projectId);
+        updateActiveTab({
+          ctx: { ...activeTab.ctx, drawingId: drawing.id },
+          label: drawing.id + " — " + drawing.title,
+          subLabel: drawing.trade
+        });
+      };
+
+      const popOutDrawing = () => {
+        const drawing = data.drawings.find(d => d.id === activeTab.ctx.drawingId);
+        const proj = projects.find(p => p.id === activeTab.projectId);
+        setDrawingViewer({ drawing, project: proj });
+      };
+
+      // ---- Pinned items as nav entries ----
+      const pinnedItems = useMemo(() => {
+        const arr = [];
+        for (const id of pinned) {
+          const p = projects.find(p => p.id === id);
+          if (p) { arr.push({ id: p.id, label: p.name, icon: p.icon || "folder_open", kind: "project" }); continue; }
+          // Some pinned ids are non-project recommendations from Home
+          if (id === "rec-wellness") arr.push({ id, label: "Wellness Center bid", icon: "favorite_border", kind: "rec" });
+        }
+        return arr;
+      }, [pinned, projects]);
+
+      const onOpenPinned = (p) => {
+        if (p.kind === "project") openProject(p.id);
+      };
+
+      const onAddConnection = () => goToScreen("settings");
+
+      const onAskAI = () => setAiOpen(true);
+      const onToggleTheme = () => {
+        const next = t.theme === "light" ? "hybrid" : t.theme === "hybrid" ? "dark" : "light";
+        setTweak("theme", next);
+      };
+
+      // ---- DETAIL ROUTING (column 3) ----
+      const activeProject = activeTab.projectId ? projects.find(p => p.id === activeTab.projectId) : null;
+      const screen = activeTab.screen;
+      const ctx = activeTab.ctx || {};
+
+      let detail = null;
+      if (activeTab.kind === "drawing") {
+        const drawing = data.drawings.find(d => d.id === ctx.drawingId);
+        detail = (
+          <DrawingViewer
+            drawing={drawing}
+            project={activeProject || projects[0]}
+            onClose={() => closeTab(activeTab.id)}
+            onSwitchSheet={switchDrawing}
+            onPopOut={popOutDrawing}
+            onOpenCost={() => openProjectTab("estimation")}
+            pinnedSet={pinned}
+            onPin={onPin}
+          />
+        );
+      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} />;
+      else if (screen === "projects") detail = <ProjectsScreen ctx={ctx} projects={projects} pinnedSet={pinned} onPin={onPin} onOpen={openProject} onOpenInNewTab={openProjectInNewTab} onAskAI={onAskAI} onNewProject={openNewProject} onCtxMenu={openCtxMenu} />;
+      else if (screen === "skills") detail = <SkillRunScreen project={projects[0]} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} />;
+      else if (screen === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} />;
+      else if (screen === "labor") detail = <LaborScreen ctx={ctx} onAskAI={onAskAI} />;
+      else if (screen === "settings") detail = <SettingsScreen ctx={ctx} onAskAI={onAskAI} theme={t.theme} onToggleTheme={onToggleTheme} />;
+      else if (screen === "project" || screen === "skill-run") {
+        const p = activeProject || projects[0];
+        const tab = ctx.tab || "overview";
+        const projectSwitcher = (
+          <ProjectSwitcher
+            project={p}
+            projects={projects}
+            recentProjects={recentProjects}
+            onSwitch={switchProjectInTab}
+            onOpenInTab={openProjectInNewTab}
+          />
+        );
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
+        else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
+        else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
+        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
+        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
+        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
+        else if (tab === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} projectSwitcher={projectSwitcher} />;
+        else if (tab === "schedule") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
+      }
+
+      // ---- Recently visited (from history excluding workspace nav items) ----
+      const recentlyVisited = tabHistory
+        .filter(h => h.key !== activeTabId)
+        .filter(h => {
+          const tb = tabs.find(t => t.id === h.key);
+          return tb && tb.kind !== "static";
+        })
+        .slice(0, 4);
+
+      // Recent projects = most-recently-visited project tabs, deduped by projectId
+      const recentProjects = useMemo(() => {
+        const seen = new Set();
+        const out = [];
+        for (const h of tabHistory) {
+          const tb = tabs.find(t => t.id === h.key);
+          if (!tb || tb.kind !== "project" || !tb.projectId) continue;
+          if (seen.has(tb.projectId)) continue;
+          seen.add(tb.projectId);
+          const p = projects.find(p => p.id === tb.projectId);
+          if (p) out.push(p);
+        }
+        // Add active project if any
+        if (activeTab.kind === "project" && activeTab.projectId && !seen.has(activeTab.projectId)) {
+          const p = projects.find(p => p.id === activeTab.projectId);
+          if (p) out.unshift(p);
+        }
+        return out.slice(0, 4);
+      }, [tabHistory, tabs, projects, activeTabId]);
+
+      const newTabFromButton = () => goToScreen("home");
+
+      return (
+        <div className="app" data-density={t.density} data-no-list="true" data-ai-open={aiOpen}>
+          <NavRail
+            screen={screen}
+            setScreen={goToScreen}
+            setScreenInNewTab={openScreenInNewTab}
+            user={data.user}
+            onToggleTheme={onToggleTheme}
+            theme={t.theme}
+            recentlyVisited={recentlyVisited}
+            recentProjects={recentProjects}
+            onOpenProject={openProject}
+            onOpenProjectInNewTab={openProjectInNewTab}
+            onOpenSettings={() => goToScreen("settings")}
+            pinnedItems={pinnedItems}
+            onOpenPinned={onOpenPinned}
+            onAddConnection={onAddConnection}
+            onCtxMenu={openCtxMenu}
+          />
+          <div className="col-detail-wrap">
+            {(activeTab.kind !== "static" || tabs.length > 1) && (
+              <TabBar
+                tabs={tabs}
+                activeId={activeTabId}
+                onActivate={setActiveTabId}
+                onClose={closeTab}
+                onNewTab={newTabFromButton}
+              />
+            )}
+            <div className="col-detail-body">
+              {detail}
+            </div>
+          </div>
+
+          {/* AI Assistant — docked right rail */}
+          <AIAssistant
+            open={aiOpen}
+            onClose={() => setAiOpen(false)}
+            onOpen={() => setAiOpen(true)}
+            context={{ screen, ctx, project: activeProject }}
+          />
+
+          <TweaksPanel>
+            <TweakSection label="Theme" />
+            <TweakRadio label="Mode" value={t.theme} options={[{value:"dark",label:"Dark"},{value:"hybrid",label:"Hybrid"},{value:"light",label:"Light"}]}
+                        onChange={(v) => setTweak("theme", v)} />
+            <TweakSection label="Layout" />
+            <TweakRadio label="Density" value={t.density}
+                        options={[{value:"compact",label:"Compact"},{value:"regular",label:"Regular"},{value:"roomy",label:"Roomy"}]}
+                        onChange={(v) => setTweak("density", v)} />
+          </TweaksPanel>
+
+          <NewProjectModal
+            open={showNewProject}
+            onClose={() => setShowNewProject(false)}
+            onCreate={createProject}
+          />
+
+          <DailyReportModal
+            open={showDailyReport}
+            onClose={() => setShowDailyReport(false)}
+            projects={projects}
+          />
+
+          <ContextMenu menu={ctxMenu} onClose={closeCtxMenu} />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

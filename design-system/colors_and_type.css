@@ -1,0 +1,240 @@
+/* ============================================================
+   BuildCrew.AI — Colors & Type
+   ============================================================
+   Extracted from the BuildCrew.AI Figma design system.
+   Product defaults to DARK THEME (Dark Raisin canvas).
+   Primary = Golden Gate Bridge orange, supported by Dark Raisin
+   (neutrals) and Tiffany Blue (accent).
+   ============================================================ */
+
+/* ---------- FONTS ----------------------------------------- */
+/* Figtree — primary UI + display (Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&display=swap');
+/* Inter — data / table / dense UI (Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Bitcount Grid Double — headline / marketing display (Google Fonts)
+   Used at 96px in content screens for the wordmark "buildcrew.ai" */
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@400;700&display=swap');
+/* Fallback for Sofia Pro (seen in older specs) — substitute with Figtree */
+
+:root {
+  /* ---- Font stacks ---- */
+  --font-display:  'Figtree', system-ui, -apple-system, Segoe UI, sans-serif;
+  --font-ui:       'Figtree', system-ui, -apple-system, Segoe UI, sans-serif;
+  --font-data:     'Inter', 'Figtree', system-ui, sans-serif;
+  --font-marketing:'Bitcount Grid Double', 'Figtree', system-ui, sans-serif; /* headline ONLY */
+  --font-sofia:    'Figtree', system-ui, sans-serif; /* Sofia Pro stand-in */
+
+  /* ============================================================
+     CORE BRAND COLORS
+     ============================================================ */
+  /* Primary — Golden Gate Bridge orange */
+  --orange-50:  #ffedeb;
+  --orange-100: #ffd8d3;
+  --orange-200: #ffbcb5;
+  --orange-300: #ff806c;
+  --orange-400: #ff5d17;   /* light accent */
+  --orange-500: #e84600;   /* ★ brand primary */
+  --orange-600: #ba3800;   /* duotone shadow */
+  --orange-700: #802400;
+  --orange-800: #4a1100;
+  --orange-900: #270500;
+
+  /* Dark Raisin — primary neutrals (dark canvas) */
+  --raisin-50:  #f1f0f3;
+  --raisin-100: #e6e5ea;
+  --raisin-200: #cfcfd7;
+  --raisin-300: #a8a7b6;
+  --raisin-400: #838197;
+  --raisin-500: #5f5d76;
+  --raisin-600: #3e3c50;
+  --raisin-700: #2f2e40;
+  --raisin-800: #272635;   /* ★ primary dark bg */
+  --raisin-900: #1f1e2a;
+  --raisin-950: #12111a;
+
+  /* Tiffany Blue — accent */
+  --tiffany-50:  #eaf9f7;
+  --tiffany-100: #93f8ee;
+  --tiffany-200: #70cec5;
+  --tiffany-300: #48c1b5;   /* ★ accent */
+  --tiffany-400: #369e94;
+  --tiffany-500: #26766f;
+  --tiffany-600: #17514b;
+  --tiffany-700: #0a2e2b;
+
+  /* Warm grays (from orange neutral ramp) */
+  --stone-50:  #f1f0f0;
+  --stone-100: #cfcbcb;
+  --stone-200: #aca3a2;
+  --stone-300: #897d7c;
+  --stone-400: #635a59;
+  --stone-500: #403a39;
+  --stone-600: #1f1c1c;
+
+  /* Pure */
+  --white: #ffffff;
+  --black: #000000;
+
+  /* Legacy figma accent gradient (used on the "AI Chat" pill + sparkle) */
+  --gradient-ai: linear-gradient(135deg, #ffbd15 0%, #f4550b 50%, #b600e9 100%);
+
+  /* ============================================================
+     SEMANTIC TOKENS — DARK THEME (default)
+     ============================================================ */
+  color-scheme: dark;
+
+  --bg:          var(--raisin-800);   /* app canvas */
+  --bg-elevated: var(--raisin-700);   /* cards, sheets */
+  --bg-overlay:  rgba(39, 38, 53, 0.72);
+  --bg-subtle:   rgba(255, 255, 255, 0.05);
+  --bg-hover:    rgba(255, 255, 255, 0.08);
+
+  --surface:     #f9f9f9;             /* white content sheets inside app */
+  --surface-alt: #f3f3f3;
+  --surface-border: rgba(39,38,53,0.10);
+
+  --fg:          #ffffff;              /* primary text on dark */
+  --fg-muted:    rgba(255,255,255,0.72);
+  --fg-subtle:   rgba(255,255,255,0.50);
+  --fg-disabled: rgba(255,255,255,0.30);
+
+  --fg-on-surface:        var(--raisin-800); /* text on white surface */
+  --fg-on-surface-muted:  rgba(39,38,53,0.70);
+  --fg-on-surface-subtle: rgba(39,38,53,0.40);
+
+  --accent:         var(--orange-500);
+  --accent-hover:   var(--orange-600);
+  --accent-pressed: var(--orange-700);
+  --accent-fg:      #ffffff;
+  --accent-wash:    rgba(232,70,0,0.10);
+
+  --border:        rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.20);
+  --border-on-surface: rgba(39,38,53,0.10);
+
+  --focus-ring:    rgba(232,70,0,0.55);
+
+  /* Status */
+  --success: #48c1b5;
+  --warning: #ffbd15;
+  --danger:  #a8190d;
+  --info:    #5047f3;
+
+  /* ============================================================
+     SPACING / RADII / ELEVATION
+     ============================================================ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius:    8px;     /* default for cards, modals, pills-small */
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.08);
+  --shadow:    0 4px 8px 0 rgba(0,0,0,0.12);         /* modals */
+  --shadow-lg: 8px 4px 20px 0 rgba(0,0,0,0.25);      /* elevated dark panels (side nav) */
+  --shadow-inner: inset 0 1px 0 0 rgba(255,255,255,0.06);
+
+  /* ============================================================
+     TYPOGRAPHY SCALE
+     (from Figma — Heading + Body + Button specimens)
+     ============================================================ */
+  --h1-size: 32px; --h1-weight: 700; --h1-line: 1.1;
+  --h2-size: 28px; --h2-weight: 700; --h2-line: 1.15;
+  --h3-size: 24px; --h3-weight: 600; --h3-line: 1.2;
+  --h4-size: 20px; --h4-weight: 600; --h4-line: 1.3;
+  --h5-size: 18px; --h5-weight: 600; --h5-line: 1.35;
+  --h6-size: 13px; --h6-weight: 700; --h6-line: 1.4;
+
+  --body-1-size: 16px; --body-1-weight: 400; --body-1-line: 1.5;
+  --body-2-size: 15px; --body-2-weight: 400; --body-2-line: 1.4;  /* tables / detail */
+  --body-3-size: 14px; --body-3-weight: 600; --body-3-line: 1.4;  /* button text */
+
+  --caption-size: 13px; --caption-weight: 400; --caption-line: 1.4;
+  --micro-size: 11px;
+}
+
+/* ============================================================
+   LIGHT THEME OPT-IN
+   ============================================================
+   Apply `.theme-light` or `[data-theme="light"]` on an ancestor. */
+.theme-light, [data-theme="light"] {
+  color-scheme: light;
+  --bg:          #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-overlay:  rgba(39,38,53,0.48);
+  --bg-subtle:   #f9f9f9;
+  --bg-hover:    #f3f3f3;
+
+  --surface:     #ffffff;
+  --surface-alt: #f9f9f9;
+
+  --fg:          var(--raisin-800);
+  --fg-muted:    rgba(39,38,53,0.72);
+  --fg-subtle:   rgba(39,38,53,0.50);
+  --fg-disabled: rgba(39,38,53,0.30);
+
+  --border:        rgba(39,38,53,0.10);
+  --border-strong: rgba(39,38,53,0.20);
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES
+   Apply directly, or compose via `.h1`, `.body-2`, etc. classes.
+   ============================================================ */
+.h1, h1 { font-family: var(--font-display); font-weight: var(--h1-weight); font-size: var(--h1-size); line-height: var(--h1-line); letter-spacing: -0.01em; color: var(--fg); }
+.h2, h2 { font-family: var(--font-display); font-weight: var(--h2-weight); font-size: var(--h2-size); line-height: var(--h2-line); letter-spacing: -0.01em; color: var(--fg); }
+.h3, h3 { font-family: var(--font-display); font-weight: var(--h3-weight); font-size: var(--h3-size); line-height: var(--h3-line); color: var(--fg); }
+.h4, h4 { font-family: var(--font-display); font-weight: var(--h4-weight); font-size: var(--h4-size); line-height: var(--h4-line); color: var(--fg); }
+.h5, h5 { font-family: var(--font-display); font-weight: var(--h5-weight); font-size: var(--h5-size); line-height: var(--h5-line); color: var(--fg); }
+.h6, h6 { font-family: var(--font-display); font-weight: var(--h6-weight); font-size: var(--h6-size); line-height: var(--h6-line); color: var(--fg); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.body-1 { font-family: var(--font-ui); font-weight: var(--body-1-weight); font-size: var(--body-1-size); line-height: var(--body-1-line); color: var(--fg); }
+.body-2 { font-family: var(--font-ui); font-weight: var(--body-2-weight); font-size: var(--body-2-size); line-height: var(--body-2-line); color: var(--fg); }
+.body-3 { font-family: var(--font-ui); font-weight: var(--body-3-weight); font-size: var(--body-3-size); line-height: var(--body-3-line); color: var(--fg); }
+
+.caption  { font-family: var(--font-ui); font-size: var(--caption-size); line-height: var(--caption-line); color: var(--fg-muted); }
+.micro    { font-family: var(--font-ui); font-size: var(--micro-size); text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-muted); }
+
+.mono, code { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+.marketing-display {
+  font-family: var(--font-marketing);
+  font-weight: 400;
+  font-size: clamp(56px, 8vw, 96px);
+  line-height: 1;
+  color: var(--orange-500);
+}
+
+/* Page defaults — opt-in via `body.bc` */
+body.bc {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--body-1-size);
+  line-height: var(--body-1-line);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Focus ring — orange glow */
+.bc-focus:focus-visible,
+:where(body.bc) a:focus-visible,
+:where(body.bc) button:focus-visible,
+:where(body.bc) input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
