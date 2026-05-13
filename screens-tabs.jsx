@@ -44,9 +44,6 @@ function TabBar({ tabs, activeId, onActivate, onClose, onNewTab }) {
           </div>
         ))}
       </div>
-      <button className="tab-new" onClick={onNewTab} title="New tab">
-        <Icon name="add" size={16} />
-      </button>
     </div>
   );
 }

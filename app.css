@@ -360,8 +360,9 @@ button { font-family: inherit; }
   cursor: pointer;
   transition: all 120ms;
 }
-.psw-trigger:hover { background: rgba(39,38,53,0.05); border-color: rgba(39,38,53,0.10); }
-.psw-trigger.open { background: rgba(232,70,0,0.08); border-color: rgba(232,70,0,0.30); color: var(--orange-500); }
+.psw-trigger:hover { color: var(--orange-500); }
+.psw-trigger:hover b { color: var(--orange-500); }
+.psw-trigger.open { color: var(--orange-500); }
 .psw-trigger.open b { color: var(--orange-500); }
 .psw-trigger b { font-weight: 700; color: var(--raisin-800); }
 .psw-trigger .mi { opacity: 0.55; }
@@ -1803,7 +1804,10 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .labor-prompt-title {
   font-family: var(--font-display); font-weight: 700; font-size: 16px;
   color: var(--raisin-800); letter-spacing: -0.005em;
+  display: inline-flex; align-items: center; gap: 8px;
 }
+.labor-prompt-title .mi { color: #0074E8; }
+[data-theme="dark"] .labor-prompt-title .mi { color: #6db3ff; }
 .labor-prompt p {
   margin: 0; max-width: 650px;
   font-size: 13px; line-height: 1.5; color: rgba(39,38,53,0.70);
@@ -2944,6 +2948,279 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 [data-theme="dark"] .scope-list-inclusions li { background: rgba(72,193,181,0.10); }
 [data-theme="dark"] .scope-item-value { color: #fff; }
 
+/* Run a Skill — running state on the project home cards */
+.run-skill-card { position: relative; overflow: hidden; }
+.run-skill-card.is-running {
+  border-color: rgba(232,70,0,0.40);
+  box-shadow: 0 0 0 1px rgba(232,70,0,0.20), 0 4px 14px rgba(232,70,0,0.12);
+  cursor: pointer;
+}
+
+/* Just-completed celebration — green outline flash + check pop */
+.run-skill-card.is-just-completed {
+  border-color: var(--tiffany-400);
+  animation: runSkillCelebrate 1500ms ease-out;
+}
+@keyframes runSkillCelebrate {
+  0%   { box-shadow: 0 0 0 0 rgba(72,193,181,0); border-color: rgba(232,70,0,0.40); }
+  10%  { box-shadow: 0 0 0 2px var(--tiffany-400), 0 0 0 6px rgba(72,193,181,0.40); border-color: var(--tiffany-400); }
+  35%  { box-shadow: 0 0 0 0 var(--tiffany-400), 0 0 0 14px rgba(72,193,181,0); border-color: var(--tiffany-400); }
+  100% { box-shadow: 0 0 0 0 rgba(72,193,181,0); border-color: rgba(72,193,181,0.40); }
+}
+.run-skill-celebration {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  color: var(--tiffany-400);
+  pointer-events: none;
+  animation: runSkillCheckPop 1500ms ease-out forwards;
+  z-index: 5;
+  filter: drop-shadow(0 4px 12px rgba(72,193,181,0.45));
+}
+@keyframes runSkillCheckPop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  25%  { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+  45%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  85%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Persistent "completed this session" state — subtle tiffany cue */
+.run-skill-card.is-completed {
+  border-color: rgba(72,193,181,0.32);
+}
+.run-skill-bar {
+  position: absolute; left: 0; top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-500), #FF9460);
+  border-radius: 0 2px 2px 0;
+  transition: width 220ms ease-out;
+  z-index: 2;
+}
+.run-skill-spinner {
+  width: 16px; height: 16px;
+  border-radius: 100px;
+  border: 2px solid rgba(232,70,0,0.25);
+  border-top-color: var(--orange-500);
+  animation: runSkillSpin 700ms linear infinite;
+}
+@keyframes runSkillSpin { to { transform: rotate(360deg); } }
+.run-skill-stage {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11.5px; font-weight: 700;
+  color: var(--orange-500);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.run-skill-stage .dot {
+  width: 6px; height: 6px; border-radius: 100px;
+  background: var(--orange-500);
+  animation: runSkillPulse 1.2s ease-in-out infinite;
+}
+@keyframes runSkillPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+.run-skill-stop {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: transparent; border: 1px solid rgba(168,25,13,0.30);
+  color: var(--danger);
+  font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+  padding: 4px 9px; border-radius: 100px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.run-skill-stop:hover { background: rgba(168,25,13,0.08); border-color: var(--danger); }
+
+/* Loading state on each Skill result screen */
+.skill-loading-card {
+  background: #fff;
+  border: 1px solid rgba(232,70,0,0.20);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 10px rgba(232,70,0,0.06);
+}
+.skill-loading-h { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.skill-loading-spinner {
+  width: 28px; height: 28px; border-radius: 100px;
+  border: 3px solid rgba(232,70,0,0.20);
+  border-top-color: var(--orange-500);
+  animation: runSkillSpin 700ms linear infinite;
+  flex-shrink: 0;
+}
+.skill-loading-stage {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px;
+  color: var(--bc-strong);
+}
+.skill-loading-stage .dot {
+  width: 6px; height: 6px; border-radius: 100px;
+  background: var(--orange-500);
+  animation: runSkillPulse 1.2s ease-in-out infinite;
+}
+.skill-loading-pct { font-size: 11.5px; color: var(--bc-muted); margin-top: 2px; }
+.skill-loading-bar {
+  height: 6px; background: rgba(39,38,53,0.08); border-radius: 100px; overflow: hidden;
+}
+.skill-loading-bar > div {
+  height: 100%; background: linear-gradient(90deg, var(--orange-500), #FF9460);
+  border-radius: 100px;
+  transition: width 220ms ease-out;
+}
+.skill-loading-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  margin-bottom: 18px;
+}
+.skill-loading-block {
+  height: 96px; border-radius: 10px;
+  background: linear-gradient(90deg, rgba(39,38,53,0.05), rgba(39,38,53,0.10), rgba(39,38,53,0.05));
+  background-size: 200% 100%;
+  animation: skillShimmer 1.6s infinite ease-in-out;
+}
+.skill-loading-table {
+  background: #fff; border: 1px solid rgba(39,38,53,0.08);
+  border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.skill-loading-row {
+  height: 28px; border-radius: 6px;
+  background: linear-gradient(90deg, rgba(39,38,53,0.05), rgba(39,38,53,0.10), rgba(39,38,53,0.05));
+  background-size: 200% 100%;
+  animation: skillShimmer 1.6s infinite ease-in-out;
+}
+@keyframes skillShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+[data-theme="dark"] .skill-loading-card { background: rgba(255,255,255,0.04); border-color: rgba(232,70,0,0.30); }
+[data-theme="dark"] .skill-loading-table { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .skill-loading-block,
+[data-theme="dark"] .skill-loading-row {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  background-size: 200% 100%;
+}
+
+/* Bid Level — Detailed Analysis tab: per-sub breakdown blocks under shared trade tabs */
+.bid-trade-block { margin-bottom: 28px; }
+.bid-trade-stats {
+  display: flex; gap: 28px; flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid rgba(39,38,53,0.10);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+}
+.bid-trade-stat .bid-trade-stat-l {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; color: var(--bc-muted);
+}
+.bid-trade-stat .bid-trade-stat-v {
+  font-family: var(--font-data); font-weight: 700; font-size: 14px;
+  color: var(--raisin-800); margin-top: 2px;
+}
+[data-theme="dark"] .bid-trade-stats { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .bid-trade-stat .bid-trade-stat-v { color: #fff; }
+
+.sub-detail {
+  background: #fff;
+  border: 1px solid rgba(39,38,53,0.10);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+.sub-detail.is-winner { border-color: var(--tiffany-400); box-shadow: 0 2px 10px rgba(72,193,181,0.18); }
+
+.sub-detail-h {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(39,38,53,0.06);
+}
+.sub-detail-h-l { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.sub-detail-rank {
+  font-family: var(--font-data); font-weight: 800; font-size: 18px;
+  color: var(--bc-muted);
+  background: rgba(39,38,53,0.06);
+  width: 36px; height: 36px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sub-detail.is-winner .sub-detail-rank { background: rgba(72,193,181,0.18); color: var(--tiffany-400); }
+.sub-detail-name {
+  font-family: var(--font-display); font-weight: 700; font-size: 16px;
+  color: var(--raisin-800); letter-spacing: -0.005em;
+  display: flex; align-items: center; flex-wrap: wrap;
+}
+.sub-detail-contact { font-size: 12px; color: var(--bc-muted); margin-top: 2px; }
+.sub-detail-h-r { text-align: right; flex-shrink: 0; }
+.sub-detail-totals-l {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; color: var(--bc-muted);
+}
+.sub-detail-totals-v {
+  font-family: var(--font-display); font-weight: 800; font-size: 22px;
+  color: var(--raisin-800); letter-spacing: -0.01em; margin-top: 2px;
+}
+.sub-detail.is-winner .sub-detail-totals-v { color: var(--tiffany-400); }
+.sub-detail-variance {
+  font-family: var(--font-data); font-size: 11px; color: var(--bc-muted);
+  margin-top: 2px; font-weight: 600;
+}
+.sub-detail-variance.is-savings { color: var(--tiffany-400); }
+
+.sub-detail-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(39,38,53,0.06);
+}
+.sub-detail-stat .l {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; color: var(--bc-muted);
+}
+.sub-detail-stat .v {
+  font-family: var(--font-data); font-weight: 700; font-size: 14px;
+  color: var(--raisin-800); margin-top: 2px;
+}
+.sub-detail-stat .v.is-good { color: var(--tiffany-400); }
+.sub-detail-stat .v.is-warn { color: var(--orange-500); }
+
+.sub-detail-narrative {
+  margin: 14px 0 12px; font-size: 13px; line-height: 1.55; color: var(--bc-strong);
+}
+
+.sub-detail-lines {
+  background: rgba(39,38,53,0.03);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.sub-detail-lines-h {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 700; color: var(--bc-muted);
+  padding-bottom: 8px; margin-bottom: 4px;
+  border-bottom: 1px solid rgba(39,38,53,0.06);
+}
+.sub-line {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(39,38,53,0.06);
+  font-size: 12.5px;
+}
+.sub-line:last-child { border-bottom: none; }
+.sub-line.is-excluded { color: var(--bc-muted); }
+.sub-line.is-excluded em { color: var(--danger); font-style: normal; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.sub-line-name { color: var(--raisin-800); }
+.sub-line.is-excluded .sub-line-name { text-decoration: line-through; text-decoration-color: rgba(39,38,53,0.30); }
+.sub-line-name small { display: block; font-size: 11px; color: var(--bc-muted); font-style: italic; margin-top: 1px; }
+.sub-line-value { font-family: var(--font-data); font-weight: 700; color: var(--raisin-800); white-space: nowrap; }
+
+.sub-detail-cta { margin-top: 12px; padding-left: 0 !important; }
+
+[data-theme="dark"] .sub-detail { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .sub-detail.is-winner { background: rgba(72,193,181,0.06); }
+[data-theme="dark"] .sub-detail-name { color: #fff; }
+[data-theme="dark"] .sub-detail-totals-v { color: #fff; }
+[data-theme="dark"] .sub-detail-narrative { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .sub-detail-lines { background: rgba(255,255,255,0.03); }
+[data-theme="dark"] .sub-line-name { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .sub-line-value { color: #fff; }
+[data-theme="dark"] .sub-detail-stat .v { color: #fff; }
+
 /* Trade selector tabs on the Bid Level Analysis screen */
 .trade-tabs {
   display: flex; flex-wrap: wrap; gap: 8px;
@@ -3188,8 +3465,9 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 [data-theme="dark"] .tab.active::after { background: #181821; }
 
 /* --- Project switcher button in breadcrumb --- */
-[data-theme="dark"] .psw-trigger { background: rgba(255,255,255,0.04); color: #fff; border-color: rgba(255,255,255,0.10); }
-[data-theme="dark"] .psw-trigger:hover { background: rgba(255,255,255,0.08); }
+[data-theme="dark"] .psw-trigger { color: #fff; }
+[data-theme="dark"] .psw-trigger:hover, [data-theme="dark"] .psw-trigger:hover b { color: var(--orange-500); }
+[data-theme="dark"] .psw-trigger.open, [data-theme="dark"] .psw-trigger.open b { color: var(--orange-500); }
 
 [data-theme="dark"] .upload-zone { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
 [data-theme="dark"] .upload-zone b { color: #fff; }

@@ -4,7 +4,7 @@ const { useState: uS2, useEffect: uE2, useRef: uR2 } = React;
 // =====================================================
 // PROJECT HOME (workspace overview when project opened)
 // =====================================================
-function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin }) {
+function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun }) {
   const drawings = window.BC_DATA.drawings || [];
   const [drawingSort, setDrawingSort] = uS2({ key: "plan", direction: "asc" });
   const toggleDrawingSort = (key) => {
@@ -172,7 +172,7 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
 
             {!laborFile && !laborConfirmed && (
               <>
-                <div className="labor-prompt-title">Add your project's labor rates</div>
+                <div className="labor-prompt-title"><Icon name="payments" size={18} />Add your project's labor rates</div>
                 <p>
                   Adding your labor rates helps Cody produce more accurate estimates, schedules, and bid analyses for this project. Drop a CSV or XLSX with your trade rates and overhead burdens to get started.
                 </p>
@@ -228,22 +228,84 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
           { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: "12 min ago", success: true },
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: "1h ago", success: true },
           { id: "bid", title: "Bid Level Analysis", icon: "compare_arrows", desc: "Compares contractor bids fairly by standardizing submissions, identifying missing or inconsistent scope items, and adjusting costs so every bid reflects an equivalent scope, ensuring award decisions are based on true value, not just the lowest number.", lastRun: null, success: false }].
-          map((s) =>
-          <div key={s.id} className="pin-card" style={{ minHeight: 140 }} onClick={() => onOpenTab(s.id)}>
-              <Icon className="bg" name={s.icon} />
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Icon name={s.icon} size={19} style={{ opacity: 0.55 }} />
+          map((s) => {
+            const runKey = project.id + "/" + s.id;
+            const run = skillRuns && skillRuns[runKey];
+            const running = !!run;
+            const completion = skillCompletions && skillCompletions[runKey];
+            const justCompleted = !!(completion && completion.justCompleted);
+            const hasFreshCompletion = !!completion; // run finished during this session
+            const progress = run ? run.progress : 0;
+            const stage = progress < 25 ? "Reading project documents…"
+              : progress < 55 ? "Extracting line items…"
+              : progress < 85 ? "Applying rates & indices…"
+              : "Finalizing report…";
+            // Effective results state: hardcoded lastRun OR fresh completion this session
+            const hasResults = hasFreshCompletion || !!s.lastRun;
+            const effectiveLastRun = hasFreshCompletion ? "Just now" : s.lastRun;
+            const effectiveSuccess = hasFreshCompletion ? true : s.success;
+            const handleCardClick = () => {
+              if (running) {
+                onOpenTab(s.id); // loading version of results
+              } else if (hasResults) {
+                onOpenTab(s.id); // existing results
+              } else {
+                onStartSkillRun && onStartSkillRun(project.id, s.id);
+              }
+            };
+            return (
+              <div key={s.id}
+                   className={"pin-card run-skill-card " + (running ? "is-running " : "") + (justCompleted ? "is-just-completed " : "") + (hasFreshCompletion && !justCompleted ? "is-completed" : "")}
+                   style={{ minHeight: 140 }}
+                   onClick={handleCardClick}>
+                {running && <span className="run-skill-bar" style={{ width: progress + "%" }} />}
+                {justCompleted && (
+                  <div className="run-skill-celebration">
+                    <Icon name="check_circle" size={56} />
+                  </div>
+                )}
+                <Icon className="bg" name={s.icon} />
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <div className="run-skill-icon-wrap" style={{ width: 34, height: 34, borderRadius: 8, background: running ? "rgba(232,70,0,0.12)" : "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {running
+                      ? <span className="run-skill-spinner" />
+                      : <Icon name={s.icon} size={19} style={{ opacity: 0.55 }} />
+                    }
+                  </div>
+                  <div className="pin-title">{s.title}</div>
                 </div>
-                <div className="pin-title">{s.title}</div>
+                {running ? (
+                  <>
+                    <div style={{ fontSize: 12, color: "var(--bc-strong)", lineHeight: 1.4 }}>
+                      <span className="run-skill-stage"><span className="dot" />{stage}</span>
+                    </div>
+                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontFamily: "var(--font-data)", fontWeight: 700, fontSize: 13, color: "var(--orange-500)" }}>{Math.round(progress)}%</span>
+                      <button className="run-skill-stop" onClick={(e) => { e.stopPropagation(); onStopSkillRun && onStopSkillRun(project.id, s.id); }} title="Stop run">
+                        <Icon name="stop" size={14} />Stop
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 12, color: "var(--bc-muted)", lineHeight: 1.4 }}>{s.desc}</div>
+                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: effectiveSuccess ? "var(--tiffany-400)" : "var(--orange-500)" }}>
+                        {effectiveSuccess && <Icon name="check_circle" size={14} style={{ color: "var(--tiffany-400)" }} />}
+                        <span>{hasResults ? "View results" : "Click to run"}</span>
+                        {hasResults && <Icon name="arrow_forward" size={12} />}
+                      </div>
+                      {effectiveLastRun && (
+                        <span style={{ fontSize: 11, color: "var(--bc-muted)", fontWeight: 500 }}>
+                          Last run · {effectiveLastRun}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-              <div style={{ fontSize: 12, color: "var(--bc-muted)", lineHeight: 1.4 }}>{s.desc}</div>
-              <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: s.success ? "var(--tiffany-400)" : "var(--orange-500)" }}>
-                {s.success && <Icon name="check_circle" size={14} style={{ color: "var(--tiffany-400)" }} />}
-                <span>{s.lastRun ? "Last run · " + s.lastRun : "Click to run"}</span>
-              </div>
-            </div>
-          )}
+            );
+          })}
         </div>
 
         {/* DRAWINGS */}

@@ -65,6 +65,40 @@
       const [pinned, setPinned] = useState(new Set(["rec-wellness", "rivergrove"]));
       const [showNewProject, setShowNewProject] = useState(false);
       const [showDailyReport, setShowDailyReport] = useState(false);
+      const [skillRuns, setSkillRuns] = useState({}); // key: "projectId/skillId" → { startTime, progress }
+      const [skillCompletions, setSkillCompletions] = useState({}); // key → { completedAt, justCompleted }
+      const skillRunTimers = React.useRef({});
+      const SKILL_RUN_DURATION = 7000;
+      const CELEBRATION_MS = 1500;
+      const startSkillRunCard = (projectId, skillId) => {
+        const key = projectId + "/" + skillId;
+        if (skillRuns[key]) return;
+        const startTime = Date.now();
+        setSkillRuns(prev => ({ ...prev, [key]: { startTime, progress: 0 } }));
+        skillRunTimers.current[key] = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(100, (elapsed / SKILL_RUN_DURATION) * 100);
+          setSkillRuns(prev => prev[key] ? ({ ...prev, [key]: { ...prev[key], progress } }) : prev);
+          if (elapsed >= SKILL_RUN_DURATION) {
+            clearInterval(skillRunTimers.current[key]);
+            delete skillRunTimers.current[key];
+            setSkillRuns(prev => { const n = { ...prev }; delete n[key]; return n; });
+            // Mark completion and trigger celebration animation
+            setSkillCompletions(prev => ({ ...prev, [key]: { completedAt: Date.now(), justCompleted: true } }));
+            setTimeout(() => {
+              setSkillCompletions(prev => prev[key] ? ({ ...prev, [key]: { ...prev[key], justCompleted: false } }) : prev);
+            }, CELEBRATION_MS);
+          }
+        }, 100);
+      };
+      const stopSkillRunCard = (projectId, skillId) => {
+        const key = projectId + "/" + skillId;
+        if (skillRunTimers.current[key]) {
+          clearInterval(skillRunTimers.current[key]);
+          delete skillRunTimers.current[key];
+        }
+        setSkillRuns(prev => { const n = { ...prev }; delete n[key]; return n; });
+      };
       const [ctxMenu, setCtxMenu] = useState(null); // { x, y, items }
       const openCtxMenu = (items, e) => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, items }); };
       const closeCtxMenu = () => setCtxMenu(null);
@@ -397,12 +431,12 @@
             onOpenInTab={openProjectInNewTab}
           />
         );
-        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} />;
         else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
         else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
-        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
-        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
-        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} />;
+        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} />;
+        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} />;
+        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} />;
         else if (tab === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} projectSwitcher={projectSwitcher} />;
         else if (tab === "schedule") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
       }

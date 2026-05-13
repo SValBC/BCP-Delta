@@ -1,4 +1,38 @@
 // BuildCrew.AI — Skill results: Estimation (HERO), RFC, Bid Leveling
+
+// Shared loading skeleton used by every skill result screen while a run is in progress.
+function SkillLoadingShell({ projectName, title, progress }) {
+  const p = Math.max(0, Math.min(100, progress || 0));
+  const stage = p < 25 ? "Reading project documents"
+    : p < 55 ? "Extracting line items"
+    : p < 85 ? "Applying rates & indices"
+    : "Finalizing report";
+  return (
+    <div className="canvas">
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{projectName}</div>
+        <h2 className="page-h1">{title}</h2>
+        <p className="page-sub">Cody is analyzing your project documents…</p>
+      </div>
+      <div className="skill-loading-card">
+        <div className="skill-loading-h">
+          <span className="skill-loading-spinner" />
+          <div>
+            <div className="skill-loading-stage"><span className="dot" />{stage}…</div>
+            <div className="skill-loading-pct">{Math.round(p)}% complete</div>
+          </div>
+        </div>
+        <div className="skill-loading-bar"><div style={{ width: p + "%" }} /></div>
+      </div>
+      <div className="skill-loading-grid">
+        {[1, 2, 3, 4].map(i => <div key={i} className="skill-loading-block" style={{ animationDelay: (i * 100) + "ms" }} />)}
+      </div>
+      <div className="skill-loading-table">
+        {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skill-loading-row" style={{ animationDelay: (i * 80) + "ms" }} />)}
+      </div>
+    </div>
+  );
+}
 const { useState: uS3, useEffect: uE3, useRef: uR3, useMemo: uM3 } = React;
 
 // =====================================================
@@ -81,7 +115,7 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
 // =====================================================
 // ESTIMATION REPORT — HERO, with edit mode
 // =====================================================
-function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin }) {
+function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress }) {
   const data = window.BC_DATA.estimation;
   const [editMode, setEditMode] = uS3(false);
   const [edits, setEdits] = uS3({}); // line item id -> { unitCost, qty, name }
@@ -174,6 +208,13 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
     setEdits(prev => ({ ...prev, [id]: { ...(prev[id] || {}), [field]: val } }));
     setEditingCell(null);
   };
+
+  if (isLoading) return (
+    <div className="col-detail">
+      <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Rough Order of Magnitude (ROM) Estimate", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
+      <SkillLoadingShell projectName={project.name} title="Rough Order of Magnitude (ROM) Estimate" progress={loadProgress} />
+    </div>
+  );
 
   return (
     <div className="col-detail">
@@ -749,7 +790,7 @@ function Donut({ items, total }) {
 // =====================================================
 // RFC — Kanban-style by priority + edit category
 // =====================================================
-function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin }) {
+function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress }) {
   // Seed each issue with a resolved flag — defaults to true for "No clarification needed".
   const initial = window.BC_DATA.rfc.issues.map(i => ({
     ...i,
@@ -785,6 +826,13 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
   };
 
   const filesAnalyzed = (window.BC_DATA.files || []).filter(f => f.indexed);
+
+  if (isLoading) return (
+    <div className="col-detail">
+      <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Clarifications & Potential RFIs", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
+      <SkillLoadingShell projectName={project.name} title="Clarifications & Potential RFIs" progress={loadProgress} />
+    </div>
+  );
 
   return (
     <div className="col-detail">
@@ -859,7 +907,9 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
               </div>
               <div className="rfc-board" key="rfc-overview">
             {cols.map(c => {
-              const list = issues.filter(i => i.priority === c.id);
+              const list = issues
+                .filter(i => i.priority === c.id)
+                .sort((a, b) => (a.resolved ? 1 : 0) - (b.resolved ? 1 : 0));
               return (
                 <div key={c.id}
                      className="rfc-col"
@@ -1016,7 +1066,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
 // =====================================================
 // BID LEVELING
 // =====================================================
-function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin }) {
+function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress }) {
   const data = window.BC_DATA.bidLeveling;
   const trades = data.trades || [];
   const [activeTradeId, setActiveTradeId] = uS3(trades[0] && trades[0].id);
@@ -1044,11 +1094,18 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
 
   const filesAnalyzed = (window.BC_DATA.files || []).filter(f => f.indexed);
 
+  if (isLoading) return (
+    <div className="col-detail">
+      <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
+      <SkillLoadingShell projectName={project.name} title="Bid Level Analysis" progress={loadProgress} />
+    </div>
+  );
+
   return (
     <div className="col-detail">
       <Taskbar
         crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]}
-        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className="btn"><Icon name="download" size={16} />Export</button><button className="btn-primary"><Icon name="check" size={16} />Award contract</button></>}
+        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className="btn"><Icon name="download" size={16} />Export</button></>}
         onAskAI={onAskAI}
         switcher={projectSwitcher}
       />
@@ -1176,7 +1233,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
           <table className="bid-table">
             <thead>
               <tr>
-                <th className="sub" style={{ width: "36%" }}>Line item</th>
+                <th className="sub" style={{ width: "36%" }}>Subcontractor name</th>
                 {trade.subs.map((s, i) => (
                   <th key={s.id} className="sub" style={{ verticalAlign: "bottom", background: i === safeWinnerIdx ? "rgba(72,193,181,0.10)" : undefined }}>
                     <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: "var(--bc-strong)", textAlign: "right" }}>{s.name}</div>
@@ -1252,47 +1309,148 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
               <div>
                 <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>How Cody compared the bids</div>
                 <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "var(--bc-strong)" }}>
-                  Cody normalized each bid against the project's leveled scope (per the indexed drawings + specs), flagged any exclusions or qualifications, and ranked subs by total leveled price weighted against historical performance on comparable awards. Per-trade rationale and risk notes are below.
+                  Cody normalized each bid against the project's leveled scope (per the indexed drawings + specs), flagged any exclusions or qualifications, and ranked subs by total leveled price weighted against historical performance on comparable awards. Below is each trade with a per-company breakdown.
                 </p>
               </div>
             </div>
           </div>
 
-          {trades.map(t => {
-            const tTotals = t.subs.map((_, i) => t.lineItems.reduce((acc, li) => acc + (li.values[i] || 0), 0));
-            const tWinnerIdx = t.subs.findIndex(s => s.recommended);
-            const tWinner = t.subs[tWinnerIdx >= 0 ? tWinnerIdx : 0];
-            const tWinTotal = tTotals[tWinnerIdx >= 0 ? tWinnerIdx : 0];
-            const tAvg = tTotals.reduce((a, b) => a + b, 0) / tTotals.length;
+          {/* Trade selector — same chip-style tabs as Overview */}
+          <div className="trade-tabs" style={{ marginBottom: 14 }}>
+            {trades.map(t => (
+              <button key={t.id}
+                      className={"trade-tab " + (activeTradeId === t.id ? "active" : "")}
+                      onClick={() => setActiveTradeId(t.id)}>
+                <span className="trade-tab-code">{t.division}</span>
+                <span className="trade-tab-name">{t.name}</span>
+                <span className="trade-tab-count">{t.subs.length} bids</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Stats strip for the active trade — spread, range, etc. */}
+          {(() => {
+            const t = trade; // already-selected trade from outer scope
+            const tTotals = totals;
+            const tMin = Math.min(...tTotals);
+            const tMax = Math.max(...tTotals);
             return (
-              <div key={t.id} className="card" style={{ padding: 18, marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                  <div style={{ minWidth: 60 }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, color: "var(--orange-500)" }}>{t.division.replace("Division ", "")}</div>
-                    <div style={{ fontSize: 10.5, color: "var(--bc-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginTop: 2 }}>{t.name}</div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, color: "var(--bc-strong)", marginBottom: 8 }}>
-                      Recommended: {tWinner.name} <span className="badge b-done" style={{ marginLeft: 8, fontSize: 9 }}><Icon name="check" size={10} />Cody's pick</span>
-                    </div>
-                    <p style={{ margin: "0 0 10px", fontSize: 13, lineHeight: 1.55, color: "var(--bc-strong)" }}>
-                      {tWinner.name} came in at <b>{fullMoney(tWinTotal)}</b>, <b>{fullMoney(tAvg - tWinTotal)}</b> below the average. {t.recommendedNote}. {t.exclusions === 0 ? "All bids in this trade are all-inclusive — easy apples-to-apples comparison." : `Note: ${t.exclusions} exclusion${t.exclusions === 1 ? "" : "s"} surfaced in this trade — make sure scope is leveled before awarding.`}
-                    </p>
-                    <div style={{ display: "flex", gap: 18, fontSize: 11.5, color: "var(--bc-muted)", flexWrap: "wrap" }}>
-                      <span><b style={{ color: "var(--bc-strong)" }}>Spread</b> · {t.spread.toFixed(1)}%</span>
-                      <span><b style={{ color: "var(--bc-strong)" }}>Subs reviewed</b> · {t.subs.length}</span>
-                      <span><b style={{ color: "var(--bc-strong)" }}>Line items</b> · {t.lineItems.length}</span>
-                      <span><b style={{ color: "var(--bc-strong)" }}>Exclusions</b> · {t.exclusions}</span>
-                      <span><b style={{ color: "var(--tiffany-400)" }}>Savings vs avg</b> · {fullMoney(tAvg - tWinTotal)}</span>
-                    </div>
-                  </div>
-                  <button className="btn" onClick={() => { setActiveTradeId(t.id); setBidTab("overview"); }}>
-                    <Icon name="open_in_new" size={14} />Open in Overview
-                  </button>
-                </div>
+              <div className="bid-trade-stats">
+                <div className="bid-trade-stat"><div className="bid-trade-stat-l">Subs</div><div className="bid-trade-stat-v">{t.subs.length}</div></div>
+                <div className="bid-trade-stat"><div className="bid-trade-stat-l">Spread</div><div className="bid-trade-stat-v">{t.spread.toFixed(1)}%</div></div>
+                <div className="bid-trade-stat"><div className="bid-trade-stat-l">Low bid</div><div className="bid-trade-stat-v">{fullMoney(tMin)}</div></div>
+                <div className="bid-trade-stat"><div className="bid-trade-stat-l">High bid</div><div className="bid-trade-stat-v">{fullMoney(tMax)}</div></div>
+                <div className="bid-trade-stat"><div className="bid-trade-stat-l">Exclusions</div><div className="bid-trade-stat-v">{t.exclusions}</div></div>
               </div>
             );
-          })}
+          })()}
+
+          {/* Active-trade per-sub breakdown cards (ranked low-to-high) */}
+          {(() => {
+            const t = trade;
+            const tTotals = totals;
+            const safeTWinIdx = safeWinnerIdx;
+            const tWinner = winningSub;
+            const tWinTotal = winningTotal;
+            const tAvg = avgTotal;
+            const ranked = t.subs
+              .map((s, i) => ({ sub: s, idx: i, total: tTotals[i] }))
+              .sort((a, b) => a.total - b.total);
+            return (
+              <div className="bid-trade-block" key={t.id}>
+                {ranked.map(({ sub, idx, total }, rank) => {
+                  const isWinner = idx === safeTWinIdx;
+                  const variance = total - tWinTotal;
+                  const exclusionsForSub = t.lineItems.filter(li => li.excluded && li.excluded[idx]).length;
+                  const includedItems = t.lineItems.filter(li => !li.excluded || !li.excluded[idx]).length;
+                  const allLineItems = t.lineItems.map((li, lineIdx) => ({
+                    name: li.name,
+                    value: li.values[idx],
+                    excluded: !!(li.excluded && li.excluded[idx]),
+                    note: li.note,
+                    winnerValue: li.values[safeTWinIdx],
+                    isWinnerOnThisRow: idx === safeTWinIdx,
+                  }));
+
+                  // Mock narrative — varies by rank/winner/exclusions
+                  let narrative;
+                  if (isWinner) {
+                    narrative = (
+                      <>
+                        <b>{sub.name}</b> is Cody's recommendation for {t.name}. The leveled total of <b>{fullMoney(total)}</b> is <b>{fullMoney(tAvg - total)}</b> below the trade average and <b>{((tAvg - total) / tAvg * 100).toFixed(1)}%</b> tighter than the next-best bid. {t.recommendedNote}. {exclusionsForSub === 0 ? "Scope is fully inclusive — no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}
+                      </>
+                    );
+                  } else if (rank === 1) {
+                    narrative = (
+                      <>
+                        <b>{sub.name}</b> came in second at <b>{fullMoney(total)}</b>, <b>{fullMoney(variance)}</b> above the recommended bid. Strong fallback if {tWinner.name} fails reference checks. {exclusionsForSub > 0 ? `Has ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} to reconcile.` : "All-inclusive scope."}
+                      </>
+                    );
+                  } else if (total >= tAvg * 1.10) {
+                    narrative = (
+                      <>
+                        <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, <b>{((total - tAvg) / tAvg * 100).toFixed(1)}%</b> above the trade average — flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.
+                      </>
+                    );
+                  } else {
+                    narrative = (
+                      <>
+                        <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, within typical range of the leveled scope (+<b>{fullMoney(variance)}</b> vs the recommended bid). {exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} — review before negotiating.` : "Scope is consistent with the leveled set."}
+                      </>
+                    );
+                  }
+
+                  return (
+                    <div key={sub.id} className={"sub-detail " + (isWinner ? "is-winner" : "")}>
+                      <div className="sub-detail-h">
+                        <div className="sub-detail-h-l">
+                          <div className="sub-detail-rank">#{rank + 1}</div>
+                          <div>
+                            <div className="sub-detail-name">
+                              {sub.name}
+                              {isWinner && <span className="badge b-done" style={{ marginLeft: 8, fontSize: 9 }}><Icon name="check" size={10} />Cody's pick</span>}
+                            </div>
+                            <div className="sub-detail-contact">{sub.contact}</div>
+                          </div>
+                        </div>
+                        <div className="sub-detail-h-r">
+                          <div className="sub-detail-totals-l">Total bid</div>
+                          <div className="sub-detail-totals-v">{fullMoney(total)}</div>
+                          {!isWinner && <div className="sub-detail-variance">+{fullMoney(variance)} vs pick</div>}
+                          {isWinner && <div className="sub-detail-variance is-savings">−{fullMoney(tAvg - total)} vs avg</div>}
+                        </div>
+                      </div>
+
+                      <div className="sub-detail-stats">
+                        <div className="sub-detail-stat"><div className="l">Rank</div><div className="v">{rank + 1} of {t.subs.length}</div></div>
+                        <div className="sub-detail-stat"><div className="l">Included items</div><div className="v">{includedItems}</div></div>
+                        <div className="sub-detail-stat"><div className="l">Exclusions</div><div className={"v " + (exclusionsForSub > 0 ? "is-warn" : "")}>{exclusionsForSub}</div></div>
+                        <div className="sub-detail-stat"><div className="l">vs average</div><div className={"v " + (total < tAvg ? "is-good" : "")}>{total < tAvg ? "−" : "+"}{((total - tAvg) / tAvg * 100).toFixed(1)}%</div></div>
+                      </div>
+
+                      <p className="sub-detail-narrative">{narrative}</p>
+
+                      <div className="sub-detail-lines">
+                        <div className="sub-detail-lines-h">Line item breakdown</div>
+                        {allLineItems.map((it, i) => (
+                          <div key={i} className={"sub-line " + (it.excluded ? "is-excluded" : "")}>
+                            <span className="sub-line-name">
+                              {it.name}
+                              {it.note && <small>{it.note}</small>}
+                            </span>
+                            <span className="sub-line-value">
+                              {it.excluded ? <em>Excluded</em> : "$" + it.value.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
