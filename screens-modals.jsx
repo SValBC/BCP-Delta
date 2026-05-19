@@ -359,4 +359,301 @@ function DailyReportModal({ open, onClose, projects }) {
   );
 }
 
-Object.assign(window, { NewProjectModal, DailyReportModal });
+// =====================================================
+// PUSH GLOBAL MODAL — confirm pushing edits to the platform's knowledge base
+// =====================================================
+function PushGlobalModal({ open, onClose, onConfirm, edits }) {
+  if (!open) return null;
+  const editEntries = Object.entries(edits || {});
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow"><Icon name="cloud_upload" size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Push Global</div>
+            <h2>Push {editEntries.length} change{editEntries.length === 1 ? "" : "s"} to all collaborators?</h2>
+            <p>This solidifies your edits, makes them visible to everyone with project access, and updates Cody's knowledge base for future skill runs across your projects.</p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+        </div>
+        <div className="modal-body">
+          {editEntries.length > 0 ? (
+            <div className="push-edit-list">
+              <div className="push-edit-list-h">Changes in this push</div>
+              {editEntries.map(([key, e], i) => (
+                <div key={i} className="push-edit-row">
+                  <div className="push-edit-label">{e.label || key}</div>
+                  <div className="push-edit-diff">
+                    <span className="push-edit-old">{e.original}</span>
+                    <Icon name="arrow_forward" size={12} />
+                    <span className="push-edit-new">{e.value}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: "var(--bc-muted)", textAlign: "center", padding: 16 }}>No pending edits.</div>
+          )}
+          <div className="push-impact">
+            <Icon name="auto_awesome" size={14} className="cody-mark" />
+            <div>
+              <b>What Cody will learn:</b> these changes feed back into the platform-wide knowledge base. Future skill runs on this project — and similar projects — will reflect your overrides.
+            </div>
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={onConfirm} disabled={editEntries.length === 0}>
+            <Icon name="cloud_upload" size={14} />Push to Global
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteFileModal({ open, file, onClose, onConfirm }) {
+  if (!open || !file) return null;
+
+  // File type icon + tone (mirrors FilesScreen helper)
+  const tt = (file.ftype || "").toLowerCase();
+  const ft = (() => {
+    if (tt === "pdf") return { icon: "picture_as_pdf", tone: "pdf" };
+    if (tt === "dwg" || tt === "dxf") return { icon: "architecture", tone: "dwg" };
+    if (tt === "xlsx" || tt === "xls" || tt === "csv") return { icon: "table_view", tone: "sheet" };
+    if (tt === "docx" || tt === "doc" || tt === "txt") return { icon: "description", tone: "doc" };
+    if (tt === "jpg" || tt === "jpeg" || tt === "png" || tt === "image") return { icon: "image", tone: "image" };
+    return { icon: "insert_drive_file", tone: "other" };
+  })();
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow modal-eyebrow-danger">
+              <Icon name="delete_forever" size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Delete file
+            </div>
+            <h2>Delete "{file.name}"?</h2>
+            <p>This file will be permanently removed from {file.projectName || "this project"}. This action cannot be undone.</p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        <div className="modal-body">
+          {/* File summary card */}
+          <div className="del-file-card">
+            <span className={"files-ftype-icon files-ftype-" + ft.tone}>
+              <Icon name={ft.icon} size={20} />
+            </span>
+            <div className="del-file-meta">
+              <div className="del-file-name">{file.name}</div>
+              <div className="del-file-sub">
+                {(file.ftype || "file").toUpperCase()} · {file.size}{file.uploaded ? " · uploaded " + file.uploaded : ""}{file.uploadedBy ? " · " + file.uploadedBy : ""}
+              </div>
+              {(file.projectName || file.revisionName) && (
+                <div className="del-file-loc">
+                  <Icon name="folder_open" size={12} style={{ opacity: 0.6, verticalAlign: "-2px", marginRight: 4 }} />
+                  {file.projectName}{file.revisionName ? " · " + file.revisionName : ""}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Historical-data impact warning */}
+          <div className="del-impact">
+            <div className="del-impact-h">
+              <Icon name="warning" size={14} />
+              <b>How this affects historical data</b>
+            </div>
+            <ul className="del-impact-list">
+              <li>Past skill runs that referenced this file will keep their results, but their source citations will show as <b>"file removed."</b></li>
+              <li>Cody's project knowledge base will be updated — future skill runs won't draw on this file's contents.</li>
+              <li>Any flagged line items, RFIs, or bid leveling notes anchored to this file will be marked <b>orphaned</b> and surfaced for review.</li>
+              <li>The file will still appear in the project's revision history audit log.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="modal-foot">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn btn-danger" onClick={() => onConfirm && onConfirm(file)}>
+            <Icon name="delete_forever" size={14} />Delete file
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Renders a brand logo with a graceful fallback chain:
+//   1. Clearbit Logo API (real logos for most company domains, no auth required)
+//   2. Google Favicons high-res (guaranteed to work for any domain with a favicon)
+//   3. Material icon tile with brand color (final fallback if the company has no web presence)
+function ConnectLogo({ domain, brand, icon, name }) {
+  const [stage, setStage] = React.useState(0);
+  if (!domain || stage >= 2) {
+    return (
+      <div className="connect-logo" style={{ background: (brand || "#272635") + "1A", color: brand || "#272635" }}>
+        <Icon name={icon || "link"} size={20} />
+      </div>
+    );
+  }
+  const src = stage === 0
+    ? "https://logo.clearbit.com/" + domain
+    : "https://www.google.com/s2/favicons?domain=" + domain + "&sz=128";
+  return (
+    <div className="connect-logo connect-logo-img-wrap">
+      <img
+        src={src}
+        alt={name}
+        className="connect-logo-img"
+        onError={() => setStage(s => s + 1)}
+      />
+    </div>
+  );
+}
+
+function AddConnectionModal({ open, onClose, connections, onToggleConnection }) {
+  if (!open) return null;
+  const [search, setSearch] = React.useState("");
+  const [activeCategory, setActiveCategory] = React.useState("all");
+
+  // Catalog of integrations — grouped by category.
+  // Each entry: { id, name, desc, category, domain (for logo lookup), icon (material-icon fallback), brand (hex color) }
+  const catalog = [
+    // Construction tech
+    { id: "bluebeam",         name: "Bluebeam Revu",     category: "Construction", domain: "bluebeam.com",         desc: "PDF markup, takeoffs, and quantification.",          icon: "draw",            brand: "#1B6EC7" },
+    { id: "building-connected", name: "BuildingConnected", category: "Construction", domain: "buildingconnected.com", desc: "Subcontractor bid invitation and tracking.",       icon: "groups",          brand: "#FF7235" },
+    { id: "procore",          name: "Procore",           category: "Construction", domain: "procore.com",          desc: "Project management, drawings, and submittals.",      icon: "domain",          brand: "#F7941E" },
+    { id: "onscreen-takeoff", name: "OnScreen Takeoff",  category: "Construction", domain: "oncenter.com",         desc: "Digital takeoffs from drawings and PDFs.",            icon: "square_foot",     brand: "#0096D6" },
+    { id: "planswift",        name: "PlanSwift",         category: "Construction", domain: "planswift.com",        desc: "Quick takeoff and estimating from PDF plans.",        icon: "straighten",      brand: "#E84600" },
+    { id: "autodesk-construction", name: "Autodesk Construction Cloud", category: "Construction", domain: "autodesk.com", desc: "BIM 360, Build, and Docs — drawings and RFIs.", icon: "view_in_ar", brand: "#0696D7" },
+    { id: "plangrid",         name: "PlanGrid",          category: "Construction", domain: "plangrid.com",         desc: "Field-first drawing access and markup sync.",         icon: "map",             brand: "#FFB400" },
+    { id: "stack",            name: "STACK",             category: "Construction", domain: "stackct.com",          desc: "Cloud takeoff and estimating for preconstruction.",   icon: "calculate",       brand: "#5047F3" },
+    { id: "trimble-connect",  name: "Trimble Connect",   category: "Construction", domain: "connect.trimble.com",  desc: "Model coordination and collaboration platform.",      icon: "hub",             brand: "#005EB8" },
+    { id: "rsmeans",          name: "RSMeans Data",      category: "Construction", domain: "rsmeans.com",          desc: "Regional cost data and unit pricing benchmarks.",     icon: "payments",        brand: "#48C1B5" },
+
+    // Cloud storage
+    { id: "dropbox",          name: "Dropbox",           category: "Storage",      domain: "dropbox.com",          desc: "Sync drawings and specs from shared folders.",        icon: "cloud",           brand: "#0061FF" },
+    { id: "onedrive",         name: "OneDrive",          category: "Storage",      domain: "onedrive.live.com",    desc: "Pull files from Microsoft 365 and SharePoint.",       icon: "cloud_queue",     brand: "#0078D4" },
+    { id: "google-drive",     name: "Google Drive",      category: "Storage",      domain: "drive.google.com",     desc: "Import documents and drawings from Drive folders.",   icon: "cloud_done",      brand: "#1FA463" },
+    { id: "box",              name: "Box",               category: "Storage",      domain: "box.com",              desc: "Enterprise content management and file sharing.",     icon: "inventory_2",     brand: "#0061D5" },
+    { id: "sharepoint",       name: "SharePoint",        category: "Storage",      domain: "sharepoint.com",       desc: "Enterprise document libraries and project sites.",    icon: "folder_shared",   brand: "#036C70" },
+    { id: "egnyte",           name: "Egnyte",            category: "Storage",      domain: "egnyte.com",           desc: "Hybrid file sharing built for construction teams.",   icon: "folder_zip",      brand: "#00968F" },
+
+    // Productivity
+    { id: "slack",            name: "Slack",             category: "Productivity", domain: "slack.com",            desc: "Get Cody notifications in your team channels.",       icon: "chat",            brand: "#4A154B" },
+    { id: "teams",            name: "Microsoft Teams",   category: "Productivity", domain: "teams.microsoft.com",  desc: "Push skill run summaries to Teams channels.",         icon: "groups_2",        brand: "#4B53BC" },
+    { id: "outlook",          name: "Outlook",           category: "Productivity", domain: "outlook.live.com",     desc: "Sync RFI emails and meeting invites.",                icon: "mail",            brand: "#0078D4" },
+    { id: "gmail",            name: "Gmail",             category: "Productivity", domain: "gmail.com",            desc: "Send RFIs and reports from your work Gmail.",         icon: "forward_to_inbox", brand: "#EA4335" },
+  ];
+
+  const categories = [
+    { id: "all",          label: "All",            count: catalog.length },
+    { id: "Construction", label: "Construction",   count: catalog.filter(c => c.category === "Construction").length },
+    { id: "Storage",      label: "Cloud storage",  count: catalog.filter(c => c.category === "Storage").length },
+    { id: "Productivity", label: "Productivity",   count: catalog.filter(c => c.category === "Productivity").length },
+  ];
+
+  const conns = connections || {};
+  const filtered = catalog.filter(c => {
+    if (activeCategory !== "all" && c.category !== activeCategory) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell connect-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow"><Icon name="hub" size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Connections</div>
+            <h2>Add a connection</h2>
+            <p>Connect BuildCrew to the tools your team already uses. Cody will pull drawings, specs, bids, and notes from these sources to power skill runs.</p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        <div className="connect-toolbar">
+          <div className="files-search" style={{ minWidth: 240 }}>
+            <Icon name="search" size={16} />
+            <input
+              type="text"
+              placeholder="Search integrations…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="icon-btn" onClick={() => setSearch("")} title="Clear" style={{ width: 24, height: 24 }}>
+                <Icon name="close" size={14} />
+              </button>
+            )}
+          </div>
+          <div className="connect-cats">
+            {categories.map(cat => (
+              <button key={cat.id}
+                      className={"connect-cat " + (activeCategory === cat.id ? "is-active" : "")}
+                      onClick={() => setActiveCategory(cat.id)}>
+                {cat.label}<span className="connect-cat-count">{cat.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="modal-body connect-body">
+          {filtered.length === 0 ? (
+            <div className="files-empty" style={{ padding: 40 }}>
+              No integrations match "{search}".
+            </div>
+          ) : (
+            <div className="connect-list">
+              {filtered.map(c => {
+                const isConnected = !!conns[c.id];
+                return (
+                  <div key={c.id} className={"connect-row " + (isConnected ? "is-connected" : "")}>
+                    <ConnectLogo domain={c.domain} brand={c.brand} icon={c.icon} name={c.name} />
+                    <div className="connect-row-meta">
+                      <div className="connect-row-name-row">
+                        <span className="connect-name">{c.name}</span>
+                        <span className="connect-row-cat">{c.category}</span>
+                      </div>
+                      <div className="connect-desc">{c.desc}</div>
+                    </div>
+                    {isConnected && (
+                      <span className="connect-status"><span className="connect-status-dot" />Connected</span>
+                    )}
+                    {isConnected ? (
+                      <button className="btn-ghost connect-btn-disc"
+                              onClick={() => onToggleConnection && onToggleConnection(c.id, false)}>
+                        <Icon name="link_off" size={14} />Disconnect
+                      </button>
+                    ) : (
+                      <button className="btn-primary connect-btn"
+                              onClick={() => onToggleConnection && onToggleConnection(c.id, true, c)}>
+                        <Icon name="add_link" size={14} />Connect
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-foot connect-foot">
+          <div className="connect-foot-meta">
+            <Icon name="info" size={13} />
+            {Object.keys(conns).length} active connection{Object.keys(conns).length === 1 ? "" : "s"} · Cody only pulls files you authorize per project.
+          </div>
+          <button className="btn" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal });

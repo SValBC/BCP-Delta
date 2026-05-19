@@ -4,7 +4,7 @@ const { useState: uS2, useEffect: uE2, useRef: uR2 } = React;
 // =====================================================
 // PROJECT HOME (workspace overview when project opened)
 // =====================================================
-function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun }) {
+function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const drawings = window.BC_DATA.drawings || [];
   const [drawingSort, setDrawingSort] = uS2({ key: "plan", direction: "asc" });
   const toggleDrawingSort = (key) => {
@@ -32,11 +32,28 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
   });
 
   // Revisions — default to the latest (last in array). Per-project state, reset on project switch.
-  const revisions = project.revisions || [];
+  const [revisions, setRevisions] = uS2(project.revisions || []);
+  uE2(() => { setRevisions(project.revisions || []); }, [project.id]);
   const latest = revisions[revisions.length - 1];
   const [activeRevisionId, setActiveRevisionId] = uS2(latest ? latest.id : null);
-  uE2(() => { setActiveRevisionId(latest ? latest.id : null); }, [project.id]);
+  uE2(() => {
+    const fresh = project.revisions || [];
+    setActiveRevisionId(fresh.length ? fresh[fresh.length - 1].id : null);
+  }, [project.id]);
   const activeRevision = revisions.find(r => r.id === activeRevisionId) || latest;
+  const handleCreateRevision = () => {
+    const nextNum = revisions.length + 1;
+    const dateStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const newRev = {
+      id: "rev-new-" + Date.now().toString(36),
+      name: "Revision " + nextNum + " — New revision",
+      date: dateStr,
+      note: "Created just now"
+    };
+    setRevisions(prev => [...prev, newRev]);
+    setActiveRevisionId(newRev.id);
+    setRevOpen(false);
+  };
 
   const [revOpen, setRevOpen] = uS2(false);
   const revRef = uR2(null);
@@ -74,6 +91,9 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         actions={
         <>
             <PinButton pinId={project.id} pinnedSet={pinnedSet} onPin={onPin} />
+            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
+              <Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}
+            </button>
             <button className="btn"><Icon name="share" size={16} />Share</button>
             <button className="btn-primary" onClick={() => onOpenTab("skills")}><Icon name="play_arrow" size={16} />Run a skill</button>
           </>
@@ -82,10 +102,19 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         switcher={projectSwitcher} />
       
       <div className="canvas">
+        {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
         <div style={{ marginBottom: 22 }}>
           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 6 }}>{project.kind}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2 className="page-h1" style={{ fontSize: 30 }}>{project.name}</h2>
+            <h2 className="page-h1" style={{ fontSize: 30 }}>
+              <EditableText
+                editMode={editMode}
+                editKey={"project:" + project.id + ":name"}
+                original={project.name}
+                value={edits && edits["project:" + project.id + ":name"] && edits["project:" + project.id + ":name"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Project name")}
+              />
+            </h2>
             {project.scope &&
             <div className="scope-tip" tabIndex="0">
                 <Icon name="info" size={18} style={{ color: "#007BA7", cursor: "help" }} />
@@ -107,7 +136,21 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginTop: 4, flexWrap: "wrap" }}>
             <p className="page-sub" style={{ margin: 0 }}>
-              {project.address} · {project.stage}
+              <EditableText
+                editMode={editMode}
+                editKey={"project:" + project.id + ":address"}
+                original={project.address}
+                value={edits && edits["project:" + project.id + ":address"] && edits["project:" + project.id + ":address"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Address")}
+              />
+              {" · "}
+              <EditableText
+                editMode={editMode}
+                editKey={"project:" + project.id + ":stage"}
+                original={project.stage}
+                value={edits && edits["project:" + project.id + ":stage"] && edits["project:" + project.id + ":stage"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Stage")}
+              />
             </p>
             {revisions.length > 0 && (
               <div className="rev-dd" ref={revRef}>
@@ -136,6 +179,14 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
                         {activeRevisionId === r.id && <Icon name="check" size={14} />}
                       </button>
                     ))}
+                    <div className="rev-menu-divider" />
+                    <button className="rev-item rev-item-create" onClick={handleCreateRevision}>
+                      <Icon name="add" size={14} />
+                      <div className="rev-item-text">
+                        <div className="rev-item-name">Create new revision</div>
+                        <div className="rev-item-meta">Snapshot the current project state</div>
+                      </div>
+                    </button>
                   </div>
                 )}
               </div>
@@ -225,8 +276,8 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         <div className="section-h"><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
           {[
-          { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: "12 min ago", success: true },
-          { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: "1h ago", success: true },
+          { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: null, success: false },
+          { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
           { id: "bid", title: "Bid Level Analysis", icon: "compare_arrows", desc: "Compares contractor bids fairly by standardizing submissions, identifying missing or inconsistent scope items, and adjusting costs so every bid reflects an equivalent scope, ensuring award decisions are based on true value, not just the lowest number.", lastRun: null, success: false }].
           map((s) => {
             const runKey = project.id + "/" + s.id;

@@ -65,6 +65,28 @@
       const [pinned, setPinned] = useState(new Set(["rec-wellness", "rivergrove"]));
       const [showNewProject, setShowNewProject] = useState(false);
       const [showDailyReport, setShowDailyReport] = useState(false);
+      // Global Edit Mode + edits store. Edits are keyed by string so we can revert by key.
+      const [editMode, setEditMode] = useState(false);
+      const [edits, setEdits] = useState({}); // { [key]: { original, value, label? } }
+      const [showPushGlobal, setShowPushGlobal] = useState(false);
+      const [globalPushedAt, setGlobalPushedAt] = useState(null); // timestamp of last push
+      const recordEdit = (key, original, value, label) => {
+        setEdits(prev => {
+          // If value === original, drop the entry
+          if (value === original) {
+            const n = { ...prev }; delete n[key]; return n;
+          }
+          return { ...prev, [key]: { original, value, label } };
+        });
+      };
+      const revertEdits = () => setEdits({});
+      const confirmPushGlobal = () => {
+        setGlobalPushedAt(Date.now());
+        setEdits({});
+        setEditMode(false);
+        setShowPushGlobal(false);
+      };
+      const editCount = Object.keys(edits).length;
       const [skillRuns, setSkillRuns] = useState({}); // key: "projectId/skillId" → { startTime, progress }
       const [skillCompletions, setSkillCompletions] = useState({}); // key → { completedAt, justCompleted }
       const skillRunTimers = React.useRef({});
@@ -108,6 +130,19 @@
       const [projects, setProjects] = useState(data.projects);
       const skills = data.skills;
       const runs = data.runs;
+
+      // Per-project files (used by the Files workspace screen). Wrapped in state so
+      // deletions update the UI immediately.
+      const [filesByProject, setFilesByProject] = useState(data.filesByProject || {});
+      const [pendingDelete, setPendingDelete] = useState(null); // { id, name, projectId, projectName, revisionName, ... }
+      const requestDeleteFile = (file) => setPendingDelete(file);
+      const confirmDeleteFile = (file) => {
+        setFilesByProject(prev => {
+          const list = prev[file.projectId] || [];
+          return { ...prev, [file.projectId]: list.filter(f => f.id !== file.id) };
+        });
+        setPendingDelete(null);
+      };
 
       const activeTab = tabs.find(tb => tb.id === activeTabId) || tabs[0];
 
@@ -180,10 +215,10 @@
 
       // ---- Setters used by NavRail (replace current tab if static, else create new) ----
       const goToScreen = (screenId) => {
-        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "settings"].includes(screenId);
+        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "files", "settings"].includes(screenId);
         if (!isStaticScreen) return;
-        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", settings:"Settings" };
-        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", settings:"tune" };
+        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", files:"Files", settings:"Settings" };
+        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", files:"folder_copy", settings:"tune" };
         // Workspace nav items don't open as separate tabs — they replace
         // the content of the current active tab (unless that tab is a
         // project / skill-run / drawing, which we want to preserve).
@@ -214,10 +249,10 @@
 
       // Open a workspace screen in a brand-new tab (bypasses goToScreen's replace/switch logic)
       const openScreenInNewTab = (screenId) => {
-        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "settings"].includes(screenId);
+        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "files", "settings"].includes(screenId);
         if (!isStaticScreen) return;
-        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", settings:"Settings" };
-        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", settings:"tune" };
+        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", files:"Files", settings:"Settings" };
+        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", files:"folder_copy", settings:"tune" };
         addTab({
           kind: "static",
           screen: screenId,
@@ -385,7 +420,27 @@
         if (p.kind === "project") openProject(p.id);
       };
 
-      const onAddConnection = () => goToScreen("settings");
+      // ---- Connections (used by AddConnectionModal + nav rail) ----
+      // Seeded with the two integrations the nav showed before. Each value can
+      // hold metadata for richer status (logo, brand color) so the nav rail
+      // doesn't need its own catalog.
+      const [connections, setConnections] = useState({
+        bluebeam: { id: "bluebeam", name: "Bluebeam Revu", icon: "draw", brand: "#1B6EC7" },
+        procore:  { id: "procore",  name: "Procore",       icon: "domain", brand: "#F7941E" },
+      });
+      const [showAddConnection, setShowAddConnection] = useState(false);
+      const onAddConnection = () => setShowAddConnection(true);
+      const toggleConnection = (id, shouldConnect, meta) => {
+        setConnections(prev => {
+          const next = { ...prev };
+          if (shouldConnect) {
+            next[id] = meta ? { id: meta.id, name: meta.name, icon: meta.icon, brand: meta.brand } : { id };
+          } else {
+            delete next[id];
+          }
+          return next;
+        });
+      };
 
       const onAskAI = () => setAiOpen(true);
       const onToggleTheme = () => {
@@ -418,6 +473,7 @@
       else if (screen === "skills") detail = <SkillRunScreen project={projects[0]} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} />;
       else if (screen === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} />;
       else if (screen === "labor") detail = <LaborScreen ctx={ctx} onAskAI={onAskAI} />;
+      else if (screen === "files") detail = <WorkspaceFilesScreen ctx={ctx} onAskAI={onAskAI} projects={projects} filesByProject={filesByProject} onDeleteFile={requestDeleteFile} onCtxMenu={openCtxMenu} />;
       else if (screen === "settings") detail = <SettingsScreen ctx={ctx} onAskAI={onAskAI} theme={t.theme} onToggleTheme={onToggleTheme} />;
       else if (screen === "project" || screen === "skill-run") {
         const p = activeProject || projects[0];
@@ -431,12 +487,12 @@
             onOpenInTab={openProjectInNewTab}
           />
         );
-        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} />;
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
         else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
         else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
-        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} />;
-        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} />;
-        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} />;
+        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "rfc")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "bid")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
         else if (tab === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} projectSwitcher={projectSwitcher} />;
         else if (tab === "schedule") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
       }
@@ -490,6 +546,7 @@
             onOpenPinned={onOpenPinned}
             onAddConnection={onAddConnection}
             onCtxMenu={openCtxMenu}
+            connections={connections}
           />
           <div className="col-detail-wrap">
             {(activeTab.kind !== "static" || tabs.length > 1) && (
@@ -534,6 +591,27 @@
             open={showDailyReport}
             onClose={() => setShowDailyReport(false)}
             projects={projects}
+          />
+
+          <PushGlobalModal
+            open={showPushGlobal}
+            onClose={() => setShowPushGlobal(false)}
+            onConfirm={confirmPushGlobal}
+            edits={edits}
+          />
+
+          <DeleteFileModal
+            open={!!pendingDelete}
+            file={pendingDelete}
+            onClose={() => setPendingDelete(null)}
+            onConfirm={confirmDeleteFile}
+          />
+
+          <AddConnectionModal
+            open={showAddConnection}
+            onClose={() => setShowAddConnection(false)}
+            connections={connections}
+            onToggleConnection={toggleConnection}
           />
 
           <ContextMenu menu={ctxMenu} onClose={closeCtxMenu} />

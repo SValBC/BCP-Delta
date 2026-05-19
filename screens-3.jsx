@@ -115,9 +115,8 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
 // =====================================================
 // ESTIMATION REPORT — HERO, with edit mode
 // =====================================================
-function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress }) {
+function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress, onRerun, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const data = window.BC_DATA.estimation;
-  const [editMode, setEditMode] = uS3(false);
   const [edits, setEdits] = uS3({}); // line item id -> { unitCost, qty, name }
   const [editingCell, setEditingCell] = uS3(null); // {id, field}
   const [items, setItems] = uS3(data.lineItems);
@@ -225,7 +224,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         actions={
           <>
             <PinButton pinId={"skill:" + project.id + "/estimation"} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode(e => !e)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
+            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
               <Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}
             </button>
             <button className="btn"><Icon name="picture_as_pdf" size={16} />Export</button>
@@ -236,11 +235,31 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         switcher={projectSwitcher}
       />
       <div className="canvas">
+        {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4, gap: 16 }}>
           <div>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{project.name}</div>
-            <h2 className="page-h1">Rough Order of Magnitude (ROM) Estimate</h2>
-            <p className="page-sub">v3 · 84,000 SF · Run finished 12 min ago in 11m 32s</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <h2 className="page-h1" style={{ marginBottom: 0 }}>
+                <EditableText
+                  editMode={editMode}
+                  editKey={"est:" + project.id + ":title"}
+                  original={"Rough Order of Magnitude (ROM) Estimate"}
+                  value={globalEdits && globalEdits["est:" + project.id + ":title"] && globalEdits["est:" + project.id + ":title"].value}
+                  onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Report title")}
+                />
+              </h2>
+              {onRerun && <button className="btn rerun-inline" onClick={onRerun}><Icon name="refresh" size={14} />Re-run skill</button>}
+            </div>
+            <p className="page-sub" style={{ marginTop: 4 }}>
+              <EditableText
+                editMode={editMode}
+                editKey={"est:" + project.id + ":subtitle"}
+                original={"v3 · 84,000 SF · Run finished 12 min ago in 11m 32s"}
+                value={globalEdits && globalEdits["est:" + project.id + ":subtitle"] && globalEdits["est:" + project.id + ":subtitle"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Report meta")}
+              />
+            </p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <span className="badge b-done"><Icon name="verified" size={12} style={{ opacity: 0.7 }} />91% confidence</span>
@@ -265,44 +284,49 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         {/* OVERVIEW TAB */}
         {reportTab === "overview" && <>
 
-        {editMode && (
-          <div className="card" style={{ marginTop: 12, marginBottom: 14, background: "rgba(232,70,0,0.05)", borderColor: "rgba(232,70,0,0.25)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-            <Icon name="edit_note" style={{ color: "var(--orange-500)" }} />
-            <div style={{ fontSize: 13, color: "var(--bc-strong)" }}>
-              <b>Edit mode is on.</b> Click any cell to correct values. Cody will track your changes and update totals live.
-            </div>
-            <div style={{ marginLeft: "auto", fontSize: 12, color: "var(--bc-muted)" }}>
-              {Object.keys(edits).length} edits · <span style={{ color: "var(--orange-500)", fontWeight: 700 }}>{accepted.size} confirmed</span>
-            </div>
-          </div>
-        )}
 
         {/* SUMMARY */}
         <div className="summary-row" style={{ marginTop: 18 }}>
           <div className="kpi-strip" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             <div className="kpi">
               <Icon className="bg" name="payments" />
-              <div className="label">Total Project Estimate</div>
+              <div className="label">
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:totalLbl"} original={"Total Project Estimate"} value={globalEdits && globalEdits["est:" + project.id + ":kpi:totalLbl"] && globalEdits["est:" + project.id + ":kpi:totalLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Total")} />
+              </div>
               <div className="value" style={{ color: "var(--tiffany-400)" }}>{fullMoney(editMode ? editedTotal : data.grandTotal)}</div>
-              <div className="delta" style={{ color: "var(--bc-muted)" }}>{(data.contingency * 100).toFixed(0)}% contingency · SD phase</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:totalDelta"} original={(data.contingency * 100).toFixed(0) + "% contingency · SD phase"} value={globalEdits && globalEdits["est:" + project.id + ":kpi:totalDelta"] && globalEdits["est:" + project.id + ":kpi:totalDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Total")} />
+              </div>
             </div>
             <div className="kpi kpi-accent" style={{ "--kpi-accent": "#5047F3" }}>
               <Icon className="bg" name="engineering" />
-              <div className="label">Labor</div>
+              <div className="label">
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:laborLbl"} original={"Labor"} value={globalEdits && globalEdits["est:" + project.id + ":kpi:laborLbl"] && globalEdits["est:" + project.id + ":kpi:laborLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Labor")} />
+              </div>
               <div className="value">{fullMoney(data.laborTotal)}</div>
-              <div className="delta" style={{ color: "var(--bc-muted)" }}>Most expensive trade · {topDivision.name}</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:laborDelta"} original={"Most expensive trade · " + topDivision.name} value={globalEdits && globalEdits["est:" + project.id + ":kpi:laborDelta"] && globalEdits["est:" + project.id + ":kpi:laborDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Labor")} />
+              </div>
             </div>
             <div className="kpi">
               <Icon className="bg" name="square_foot" />
-              <div className="label">Cost Per SF</div>
+              <div className="label">
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:psfLbl"} original={"Cost Per SF"} value={globalEdits && globalEdits["est:" + project.id + ":kpi:psfLbl"] && globalEdits["est:" + project.id + ":kpi:psfLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Per SF")} />
+              </div>
               <div className="value">${costPerSF}</div>
-              <div className="delta" style={{ color: "var(--bc-muted)" }}>Gross project area · {grossArea.toLocaleString()} SF</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:psfDelta"} original={"Gross project area · " + grossArea.toLocaleString() + " SF"} value={globalEdits && globalEdits["est:" + project.id + ":kpi:psfDelta"] && globalEdits["est:" + project.id + ":kpi:psfDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Per SF")} />
+              </div>
             </div>
             <div className="kpi kpi-accent" style={{ "--kpi-accent": "#E84600" }}>
               <Icon className="bg" name="build" />
-              <div className="label">Materials</div>
+              <div className="label">
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:matLbl"} original={"Materials"} value={globalEdits && globalEdits["est:" + project.id + ":kpi:matLbl"] && globalEdits["est:" + project.id + ":kpi:matLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Materials")} />
+              </div>
               <div className="value">{fullMoney(data.materialTotal)}</div>
-              <div className="delta" style={{ color: "var(--bc-muted)" }}>Most expensive material · {topMaterial}</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                <EditableText editMode={editMode} editKey={"est:" + project.id + ":kpi:matDelta"} original={"Most expensive material · " + topMaterial} value={globalEdits && globalEdits["est:" + project.id + ":kpi:matDelta"] && globalEdits["est:" + project.id + ":kpi:matDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Materials")} />
+              </div>
             </div>
           </div>
 
@@ -328,12 +352,38 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         <div style={{ marginTop: 18 }}>
           <CodyMessage
             eyebrow="Cody flagged something"
-            title="Division 13 — Special Construction sits 18% above benchmark"
+            title={
+              <EditableText
+                editMode={editMode}
+                editKey={"est:" + project.id + ":flagTitle"}
+                original={"Division 13 — Special Construction sits 18% above benchmark"}
+                value={globalEdits && globalEdits["est:" + project.id + ":flagTitle"] && globalEdits["est:" + project.id + ":flagTitle"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Cody flag title")}
+              />
+            }
             pillLabel="Walk me through it"
             onPill={onAskAI}
           >
-            <p>The pool tank lump-sum (<b>$384k</b>) sits 18% above my regional benchmark. The benchmark is built from <b>14 similar 25m × 8-lane projects in the PNW</b>; the closest comp is Beaverton Aquatic ($326k, 2024).</p>
-            <p>Want me to break the lump sum into trade lines for a tighter view?</p>
+            {(() => {
+              const flagBody1Key = "est:" + project.id + ":flagBody1";
+              const flagBody1Orig = "The pool tank lump-sum ($384k) sits 18% above my regional benchmark. The benchmark is built from 14 similar 25m × 8-lane projects in the PNW; the closest comp is Beaverton Aquatic ($326k, 2024).";
+              const flagBody2Key = "est:" + project.id + ":flagBody2";
+              const flagBody2Orig = "Want me to break the lump sum into trade lines for a tighter view?";
+              if (!editMode) {
+                return <>
+                  <p>The pool tank lump-sum (<b>$384k</b>) sits 18% above my regional benchmark. The benchmark is built from <b>14 similar 25m × 8-lane projects in the PNW</b>; the closest comp is Beaverton Aquatic ($326k, 2024).</p>
+                  <p>Want me to break the lump sum into trade lines for a tighter view?</p>
+                </>;
+              }
+              return <>
+                <p>
+                  <EditableText editMode={editMode} multiline editKey={flagBody1Key} original={flagBody1Orig} value={globalEdits && globalEdits[flagBody1Key] && globalEdits[flagBody1Key].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Cody flag body")} />
+                </p>
+                <p>
+                  <EditableText editMode={editMode} multiline editKey={flagBody2Key} original={flagBody2Orig} value={globalEdits && globalEdits[flagBody2Key] && globalEdits[flagBody2Key].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Cody flag follow-up")} />
+                </p>
+              </>;
+            })()}
             <div className="suggest" style={{ marginTop: 10 }}>
               <button className="chip">Yes, break it down</button>
               <button className="chip">Show comps</button>
@@ -790,7 +840,7 @@ function Donut({ items, total }) {
 // =====================================================
 // RFC — Kanban-style by priority + edit category
 // =====================================================
-function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress }) {
+function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   // Seed each issue with a resolved flag — defaults to true for "No clarification needed".
   const initial = window.BC_DATA.rfc.issues.map(i => ({
     ...i,
@@ -841,6 +891,9 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
         actions={
           <>
             <PinButton pinId={"skill:" + project.id + "/rfc"} pinnedSet={pinnedSet} onPin={onPin} />
+            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
+              <Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}
+            </button>
             <button className="btn"><Icon name="email" size={16} />Draft RFI emails</button>
             <button className="btn"><Icon name="download" size={16} />Export</button>
           </>
@@ -849,11 +902,23 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
         switcher={projectSwitcher}
       />
       <div className="canvas">
+        {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{project.name}</div>
-            <h2 className="page-h1">Clarifications & Potential RFIs</h2>
-            <p className="page-sub">{issues.length} detected · Run finished 1h ago · Drag a card to change priority</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <h2 className="page-h1" style={{ marginBottom: 0 }}>
+                <EditableText
+                  editMode={editMode}
+                  editKey={"rfc:" + project.id + ":title"}
+                  original={"Clarifications & Potential RFIs"}
+                  value={globalEdits && globalEdits["rfc:" + project.id + ":title"] && globalEdits["rfc:" + project.id + ":title"].value}
+                  onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Report title")}
+                />
+              </h2>
+              {onRerun && <button className="btn rerun-inline" onClick={onRerun}><Icon name="refresh" size={14} />Re-run skill</button>}
+            </div>
+            <p className="page-sub" style={{ marginTop: 4 }}>{issues.length} detected · Run finished 1h ago · Drag a card to change priority</p>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <span className="badge b-high">{issues.filter(i => i.priority === "critical").length} critical</span>
@@ -882,27 +947,43 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
               <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
                 <div className="kpi">
                   <Icon className="bg" name="rule" />
-                  <div className="label">Total Clarifications</div>
+                  <div className="label">
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:totalLbl"} original={"Total Clarifications"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:totalLbl"] && globalEdits["rfc:" + project.id + ":kpi:totalLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Total")} />
+                  </div>
                   <div className="value">{totalCount}</div>
-                  <div className="delta" style={{ color: "var(--bc-muted)" }}>Detected by Cody · 28 docs scanned</div>
+                  <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:totalDelta"} original={"Detected by Cody · 28 docs scanned"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:totalDelta"] && globalEdits["rfc:" + project.id + ":kpi:totalDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Total")} />
+                  </div>
                 </div>
                 <div className="kpi">
                   <Icon className="bg" name="priority_high" />
-                  <div className="label">Critical</div>
+                  <div className="label">
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:critLbl"} original={"Critical"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:critLbl"] && globalEdits["rfc:" + project.id + ":kpi:critLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Critical")} />
+                  </div>
                   <div className="value">{criticalCount}</div>
-                  <div className="delta up"><Icon name="warning" size={14} />Need immediate action</div>
+                  <div className="delta up"><Icon name="warning" size={14} />
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:critDelta"} original={"Need immediate action"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:critDelta"] && globalEdits["rfc:" + project.id + ":kpi:critDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Critical")} />
+                  </div>
                 </div>
                 <div className="kpi">
                   <Icon className="bg" name="compare_arrows" />
-                  <div className="label">Document Conflicts</div>
+                  <div className="label">
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:confLbl"} original={"Document Conflicts"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:confLbl"] && globalEdits["rfc:" + project.id + ":kpi:confLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Conflicts")} />
+                  </div>
                   <div className="value">{conflictsCount}</div>
-                  <div className="delta" style={{ color: "var(--bc-muted)" }}>Cross-doc inconsistencies</div>
+                  <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:confDelta"} original={"Cross-doc inconsistencies"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:confDelta"] && globalEdits["rfc:" + project.id + ":kpi:confDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Conflicts")} />
+                  </div>
                 </div>
                 <div className="kpi">
                   <Icon className="bg" name="check_circle" />
-                  <div className="label">Resolved</div>
+                  <div className="label">
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:resolvedLbl"} original={"Resolved"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:resolvedLbl"] && globalEdits["rfc:" + project.id + ":kpi:resolvedLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Resolved")} />
+                  </div>
                   <div className="value">{resolvedCount}</div>
-                  <div className="delta down"><Icon name="check" size={14} />Marked done by you or Cody</div>
+                  <div className="delta down"><Icon name="check" size={14} />
+                    <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":kpi:resolvedDelta"} original={"Marked done by you or Cody"} value={globalEdits && globalEdits["rfc:" + project.id + ":kpi:resolvedDelta"] && globalEdits["rfc:" + project.id + ":kpi:resolvedDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Resolved")} />
+                  </div>
                 </div>
               </div>
               <div className="rfc-board" key="rfc-overview">
@@ -932,8 +1013,12 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
                         <span className="cat">{i.category}</span>
                         <span className="rfc-id">{i.id}</span>
                       </div>
-                      <div className="title">{i.title}</div>
-                      <div className="desc">{i.desc}</div>
+                      <div className="title">
+                        <EditableText editMode={editMode} editKey={"rfc:" + project.id + ":" + i.id + ":title"} original={i.title} value={globalEdits && globalEdits["rfc:" + project.id + ":" + i.id + ":title"] && globalEdits["rfc:" + project.id + ":" + i.id + ":title"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, i.id + " · Title")} />
+                      </div>
+                      <div className="desc">
+                        <EditableText editMode={editMode} multiline editKey={"rfc:" + project.id + ":" + i.id + ":desc"} original={i.desc} value={globalEdits && globalEdits["rfc:" + project.id + ":" + i.id + ":desc"] && globalEdits["rfc:" + project.id + ":" + i.id + ":desc"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, i.id + " · Description")} />
+                      </div>
                       <div className="footer-row">
                         <div className="rfc-refs">
                           {i.refs && i.refs.length > 0
@@ -1066,11 +1151,52 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
 // =====================================================
 // BID LEVELING
 // =====================================================
-function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress }) {
+// Dropdown selector for switching between trades on Bid Level Analysis screens
+function TradeDropdown({ trades, activeTradeId, setActiveTradeId, tradeOpen, setTradeOpen, tradeRef, activeTrade }) {
+  if (!activeTrade) return null;
+  return (
+    <div className="trade-dd" ref={tradeRef}>
+      <button className={"trade-trigger " + (tradeOpen ? "open" : "")} onClick={(e) => { e.stopPropagation(); setTradeOpen(o => !o); }}>
+        <span className="trade-trigger-stack">
+          <span className="trade-trigger-code">{activeTrade.division}</span>
+          <b className="trade-trigger-name">{activeTrade.name}</b>
+        </span>
+        <span className="trade-trigger-meta">{activeTrade.subs.length} bids</span>
+        <Icon name="expand_more" size={16} />
+      </button>
+      {tradeOpen && (
+        <div className="trade-menu">
+          {trades.map(t => (
+            <button key={t.id}
+                    className={"trade-menu-item " + (activeTradeId === t.id ? "active" : "")}
+                    onClick={() => { setActiveTradeId(t.id); setTradeOpen(false); }}>
+              <div className="trade-menu-info">
+                <div className="trade-menu-code">{t.division}</div>
+                <div className="trade-menu-name">{t.name}</div>
+                <div className="trade-menu-meta">{t.subs.length} bids · {t.spread.toFixed(1)}% spread</div>
+              </div>
+              {activeTradeId === t.id && <Icon name="check" size={14} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const data = window.BC_DATA.bidLeveling;
   const trades = data.trades || [];
   const [activeTradeId, setActiveTradeId] = uS3(trades[0] && trades[0].id);
   const [bidTab, setBidTab] = uS3("overview"); // overview | detailed | files
+  const [tradeOpen, setTradeOpen] = uS3(false);
+  const tradeRef = uR3(null);
+  uE3(() => {
+    if (!tradeOpen) return;
+    const handler = (e) => { if (tradeRef.current && !tradeRef.current.contains(e.target)) setTradeOpen(false); };
+    setTimeout(() => document.addEventListener("click", handler), 0);
+    return () => document.removeEventListener("click", handler);
+  }, [tradeOpen]);
   const trade = trades.find(t => t.id === activeTradeId) || trades[0];
 
   if (!trade) return null;
@@ -1105,15 +1231,27 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
     <div className="col-detail">
       <Taskbar
         crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]}
-        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className="btn"><Icon name="download" size={16} />Export</button></>}
+        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}><Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}</button><button className="btn"><Icon name="download" size={16} />Export</button></>}
         onAskAI={onAskAI}
         switcher={projectSwitcher}
       />
       <div className="canvas">
+        {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{project.name}</div>
-          <h2 className="page-h1">Bid Level Analysis</h2>
-          <p className="page-sub">{trades.length} trades leveled · {totalSubs} subcontractors · {totalLineItems} line items</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <h2 className="page-h1" style={{ marginBottom: 0 }}>
+              <EditableText
+                editMode={editMode}
+                editKey={"bid:" + project.id + ":title"}
+                original={"Bid Level Analysis"}
+                value={globalEdits && globalEdits["bid:" + project.id + ":title"] && globalEdits["bid:" + project.id + ":title"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Report title")}
+              />
+            </h2>
+            {onRerun && <button className="btn rerun-inline" onClick={onRerun}><Icon name="refresh" size={14} />Re-run skill</button>}
+          </div>
+          <p className="page-sub" style={{ marginTop: 4 }}>{trades.length} trades leveled · {totalSubs} subcontractors · {totalLineItems} line items</p>
         </div>
 
         {/* REPORT TABS */}
@@ -1131,41 +1269,57 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
         </div>
 
       {bidTab === "overview" && <>
-        {/* TRADE SELECTOR */}
-        <div className="trade-tabs" style={{ marginBottom: 16 }}>
-          {trades.map(t => (
-            <button key={t.id}
-                    className={"trade-tab " + (activeTradeId === t.id ? "active" : "")}
-                    onClick={() => setActiveTradeId(t.id)}>
-              <span className="trade-tab-code">{t.division}</span>
-              <span className="trade-tab-name">{t.name}</span>
-              <span className="trade-tab-count">{t.subs.length} bids</span>
-            </button>
-          ))}
-        </div>
+        <TradeDropdown
+          trades={trades}
+          activeTradeId={activeTradeId}
+          setActiveTradeId={setActiveTradeId}
+          tradeOpen={tradeOpen}
+          setTradeOpen={setTradeOpen}
+          tradeRef={tradeRef}
+          activeTrade={trade}
+        />
 
         <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
           <div className="kpi">
             <Icon className="bg" name="emoji_events" />
-            <div className="label">Recommended</div>
+            <div className="label">
+              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":recLbl"} original={"Recommended"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":recLbl"] && globalEdits["bid:" + project.id + ":" + trade.id + ":recLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Recommended")} />
+            </div>
             <div className="value" style={{ fontSize: 17, lineHeight: 1.2 }}>{winningSub.name}</div>
-            <div className="delta down"><Icon name="check" size={14} />{trade.recommendedNote || "Cody's pick"}</div>
+            <div className="delta down">
+              <Icon name="check" size={14} />
+              <EditableText
+                editMode={editMode}
+                editKey={"bid:" + project.id + ":" + trade.id + ":recNote"}
+                original={trade.recommendedNote || "Cody's pick"}
+                value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":recNote"] && globalEdits["bid:" + project.id + ":" + trade.id + ":recNote"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Recommendation note")}
+              />
+            </div>
           </div>
           <div className="kpi">
             <Icon className="bg" name="payments" />
-            <div className="label">Awarded value</div>
+            <div className="label">
+              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":awardLbl"} original={"Awarded value"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":awardLbl"] && globalEdits["bid:" + project.id + ":" + trade.id + ":awardLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Awarded")} />
+            </div>
             <div className="value">{fullMoney(winningTotal)}</div>
             <div className="delta down"><Icon name="trending_down" size={14} />−{fullMoney(avgTotal - winningTotal)} vs avg</div>
           </div>
           <div className="kpi">
             <Icon className="bg" name="speed" />
-            <div className="label">Spread</div>
+            <div className="label">
+              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":spreadLbl"} original={"Spread"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadLbl"] && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Spread")} />
+            </div>
             <div className="value">{trade.spread.toFixed(1)}%</div>
-            <div className="delta" style={{ color: "var(--bc-muted)" }}>{trade.spread < 12 ? "Tight — competitive" : "Wide — review scope"}</div>
+            <div className="delta" style={{ color: "var(--bc-muted)" }}>
+              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":spreadDelta"} original={trade.spread < 12 ? "Tight — competitive" : "Wide — review scope"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadDelta"] && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Spread")} />
+            </div>
           </div>
           <div className="kpi">
             <Icon className="bg" name="report_problem" />
-            <div className="label">Exclusions</div>
+            <div className="label">
+              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":exclLbl"} original={"Exclusions"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":exclLbl"] && globalEdits["bid:" + project.id + ":" + trade.id + ":exclLbl"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI label · Exclusions")} />
+            </div>
             <div className="value">{trade.exclusions}</div>
             <div className={"delta " + (trade.exclusions === 0 ? "" : "up")}>{trade.exclusions === 0 ? "All-inclusive bids" : <><Icon name="warning" size={14} />Review scope log</>}</div>
           </div>
@@ -1307,26 +1461,26 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
                 <Icon name="analytics" size={20} style={{ color: "var(--raisin-800)", opacity: 0.65 }} />
               </div>
               <div>
-                <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>How Cody compared the bids</div>
+                <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>
+                  <EditableText editMode={editMode} editKey={"bid:" + project.id + ":howEyebrow"} original={"How Cody compared the bids"} value={globalEdits && globalEdits["bid:" + project.id + ":howEyebrow"] && globalEdits["bid:" + project.id + ":howEyebrow"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "How-Cody eyebrow")} />
+                </div>
                 <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "var(--bc-strong)" }}>
-                  Cody normalized each bid against the project's leveled scope (per the indexed drawings + specs), flagged any exclusions or qualifications, and ranked subs by total leveled price weighted against historical performance on comparable awards. Below is each trade with a per-company breakdown.
+                  <EditableText editMode={editMode} multiline editKey={"bid:" + project.id + ":howBody"} original={"Cody normalized each bid against the project's leveled scope (per the indexed drawings + specs), flagged any exclusions or qualifications, and ranked subs by total leveled price weighted against historical performance on comparable awards. Below is each trade with a per-company breakdown."} value={globalEdits && globalEdits["bid:" + project.id + ":howBody"] && globalEdits["bid:" + project.id + ":howBody"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "How-Cody narrative")} />
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Trade selector — same chip-style tabs as Overview */}
-          <div className="trade-tabs" style={{ marginBottom: 14 }}>
-            {trades.map(t => (
-              <button key={t.id}
-                      className={"trade-tab " + (activeTradeId === t.id ? "active" : "")}
-                      onClick={() => setActiveTradeId(t.id)}>
-                <span className="trade-tab-code">{t.division}</span>
-                <span className="trade-tab-name">{t.name}</span>
-                <span className="trade-tab-count">{t.subs.length} bids</span>
-              </button>
-            ))}
-          </div>
+          {/* Trade selector — shared dropdown */}
+          <TradeDropdown
+            trades={trades}
+            activeTradeId={activeTradeId}
+            setActiveTradeId={setActiveTradeId}
+            tradeOpen={tradeOpen}
+            setTradeOpen={setTradeOpen}
+            tradeRef={tradeRef}
+            activeTrade={trade}
+          />
 
           {/* Stats strip for the active trade — spread, range, etc. */}
           {(() => {
@@ -1374,31 +1528,37 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
 
                   // Mock narrative — varies by rank/winner/exclusions
                   let narrative;
+                  let narrativeText; // plain-text fallback used when editing
                   if (isWinner) {
                     narrative = (
                       <>
                         <b>{sub.name}</b> is Cody's recommendation for {t.name}. The leveled total of <b>{fullMoney(total)}</b> is <b>{fullMoney(tAvg - total)}</b> below the trade average and <b>{((tAvg - total) / tAvg * 100).toFixed(1)}%</b> tighter than the next-best bid. {t.recommendedNote}. {exclusionsForSub === 0 ? "Scope is fully inclusive — no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}
                       </>
                     );
+                    narrativeText = `${sub.name} is Cody's recommendation for ${t.name}. The leveled total of ${fullMoney(total)} is ${fullMoney(tAvg - total)} below the trade average and ${((tAvg - total) / tAvg * 100).toFixed(1)}% tighter than the next-best bid. ${t.recommendedNote}. ${exclusionsForSub === 0 ? "Scope is fully inclusive — no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}`;
                   } else if (rank === 1) {
                     narrative = (
                       <>
                         <b>{sub.name}</b> came in second at <b>{fullMoney(total)}</b>, <b>{fullMoney(variance)}</b> above the recommended bid. Strong fallback if {tWinner.name} fails reference checks. {exclusionsForSub > 0 ? `Has ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} to reconcile.` : "All-inclusive scope."}
                       </>
                     );
+                    narrativeText = `${sub.name} came in second at ${fullMoney(total)}, ${fullMoney(variance)} above the recommended bid. Strong fallback if ${tWinner.name} fails reference checks. ${exclusionsForSub > 0 ? `Has ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} to reconcile.` : "All-inclusive scope."}`;
                   } else if (total >= tAvg * 1.10) {
                     narrative = (
                       <>
                         <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, <b>{((total - tAvg) / tAvg * 100).toFixed(1)}%</b> above the trade average — flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.
                       </>
                     );
+                    narrativeText = `${sub.name} bid ${fullMoney(total)}, ${((total - tAvg) / tAvg * 100).toFixed(1)}% above the trade average — flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.`;
                   } else {
                     narrative = (
                       <>
                         <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, within typical range of the leveled scope (+<b>{fullMoney(variance)}</b> vs the recommended bid). {exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} — review before negotiating.` : "Scope is consistent with the leveled set."}
                       </>
                     );
+                    narrativeText = `${sub.name} bid ${fullMoney(total)}, within typical range of the leveled scope (+${fullMoney(variance)} vs the recommended bid). ${exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} — review before negotiating.` : "Scope is consistent with the leveled set."}`;
                   }
+                  const narrativeKey = "bid:" + project.id + ":" + t.id + ":" + sub.id + ":narrative";
 
                   return (
                     <div key={sub.id} className={"sub-detail " + (isWinner ? "is-winner" : "")}>
@@ -1428,7 +1588,12 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
                         <div className="sub-detail-stat"><div className="l">vs average</div><div className={"v " + (total < tAvg ? "is-good" : "")}>{total < tAvg ? "−" : "+"}{((total - tAvg) / tAvg * 100).toFixed(1)}%</div></div>
                       </div>
 
-                      <p className="sub-detail-narrative">{narrative}</p>
+                      <p className="sub-detail-narrative">
+                        {editMode
+                          ? <EditableText editMode={editMode} multiline editKey={narrativeKey} original={narrativeText} value={globalEdits && globalEdits[narrativeKey] && globalEdits[narrativeKey].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, sub.name + " · Narrative")} />
+                          : (globalEdits && globalEdits[narrativeKey] && globalEdits[narrativeKey].value ? globalEdits[narrativeKey].value : narrative)
+                        }
+                      </p>
 
                       <div className="sub-detail-lines">
                         <div className="sub-detail-lines-h">Line item breakdown</div>

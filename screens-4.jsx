@@ -135,6 +135,267 @@ function LaborScreen({ ctx, onAskAI }) {
   );
 }
 
+function WorkspaceFilesScreen({ ctx, onAskAI, projects, filesByProject, onDeleteFile, onCtxMenu }) {
+  const projs = projects || (window.BC_DATA && window.BC_DATA.projects) || [];
+  const fbp = filesByProject || (window.BC_DATA && window.BC_DATA.filesByProject) || {};
+
+  // Map file extensions to icons + tone color
+  const ftypeIcon = (t) => {
+    const tt = (t || "").toLowerCase();
+    if (tt === "pdf") return { icon: "picture_as_pdf", tone: "pdf" };
+    if (tt === "dwg" || tt === "dxf") return { icon: "architecture", tone: "dwg" };
+    if (tt === "xlsx" || tt === "xls" || tt === "csv") return { icon: "table_view", tone: "sheet" };
+    if (tt === "docx" || tt === "doc" || tt === "txt") return { icon: "description", tone: "doc" };
+    if (tt === "jpg" || tt === "jpeg" || tt === "png" || tt === "image") return { icon: "image", tone: "image" };
+    return { icon: "insert_drive_file", tone: "other" };
+  };
+  const ftypeLabel = (t) => (t || "file").toUpperCase();
+
+  // Expanded state — project & revision toggles
+  const initialExpanded = {};
+  projs.forEach((p, i) => { initialExpanded["proj:" + p.id] = i < 2; });
+  const [expanded, setExpanded] = uS4(initialExpanded);
+  const isOpen = (k) => !!expanded[k];
+  const toggle = (k) => setExpanded(prev => ({ ...prev, [k]: !prev[k] }));
+
+  // Search / filter
+  const [search, setSearch] = uS4("");
+  const [typeFilter, setTypeFilter] = uS4("all");
+  const [projectFilter, setProjectFilter] = uS4("all");
+
+  // Build a flat list for KPI totals
+  const allFiles = projs.flatMap(p => (fbp[p.id] || []).map(f => ({ ...f, projectId: p.id, projectName: p.name })));
+  const totalFiles = allFiles.length;
+  const totalBytes = allFiles.reduce((a, f) => a + (f.sizeBytes || 0), 0);
+  const totalSize = (() => {
+    if (totalBytes >= 1073741824) return (totalBytes / 1073741824).toFixed(1) + " GB";
+    if (totalBytes >= 1048576) return (totalBytes / 1048576).toFixed(1) + " MB";
+    return (totalBytes / 1024).toFixed(0) + " KB";
+  })();
+  const typesPresent = Array.from(new Set(allFiles.map(f => (f.ftype || "").toLowerCase()))).filter(Boolean).sort();
+
+  // Apply filters at the project level
+  const matchesFilters = (f) => {
+    if (typeFilter !== "all" && (f.ftype || "").toLowerCase() !== typeFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      if (!f.name.toLowerCase().includes(q) && !(f.uploadedBy || "").toLowerCase().includes(q)) return false;
+    }
+    return true;
+  };
+
+  const visibleProjects = projs.filter(p => projectFilter === "all" || projectFilter === p.id);
+
+  return (
+    <div className="col-detail">
+      <Taskbar
+        crumbs={[{ label: "Workspace" }, { label: "Files", bold: true }]}
+        actions={
+          <>
+            <button className="btn"><Icon name="upload" size={16} />Upload files</button>
+            <button className="btn"><Icon name="download" size={16} />Export manifest</button>
+          </>
+        }
+        onAskAI={onAskAI}
+      />
+      <div className="canvas">
+        <div style={{ marginBottom: 14 }}>
+          <h2 className="page-h1">All project files</h2>
+          <p className="page-sub">Manage every file uploaded across your projects. Files are organized by project and revision. Deletions affect any historical skill runs that reference them.</p>
+        </div>
+
+        {/* KPI strip — matches the look of other top-level screens */}
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
+          <div className="kpi">
+            <Icon className="bg" name="folder_copy" />
+            <div className="label">Total files</div>
+            <div className="value">{totalFiles}</div>
+            <div className="delta" style={{ color: "var(--bc-muted)" }}>Across {projs.length} projects</div>
+          </div>
+          <div className="kpi">
+            <Icon className="bg" name="storage" />
+            <div className="label">Storage used</div>
+            <div className="value">{totalSize}</div>
+            <div className="delta" style={{ color: "var(--bc-muted)" }}>{typesPresent.length} file types</div>
+          </div>
+          <div className="kpi">
+            <Icon className="bg" name="picture_as_pdf" />
+            <div className="label">Drawings & specs</div>
+            <div className="value">{allFiles.filter(f => ["pdf", "dwg", "dxf"].includes((f.ftype || "").toLowerCase())).length}</div>
+            <div className="delta" style={{ color: "var(--bc-muted)" }}>PDF / DWG indexed by Cody</div>
+          </div>
+          <div className="kpi">
+            <Icon className="bg" name="history" />
+            <div className="label">Latest upload</div>
+            <div className="value" style={{ fontSize: 15, lineHeight: 1.2 }}>May 5, 2026</div>
+            <div className="delta" style={{ color: "var(--bc-muted)" }}>Recreational Wellness · rev 4</div>
+          </div>
+        </div>
+
+        {/* Filter toolbar — same visual style as other screens */}
+        <div className="files-toolbar">
+          <div className="files-search">
+            <Icon name="search" size={16} />
+            <input
+              type="text"
+              placeholder="Search filename or uploader…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="icon-btn" onClick={() => setSearch("")} title="Clear search" style={{ width: 24, height: 24 }}>
+                <Icon name="close" size={14} />
+              </button>
+            )}
+          </div>
+          <div className="files-filter-group">
+            <label className="files-filter-lbl">Project</label>
+            <select className="files-filter-select" value={projectFilter} onChange={e => setProjectFilter(e.target.value)}>
+              <option value="all">All projects</option>
+              {projs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div className="files-filter-group">
+            <label className="files-filter-lbl">Type</label>
+            <select className="files-filter-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+              <option value="all">All types</option>
+              {typesPresent.map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+            </select>
+          </div>
+          <div className="files-toolbar-spacer" />
+          <button className="btn-ghost" onClick={() => {
+            const allKeys = {};
+            projs.forEach(p => {
+              allKeys["proj:" + p.id] = true;
+              (p.revisions || []).forEach(r => { allKeys["rev:" + p.id + ":" + r.id] = true; });
+            });
+            setExpanded(allKeys);
+          }}>
+            <Icon name="unfold_more" size={14} />Expand all
+          </button>
+          <button className="btn-ghost" onClick={() => setExpanded({})}>
+            <Icon name="unfold_less" size={14} />Collapse all
+          </button>
+        </div>
+
+        {/* Project > Revision > File tree */}
+        <div className="files-tree">
+          {visibleProjects.map(p => {
+            const projFiles = (fbp[p.id] || []).filter(matchesFilters);
+            const revisions = p.revisions || [];
+            const projKey = "proj:" + p.id;
+            const projOpen = isOpen(projKey);
+            return (
+              <div key={p.id} className={"files-proj " + (projOpen ? "is-open" : "")}>
+                <button className="files-proj-h" onClick={() => toggle(projKey)}>
+                  <Icon name={projOpen ? "expand_more" : "chevron_right"} size={18} className="files-chev" />
+                  <div className="files-proj-icon">
+                    <Icon name={p.icon || "folder"} size={18} />
+                  </div>
+                  <div className="files-proj-meta">
+                    <div className="files-proj-name">{p.name}</div>
+                    <div className="files-proj-sub">{p.kind} · {projFiles.length} file{projFiles.length === 1 ? "" : "s"} · {revisions.length} revision{revisions.length === 1 ? "" : "s"}</div>
+                  </div>
+                  <span className="files-count-pill">{projFiles.length}</span>
+                </button>
+
+                {projOpen && (
+                  <div className="files-proj-body">
+                    {revisions.length === 0 ? (
+                      <div className="files-empty">No revisions yet.</div>
+                    ) : revisions.map(r => {
+                      const revFiles = projFiles.filter(f => f.revisionId === r.id);
+                      const revKey = "rev:" + p.id + ":" + r.id;
+                      const revOpen = isOpen(revKey);
+                      if (revFiles.length === 0 && (search || typeFilter !== "all")) return null;
+                      return (
+                        <div key={r.id} className={"files-rev " + (revOpen ? "is-open" : "")}>
+                          <button className="files-rev-h" onClick={() => toggle(revKey)}>
+                            <Icon name={revOpen ? "expand_more" : "chevron_right"} size={16} className="files-chev" />
+                            <Icon name="history" size={14} className="files-rev-icon" />
+                            <div className="files-rev-meta">
+                              <div className="files-rev-name">{r.name}</div>
+                              <div className="files-rev-sub">{r.date}{r.note ? " · " + r.note : ""}</div>
+                            </div>
+                            <span className="files-count-pill files-count-pill-sm">{revFiles.length}</span>
+                          </button>
+
+                          {revOpen && (
+                            revFiles.length === 0 ? (
+                              <div className="files-empty files-empty-rev">No files in this revision yet.</div>
+                            ) : (
+                              <table className="bc-table files-table">
+                                <thead>
+                                  <tr>
+                                    <th style={{ width: "44%" }}>Filename</th>
+                                    <th style={{ width: 90 }}>Type</th>
+                                    <th className="num" style={{ width: 110 }}>Size</th>
+                                    <th style={{ width: 160 }}>Date uploaded</th>
+                                    <th style={{ width: 160 }}>Uploaded by</th>
+                                    <th className="center" style={{ width: 80 }}></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {revFiles.map(f => {
+                                    const ft = ftypeIcon(f.ftype);
+                                    return (
+                                      <tr key={f.id}
+                                          onContextMenu={(e) => onCtxMenu && onCtxMenu([
+                                            { label: "Open", icon: "open_in_new", onClick: () => {} },
+                                            { label: "Download", icon: "download", onClick: () => {} },
+                                            { divider: true },
+                                            { label: "Delete", icon: "delete", danger: true, onClick: () => onDeleteFile && onDeleteFile({ ...f, projectId: p.id, projectName: p.name, revisionName: r.name }) },
+                                          ], e)}>
+                                        <td>
+                                          <div className="files-name-cell">
+                                            <span className={"files-ftype-icon files-ftype-" + ft.tone}>
+                                              <Icon name={ft.icon} size={16} />
+                                            </span>
+                                            <span className="item-title files-name-text">{f.name}</span>
+                                          </div>
+                                        </td>
+                                        <td>
+                                          <span className={"files-type-pill files-type-" + ft.tone}>{ftypeLabel(f.ftype)}</span>
+                                        </td>
+                                        <td className="num">{f.size}</td>
+                                        <td>
+                                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-strong)" }}>{f.uploaded}</span>
+                                        </td>
+                                        <td>
+                                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{f.uploadedBy}</span>
+                                        </td>
+                                        <td className="center">
+                                          <button className="icon-btn files-del-btn"
+                                                  title="Delete file"
+                                                  onClick={() => onDeleteFile && onDeleteFile({ ...f, projectId: p.id, projectName: p.name, revisionName: r.name })}>
+                                            <Icon name="delete_outline" size={16} />
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {visibleProjects.length === 0 && (
+            <div className="files-empty" style={{ padding: 24 }}>No projects match this filter.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
   const tab = ctx.tab || "profile";
   return (
@@ -209,4 +470,4 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
   );
 }
 
-Object.assign(window, { ReportsScreen, LaborScreen, SettingsScreen });
+Object.assign(window, { ReportsScreen, LaborScreen, WorkspaceFilesScreen, SettingsScreen });

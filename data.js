@@ -184,6 +184,88 @@ window.BC_DATA = {
     { id: "f14", name: "Owner program narrative.docx", size: "412 KB", uploaded: "2w ago · Jamie Park", category: "Supporting Docs", ftype: "doc", confidence: "high", indexed: true },
   ],
 
+  // Per-project files grouped by revision — used by the Files management screen.
+  // Each file: { id, name, size, sizeBytes, ftype, uploaded, uploadedBy, revisionId }
+  filesByProject: {
+    "rec-wellness": [
+      // rev1 — Owner program + site plan
+      { id: "rw-r1-1", name: "Owner program narrative.docx", size: "412 KB", sizeBytes: 421888, ftype: "docx", uploaded: "Apr 18, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "rw-r1-2", name: "Site survey — Riverside Ave.pdf", size: "6.4 MB", sizeBytes: 6710886, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "rw-r1-3", name: "Geotech report.pdf", size: "8.2 MB", sizeBytes: 8598323, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "rw-r1-4", name: "Brownfield env assessment.pdf", size: "2.1 MB", sizeBytes: 2202010, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      // rev2 — Architectural set
+      { id: "rw-r2-1", name: "A-101 — Level 1 floor plan.pdf", size: "4.2 MB", sizeBytes: 4404019, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "rw-r2-2", name: "A-102 — Level 2 floor plan.pdf", size: "3.9 MB", sizeBytes: 4089446, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "rw-r2-3", name: "A-201 — Elevations.pdf", size: "5.8 MB", sizeBytes: 6081740, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "rw-r2-4", name: "A-301 — Reflected ceiling plan.pdf", size: "3.4 MB", sizeBytes: 3565158, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rw-r2-5", name: "S-100 — Structural framing.dwg", size: "2.4 MB", sizeBytes: 2516582, ftype: "dwg", uploaded: "Apr 22, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rw-r2-6", name: "Project manual — Div 09 Finishes.pdf", size: "1.8 MB", sizeBytes: 1887436, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      // rev3 — RFC responses
+      { id: "rw-r3-1", name: "RFC-002 ceiling height response.pdf", size: "624 KB", sizeBytes: 638976, ftype: "pdf", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rw-r3-2", name: "A-301 R1 — Reflected ceiling (rev).pdf", size: "3.6 MB", sizeBytes: 3774873, ftype: "pdf", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rw-r3-3", name: "Site photo — east facade.jpg", size: "2.1 MB", sizeBytes: 2202010, ftype: "jpg", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      // rev4 — Mechanical addendum
+      { id: "rw-r4-1", name: "M-201 — HVAC level 1.pdf", size: "4.6 MB", sizeBytes: 4823449, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Jamie Park", revisionId: "rev4" },
+      { id: "rw-r4-2", name: "M-202 — HVAC level 2.pdf", size: "4.3 MB", sizeBytes: 4508876, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Jamie Park", revisionId: "rev4" },
+      { id: "rw-r4-3", name: "M-203 — Pool HVAC.pdf", size: "5.1 MB", sizeBytes: 5347737, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Jamie Park", revisionId: "rev4" },
+      { id: "rw-r4-4", name: "Mechanical specifications.pdf", size: "3.4 MB", sizeBytes: 3565158, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Sam Lee", revisionId: "rev4" },
+    ],
+    "rivergrove": [
+      // rev1 — Phase II program
+      { id: "rg-r1-1", name: "Phase II program narrative.docx", size: "388 KB", sizeBytes: 397312, ftype: "docx", uploaded: "Mar 12, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "rg-r1-2", name: "Owner pro forma.xlsx", size: "186 KB", sizeBytes: 190464, ftype: "xlsx", uploaded: "Mar 12, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "rg-r1-3", name: "Site plan — Powell Blvd.pdf", size: "4.8 MB", sizeBytes: 5033165, ftype: "pdf", uploaded: "Mar 12, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      // rev2 — 100% DD set
+      { id: "rg-r2-1", name: "A-100 — Site plan.pdf", size: "5.2 MB", sizeBytes: 5452595, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "rg-r2-2", name: "A-101 — Podium plan.pdf", size: "4.4 MB", sizeBytes: 4613734, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "rg-r2-3", name: "A-201 — Building elevations.pdf", size: "5.5 MB", sizeBytes: 5767168, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "rg-r2-4", name: "S-200 — Type V framing.pdf", size: "3.1 MB", sizeBytes: 3250585, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rg-r2-5", name: "Project manual — DD set.pdf", size: "12.4 MB", sizeBytes: 13002342, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      // rev3 — Bid set
+      { id: "rg-r3-1", name: "Bid form — Northwest Drywall Co.pdf", size: "182 KB", sizeBytes: 186368, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-2", name: "Bid form — Pinnacle Interiors.pdf", size: "204 KB", sizeBytes: 208896, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-3", name: "Bid form — Apex Finishes.xlsx", size: "94 KB", sizeBytes: 96256, ftype: "xlsx", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-4", name: "Bid form — Cascade Wall Systems.pdf", size: "172 KB", sizeBytes: 176128, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-5", name: "Bid form — ThermalTech Solutions.pdf", size: "198 KB", sizeBytes: 202752, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-6", name: "Bid form — Stark Electric Inc.pdf", size: "212 KB", sizeBytes: 217088, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+    ],
+    "westlake": [
+      { id: "wl-r1-1", name: "Owner kickoff packet.pdf", size: "1.4 MB", sizeBytes: 1468006, ftype: "pdf", uploaded: "May 4, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "wl-r1-2", name: "Existing conditions survey.pdf", size: "3.2 MB", sizeBytes: 3355443, ftype: "pdf", uploaded: "May 4, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      { id: "wl-r1-3", name: "Site photo — playground.jpg", size: "1.8 MB", sizeBytes: 1887436, ftype: "jpg", uploaded: "May 4, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+    ],
+    "mercy-clinic": [
+      // rev1
+      { id: "mc-r1-1", name: "Tenant fit-out program.docx", size: "264 KB", sizeBytes: 270336, ftype: "docx", uploaded: "Apr 1, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "mc-r1-2", name: "Lease floor plan.pdf", size: "1.6 MB", sizeBytes: 1677721, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      // rev2
+      { id: "mc-r2-1", name: "A-101 — Schematic layout (rev).pdf", size: "2.8 MB", sizeBytes: 2936012, ftype: "pdf", uploaded: "Apr 15, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "mc-r2-2", name: "A-201 — Schematic elevations.pdf", size: "2.4 MB", sizeBytes: 2516582, ftype: "pdf", uploaded: "Apr 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "mc-r2-3", name: "Casework reference photos.jpg", size: "3.1 MB", sizeBytes: 3250585, ftype: "jpg", uploaded: "Apr 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      // rev3
+      { id: "mc-r3-1", name: "M-201 — HVAC level 1.pdf", size: "4.2 MB", sizeBytes: 4404019, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Jamie Park", revisionId: "rev3" },
+      { id: "mc-r3-2", name: "M-202 — HVAC level 2.pdf", size: "4.0 MB", sizeBytes: 4194304, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Jamie Park", revisionId: "rev3" },
+      { id: "mc-r3-3", name: "Mechanical specifications.pdf", size: "2.9 MB", sizeBytes: 3040870, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+    ],
+    "bayside": [
+      // rev1
+      { id: "bs-r1-1", name: "Owner program — warehouse.docx", size: "348 KB", sizeBytes: 356352, ftype: "docx", uploaded: "Feb 20, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "bs-r1-2", name: "Site survey — Marine Dr.pdf", size: "5.8 MB", sizeBytes: 6081740, ftype: "pdf", uploaded: "Feb 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      { id: "bs-r1-3", name: "Geotech report.pdf", size: "7.4 MB", sizeBytes: 7759462, ftype: "pdf", uploaded: "Feb 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      // rev2 — 100% CD
+      { id: "bs-r2-1", name: "A-101 — Warehouse floor plan.pdf", size: "6.2 MB", sizeBytes: 6501171, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "bs-r2-2", name: "A-201 — Elevations.pdf", size: "5.9 MB", sizeBytes: 6186598, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+      { id: "bs-r2-3", name: "S-100 — Foundation plan.pdf", size: "4.8 MB", sizeBytes: 5033165, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "bs-r2-4", name: "S-200 — Steel framing.dwg", size: "3.6 MB", sizeBytes: 3774873, ftype: "dwg", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "bs-r2-5", name: "E-101 — Power plan.pdf", size: "3.9 MB", sizeBytes: 4089446, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "bs-r2-6", name: "Project manual — full set.pdf", size: "14.2 MB", sizeBytes: 14889779, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Jamie Park", revisionId: "rev2" },
+    ],
+    "emerson-tower": [
+      { id: "et-r1-1", name: "Lobby concept brief.docx", size: "224 KB", sizeBytes: 229376, ftype: "docx", uploaded: "Apr 30, 2026", uploadedBy: "Jamie Park", revisionId: "rev1" },
+      { id: "et-r1-2", name: "Existing lobby photos.jpg", size: "4.4 MB", sizeBytes: 4613734, ftype: "jpg", uploaded: "Apr 30, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+    ],
+  },
+
   // Skill runs (for project home and home page)
   runs: [
     { id: "r1", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness", status: "done", when: "12 min ago", duration: "11m 32s", ai: { lines: 1284, total: "$4.82M", confidence: 0.91 } },

@@ -13,6 +13,66 @@ const CodyMark = ({ size = 14, style, className }) => (
   <Icon name="auto_awesome" size={size} className={"cody-mark " + (className || "")} style={style} />
 );
 
+// Shared Edit Mode banner — sits at the top of any screen in edit mode.
+function EditModeBar({ editCount, onRevert, onPushGlobal, onExit }) {
+  return (
+    <div className="edit-mode-bar">
+      <div className="edit-mode-bar-l">
+        <Icon name="edit_note" size={18} />
+        <div>
+          <b>Edit mode is on</b>
+          <div className="edit-mode-bar-sub">
+            Click any highlighted field to update. {editCount > 0 ? `${editCount} pending change${editCount === 1 ? "" : "s"}.` : "No changes yet."}
+          </div>
+        </div>
+      </div>
+      <div className="edit-mode-bar-actions">
+        <button className="btn-ghost" onClick={onRevert} disabled={editCount === 0}>
+          <Icon name="undo" size={14} />Revert all
+        </button>
+        <button className="btn-primary" onClick={onPushGlobal} disabled={editCount === 0}>
+          <Icon name="cloud_upload" size={14} />Push Global
+        </button>
+        <button className="btn-ghost" onClick={onExit} title="Exit edit mode">
+          <Icon name="close" size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Inline editable text — swaps a span/div for a contentEditable element when edit mode is on.
+// Records edits to the global store so they can be reverted in bulk.
+function EditableText({ editMode, editKey, original, value, onChange, multiline, className, style, placeholder }) {
+  const ref = useRef(null);
+  const Tag = multiline ? "div" : "span";
+  const current = value != null ? value : original;
+  if (!editMode) {
+    return <Tag className={className} style={style}>{current}</Tag>;
+  }
+  const onBlur = (e) => {
+    const next = (e.currentTarget.textContent || "").trim() || placeholder || original;
+    onChange && onChange(editKey, original, next);
+  };
+  const onKeyDown = (e) => {
+    if (!multiline && e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
+    if (e.key === "Escape") { e.currentTarget.textContent = current; e.currentTarget.blur(); }
+  };
+  return (
+    <Tag
+      ref={ref}
+      className={"editable-text " + (className || "") + (value != null && value !== original ? " is-edited" : "")}
+      style={style}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      onClick={(e) => e.stopPropagation()}
+      title="Click to edit"
+    >{current}</Tag>
+  );
+}
+
 // Reusable pin/unpin toggle — used on Project Home, skill result screens, drawing viewer
 function PinButton({ pinId, pinnedSet, onPin, label = "Pin to Home", variant }) {
   if (!pinId || !pinnedSet || !onPin) return null;
@@ -210,20 +270,25 @@ const DrawingThumb = ({ kind = "level1", color = "#E84600", markups = 12 }) => {
 // =====================================================
 // COLUMN 1 — PRIMARY NAV
 // =====================================================
-function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu }) {
+function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu, connections }) {
   const items = [
     { id: "home", label: "Home", icon: "home" },
     { id: "projects", label: "Projects", icon: "folder_open", count: 6 },
     { id: "skills", label: "Skills", icon: "auto_awesome", count: 3 },
     { id: "reports", label: "Reports", icon: "assessment" },
     { id: "labor", label: "Labor rates", icon: "engineering" },
+    { id: "files", label: "Files", icon: "folder_copy" },
   ];
 
   // Only connected integrations are listed; everything else hides behind "Add connection".
-  const connectedIntegrations = [
-    { id: "bluebeam", label: "Bluebeam Revu", icon: "draw" },
-    { id: "procore", label: "Procore", icon: "domain" },
-  ];
+  // The list now comes from app-level state (via the `connections` prop) so the AddConnectionModal
+  // can toggle integrations on/off and have the nav update immediately.
+  const connectedIntegrations = connections
+    ? Object.values(connections).map(c => ({ id: c.id, label: c.name || c.id, icon: c.icon || "link" }))
+    : [
+        { id: "bluebeam", label: "Bluebeam Revu", icon: "draw" },
+        { id: "procore", label: "Procore", icon: "domain" },
+      ];
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -1089,4 +1154,4 @@ function makeAIReply(t, context) {
 }
 
 // expose globals
-Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });
+Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });
