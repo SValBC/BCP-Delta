@@ -918,7 +918,10 @@ button { font-family: inherit; }
 
 .canvas {
   flex: 1; overflow-y: auto; overflow-x: hidden;
-  padding: 28px 24px;
+  /* Horizontal padding grows symmetrically once the canvas exceeds 1920px,
+     keeping content centered with a 1920px max content width while preserving
+     the 24px gutter floor on narrower screens. Vertical padding stays fixed. */
+  padding: 28px max(24px, calc((100% - 1920px) / 2));
   color: var(--raisin-800);
   scrollbar-width: thin;
   scrollbar-color: rgba(39,38,53,0.20) transparent;
