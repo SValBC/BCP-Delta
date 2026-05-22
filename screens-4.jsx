@@ -36,11 +36,11 @@ function ReportsScreen({ ctx, onAskAI }) {
             <h2 className="page-h1">Recreational Wellness — ROM v3</h2>
             <p className="page-sub">Drag blocks from skill results to assemble a custom report. Cody will keep them in sync if the underlying data changes.</p>
 
-            <div className="card no-pad" style={{ marginTop: 18 }}>
+            <div className="card no-pad" style={{ marginTop: 20 }}>
               <div className="card-h"><Icon name="view_list" style={{ color: "var(--orange-500)" }} /><h3>Report sections</h3><div className="right"><button className="btn-ghost"><Icon name="add" size={14}/>Add section</button></div></div>
-              <div style={{ padding: 14 }}>
+              <div style={{ padding: 16 }}>
                 {sections.map((s, i) => (
-                  <div key={i} style={{ display: "flex", gap: 12, padding: "12px 10px", borderBottom: i < sections.length - 1 ? "1px solid rgba(39,38,53,0.06)" : "none", alignItems: "center" }}>
+                  <div key={i} style={{ display: "flex", gap: 12, padding: "12px 12px", borderBottom: i < sections.length - 1 ? "1px solid rgba(39,38,53,0.06)" : "none", alignItems: "center" }}>
                     <Icon name="drag_indicator" style={{ color: "rgba(39,38,53,0.30)" }} />
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(232,70,0,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, color: "var(--orange-500)", fontSize: 13 }}>{i + 1}</span>
@@ -59,8 +59,8 @@ function ReportsScreen({ ctx, onAskAI }) {
 
           <div>
             <div className="section-h" style={{ marginTop: 0 }}><Icon name="article" size={16} style={{ color: "var(--orange-500)" }} /><h3>Preview</h3></div>
-            <div className="page-preview" style={{ border: "1px solid rgba(39,38,53,0.10)", borderRadius: 8, padding: "32px 28px", aspectRatio: "8.5/11", display: "flex", flexDirection: "column", gap: 14, fontSize: 11, color: "var(--bc-strong)" }}>
-              <div style={{ borderBottom: "2px solid var(--orange-500)", paddingBottom: 10 }}>
+            <div className="page-preview" style={{ border: "1px solid rgba(39,38,53,0.10)", borderRadius: 8, padding: "32px 28px", aspectRatio: "8.5/11", display: "flex", flexDirection: "column", gap: 16, fontSize: 11, color: "var(--bc-strong)" }}>
+              <div style={{ borderBottom: "2px solid var(--orange-500)", paddingBottom: 12 }}>
                 <div style={{ fontFamily: "var(--font-marketing)", color: "var(--orange-500)", fontSize: 22, lineHeight: 1 }}>buildcrew.ai</div>
                 <div style={{ fontSize: 10, color: "var(--bc-muted)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginTop: 4 }}>Rough Order of Magnitude · v3</div>
               </div>
@@ -68,7 +68,7 @@ function ReportsScreen({ ctx, onAskAI }) {
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>Recreational and Wellness Center</div>
                 <div style={{ color: "var(--bc-muted)", fontSize: 10 }}>1208 Riverside Ave, Portland OR · Apr 28, 2026</div>
               </div>
-              <div style={{ background: "rgba(232,70,0,0.06)", padding: 10, borderRadius: 6 }}>
+              <div style={{ background: "rgba(232,70,0,0.06)", padding: 12, borderRadius: 8 }}>
                 <div style={{ fontWeight: 700 }}>Total project ROM</div>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22 }}>$4,823,640</div>
               </div>
@@ -94,12 +94,12 @@ function LaborScreen({ ctx, onAskAI }) {
         onAskAI={onAskAI}
       />
       <div className="canvas">
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 16 }}>
           <h2 className="page-h1">PDX metro · v2.4</h2>
           <p className="page-sub">Last updated 4 days ago. These rates apply to every skill run on projects in the PDX region. Cody will warn if you have a project that uses these rates with a different region tag.</p>
         </div>
 
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 18 }}>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 20 }}>
           <div className="kpi"><Icon className="bg" name="construction" /><div className="label">Trades tracked</div><div className="value">{rows.length}</div></div>
           <div className="kpi"><Icon className="bg" name="payments" /><div className="label">Avg base rate</div><div className="value">${(rows.reduce((a, r) => a + r.rate, 0) / rows.length).toFixed(0)}</div></div>
           <div className="kpi"><Icon className="bg" name="folder_open" /><div className="label">Projects affected</div><div className="value">4</div></div>
@@ -199,13 +199,13 @@ function WorkspaceFilesScreen({ ctx, onAskAI, projects, filesByProject, onDelete
         onAskAI={onAskAI}
       />
       <div className="canvas">
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 16 }}>
           <h2 className="page-h1">All project files</h2>
           <p className="page-sub">Manage every file uploaded across your projects. Files are organized by project and revision. Deletions affect any historical skill runs that reference them.</p>
         </div>
 
         {/* KPI strip — matches the look of other top-level screens */}
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
           <div className="kpi">
             <Icon className="bg" name="folder_copy" />
             <div className="label">Total files</div>
@@ -328,8 +328,8 @@ function WorkspaceFilesScreen({ ctx, onAskAI, projects, filesByProject, onDelete
                                 <thead>
                                   <tr>
                                     <th style={{ width: "44%" }}>Filename</th>
-                                    <th style={{ width: 90 }}>Type</th>
-                                    <th className="num" style={{ width: 110 }}>Size</th>
+                                    <th style={{ width: 88 }}>Type</th>
+                                    <th className="num" style={{ width: 112 }}>Size</th>
                                     <th style={{ width: 160 }}>Date uploaded</th>
                                     <th style={{ width: 160 }}>Uploaded by</th>
                                     <th className="center" style={{ width: 80 }}></th>
@@ -410,15 +410,15 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
 
         {tab === "profile" && (
           <div style={{ maxWidth: 640, marginTop: 16 }}>
-            <div style={{ display: "flex", gap: 18, alignItems: "center", marginBottom: 22 }}>
+            <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 24 }}>
               <div className="avatar" style={{ width: 64, height: 64, fontSize: 22 }}>JP</div>
               <div>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Jamie Park</div>
                 <div style={{ color: "var(--bc-muted)", fontSize: 13 }}>Senior estimator · Acme Builders</div>
-                <button className="btn-ghost" style={{ marginTop: 6, padding: "4px 8px" }}><Icon name="upload" size={14}/>Upload photo</button>
+                <button className="btn-ghost" style={{ marginTop: 8, padding: "4px 8px" }}><Icon name="upload" size={14}/>Upload photo</button>
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div className="field"><label>First name</label><input defaultValue="Jamie" /></div>
               <div className="field"><label>Last name</label><input defaultValue="Park" /></div>
               <div className="field" style={{ gridColumn: "1 / -1" }}><label>Email</label><input defaultValue="jamie.park@acmebuilders.com" /></div>
@@ -430,7 +430,7 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
 
         {tab === "appearance" && (
           <div style={{ maxWidth: 640, marginTop: 16 }}>
-            <div className="card" style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+            <div className="card" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
               <Icon name={theme === "light" ? "light_mode" : "dark_mode"} size={24} style={{ color: "var(--orange-500)" }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14 }}>{theme === "light" ? "Light" : "Dark"} theme</div>
@@ -438,7 +438,7 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
               </div>
               <div className={"toggle " + (theme === "dark" ? "on" : "")} onClick={onToggleTheme} />
             </div>
-            <div className="card" style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+            <div className="card" style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
               <Icon name="density_medium" size={24} style={{ color: "var(--orange-500)" }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 14 }}>Density</div>

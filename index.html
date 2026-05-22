@@ -62,7 +62,12 @@
       const [activeTabId, setActiveTabId] = useState("t-home");
       const [tabHistory, setTabHistory] = useState([]); // recently visited stack
       const [aiOpen, setAiOpen] = useState(true);
-      const [pinned, setPinned] = useState(new Set(["rec-wellness", "rivergrove"]));
+      const [pinned, setPinned] = useState(new Set([
+        "rec-wellness",
+        "rivergrove",
+        "skill:rec-wellness/estimation", // ROM estimate result that just finished
+        "drawing:rec-wellness/A-101",    // Most-viewed sheet (Level 1 floor plan)
+      ]));
       const [showNewProject, setShowNewProject] = useState(false);
       const [showDailyReport, setShowDailyReport] = useState(false);
       // Global Edit Mode + edits store. Edits are keyed by string so we can revert by key.
@@ -134,6 +139,26 @@
       // Per-project files (used by the Files workspace screen). Wrapped in state so
       // deletions update the UI immediately.
       const [filesByProject, setFilesByProject] = useState(data.filesByProject || {});
+
+      // Per-project bid configuration (used by the Bid Level Analysis pre-run modal).
+      const bidConfigByProject = data.bidConfig || {};
+      const [showBidRunModal, setShowBidRunModal] = useState(false);
+      const [bidRunProjectId, setBidRunProjectId] = useState(null);
+      const openBidRunModal = (projectId) => {
+        setBidRunProjectId(projectId);
+        setShowBidRunModal(true);
+      };
+      const confirmBidRun = ({ projectId, trades, assignments }) => {
+        // For the prototype: just close the modal and kick off the existing
+        // 7-second skill-run animation. In production this payload would
+        // travel with the skill run to scope the analysis to the chosen trades.
+        setShowBidRunModal(false);
+        // Use a short timeout so the modal exit feels clean before the card
+        // animation begins.
+        setTimeout(() => {
+          startSkillRunCard(projectId, "bid");
+        }, 80);
+      };
       const [pendingDelete, setPendingDelete] = useState(null); // { id, name, projectId, projectName, revisionName, ... }
       const requestDeleteFile = (file) => setPendingDelete(file);
       const confirmDeleteFile = (file) => {
@@ -487,7 +512,7 @@
             onOpenInTab={openProjectInNewTab}
           />
         );
-        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
         else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
         else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
         else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
@@ -612,6 +637,14 @@
             onClose={() => setShowAddConnection(false)}
             connections={connections}
             onToggleConnection={toggleConnection}
+          />
+
+          <RunBidAnalysisModal
+            open={showBidRunModal}
+            onClose={() => setShowBidRunModal(false)}
+            onConfirm={confirmBidRun}
+            project={projects.find(p => p.id === bidRunProjectId)}
+            bidConfig={bidRunProjectId ? bidConfigByProject[bidRunProjectId] : null}
           />
 
           <ContextMenu menu={ctxMenu} onClose={closeCtxMenu} />

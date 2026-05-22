@@ -281,7 +281,7 @@ function DailyReportModal({ open, onClose, projects }) {
       <div className="modal-shell daily-report-shell" onClick={(e) => e.stopPropagation()}>
         <div className="modal-h">
           <div>
-            <div className="modal-eyebrow"><CodyMark size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Cody's Daily Brief</div>
+            <div className="modal-eyebrow"><CodyMark size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Cody's Daily Brief</div>
             <h2>Overnight summary</h2>
             <p>A narrative of every meaningful change Cody picked up across the projects you have access to.</p>
           </div>
@@ -370,7 +370,7 @@ function PushGlobalModal({ open, onClose, onConfirm, edits }) {
       <div className="modal-shell" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
         <div className="modal-h">
           <div>
-            <div className="modal-eyebrow"><Icon name="cloud_upload" size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Push Global</div>
+            <div className="modal-eyebrow"><Icon name="cloud_upload" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Push Global</div>
             <h2>Push {editEntries.length} change{editEntries.length === 1 ? "" : "s"} to all collaborators?</h2>
             <p>This solidifies your edits, makes them visible to everyone with project access, and updates Cody's knowledge base for future skill runs across your projects.</p>
           </div>
@@ -432,7 +432,7 @@ function DeleteFileModal({ open, file, onClose, onConfirm }) {
         <div className="modal-h">
           <div>
             <div className="modal-eyebrow modal-eyebrow-danger">
-              <Icon name="delete_forever" size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Delete file
+              <Icon name="delete_forever" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Delete file
             </div>
             <h2>Delete "{file.name}"?</h2>
             <p>This file will be permanently removed from {file.projectName || "this project"}. This action cannot be undone.</p>
@@ -571,7 +571,7 @@ function AddConnectionModal({ open, onClose, connections, onToggleConnection }) 
       <div className="modal-shell connect-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-h">
           <div>
-            <div className="modal-eyebrow"><Icon name="hub" size={12} style={{ marginRight: 6, verticalAlign: "-2px" }} />Connections</div>
+            <div className="modal-eyebrow"><Icon name="hub" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Connections</div>
             <h2>Add a connection</h2>
             <p>Connect BuildCrew to the tools your team already uses. Cody will pull drawings, specs, bids, and notes from these sources to power skill runs.</p>
           </div>
@@ -656,4 +656,214 @@ function AddConnectionModal({ open, onClose, connections, onToggleConnection }) 
   );
 }
 
-Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal });
+// =====================================================
+// RUN BID LEVEL ANALYSIS MODAL
+// Pre-run configuration step for the Bid Level Analysis skill. Shows
+// AI-categorized bid files grouped by trade. The user can:
+//   • Re-assign any file to a different trade (in case of mis-categorization)
+//   • Multi-select which trades to actually run on
+//   • Confirm to kick off the standard skill-run animation back on Project Home
+// =====================================================
+function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
+  if (!open || !project) return null;
+
+  const baseTrades = (bidConfig && bidConfig.trades) || [];
+  const baseFiles  = (bidConfig && bidConfig.files)  || [];
+
+  // Local state — file → tradeId assignment (initialized from data, mutable),
+  // and a set of selected trade ids for the run.
+  const initialAssignments = React.useMemo(() => {
+    const map = {};
+    baseFiles.forEach(f => { map[f.id] = f.tradeId; });
+    return map;
+  }, [baseFiles]);
+  const [assignments, setAssignments] = React.useState(initialAssignments);
+  const [selected, setSelected] = React.useState(() => {
+    // Pre-select every trade that has at least one bid file
+    const initial = new Set();
+    baseTrades.forEach(t => {
+      if (baseFiles.some(f => f.tradeId === t.id)) initial.add(t.id);
+    });
+    return initial;
+  });
+
+  // Reset state when modal reopens for a different project
+  React.useEffect(() => {
+    if (open) {
+      setAssignments(initialAssignments);
+      const initial = new Set();
+      baseTrades.forEach(t => {
+        if (baseFiles.some(f => f.tradeId === t.id)) initial.add(t.id);
+      });
+      setSelected(initial);
+    }
+  }, [open, project && project.id]);
+
+  // Helpers
+  const filesForTrade = (tradeId) => baseFiles.filter(f => assignments[f.id] === tradeId);
+  const moveFile = (fileId, newTradeId) => {
+    setAssignments(prev => ({ ...prev, [fileId]: newTradeId }));
+  };
+  const toggleTrade = (tradeId) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(tradeId)) next.delete(tradeId); else next.add(tradeId);
+      return next;
+    });
+  };
+  const ftypeFor = (name) => {
+    const n = (name || "").toLowerCase();
+    if (n.endsWith(".pdf")) return { icon: "picture_as_pdf", tone: "pdf", label: "PDF" };
+    if (n.endsWith(".xlsx") || n.endsWith(".xls") || n.endsWith(".csv")) return { icon: "table_view", tone: "sheet", label: "XLSX" };
+    if (n.endsWith(".docx") || n.endsWith(".doc")) return { icon: "description", tone: "doc", label: "DOC" };
+    return { icon: "insert_drive_file", tone: "other", label: "FILE" };
+  };
+
+  // Totals
+  const totalFiles = baseFiles.length;
+  const totalTrades = baseTrades.length;
+  const selectedCount = selected.size;
+  const selectedFileCount = baseTrades
+    .filter(t => selected.has(t.id))
+    .reduce((acc, t) => acc + filesForTrade(t.id).length, 0);
+  const canRun = selectedCount > 0 && selectedFileCount > 0;
+
+  const handleRun = () => {
+    if (!canRun) return;
+    onConfirm && onConfirm({
+      projectId: project.id,
+      trades: Array.from(selected),
+      assignments,
+    });
+  };
+
+  const emptyProject = totalFiles === 0;
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell bid-run-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow"><Icon name="compare_arrows" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Bid Level Analysis</div>
+            <h2>Configure your bid run</h2>
+            <p>Cody auto-categorized your uploaded bid files into the trades below. Move any file to a different trade if it's mis-categorized, then choose which trade(s) to run.</p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        {!emptyProject && (
+          <div className="bid-run-toolbar">
+            <div className="bid-run-toolbar-meta">
+              <span className="bid-run-pill"><Icon name="auto_awesome" size={12} className="cody-mark" />{totalFiles} bid file{totalFiles === 1 ? "" : "s"} · {totalTrades} trades detected</span>
+              <span className="bid-run-toolbar-hint">Project: <b>{project.name}</b></span>
+            </div>
+            <div className="bid-run-toolbar-actions">
+              <button className="btn-ghost"
+                      onClick={() => setSelected(new Set(baseTrades.map(t => t.id)))}>
+                <Icon name="select_all" size={14} />Select all
+              </button>
+              <button className="btn-ghost"
+                      onClick={() => setSelected(new Set())}>
+                <Icon name="deselect" size={14} />Clear
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="modal-body bid-run-body">
+          {emptyProject ? (
+            <div className="bid-run-empty">
+              <Icon name="upload_file" size={36} />
+              <div className="bid-run-empty-h">No bid files uploaded yet</div>
+              <div className="bid-run-empty-sub">Upload bid forms from your subcontractors to this project and Cody will auto-organize them by trade.</div>
+            </div>
+          ) : (
+            <div className="bid-run-tradelist">
+              {baseTrades.map(t => {
+                const files = filesForTrade(t.id);
+                const isSelected = selected.has(t.id);
+                const isEmpty = files.length === 0;
+                return (
+                  <div key={t.id} className={"bid-run-trade " + (isSelected ? "is-selected " : "") + (isEmpty ? "is-empty" : "")}>
+                    <label className="bid-run-trade-h">
+                      <input type="checkbox"
+                             checked={isSelected}
+                             onChange={() => toggleTrade(t.id)}
+                             disabled={isEmpty}
+                             className="bid-run-checkbox" />
+                      <div className="bid-run-trade-meta">
+                        <div className="bid-run-trade-name">
+                          <span className="bid-run-div">Div {t.division}</span>
+                          {t.name}
+                        </div>
+                        <div className="bid-run-trade-sub">
+                          {isEmpty
+                            ? "No bid files assigned"
+                            : files.length + " bid file" + (files.length === 1 ? "" : "s") + " · " + new Set(files.map(f => f.uploadedBy)).size + " uploader" + (new Set(files.map(f => f.uploadedBy)).size === 1 ? "" : "s")
+                          }
+                        </div>
+                      </div>
+                      <span className={"bid-run-count " + (isEmpty ? "is-empty" : "")}>{files.length}</span>
+                    </label>
+
+                    {files.length > 0 && (
+                      <div className="bid-run-file-list">
+                        {files.map(f => {
+                          const ft = ftypeFor(f.name);
+                          return (
+                            <div key={f.id} className="bid-run-file">
+                              <span className={"files-ftype-icon files-ftype-" + ft.tone}>
+                                <Icon name={ft.icon} size={16} />
+                              </span>
+                              <div className="bid-run-file-meta">
+                                <div className="bid-run-file-name">{f.name}</div>
+                                <div className="bid-run-file-sub">
+                                  {ft.label} · {f.size} · {f.uploaded} · {f.uploadedBy}
+                                </div>
+                              </div>
+                              <div className="bid-run-file-move">
+                                <label className="bid-run-move-lbl">Trade</label>
+                                <select className="bid-run-move-select"
+                                        value={assignments[f.id] || t.id}
+                                        onChange={(e) => moveFile(f.id, e.target.value)}>
+                                  {baseTrades.map(tt => (
+                                    <option key={tt.id} value={tt.id}>Div {tt.division} — {tt.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-foot bid-run-foot">
+          <div className="bid-run-foot-meta">
+            {emptyProject ? (
+              <span><Icon name="info" size={13} />Upload bid forms first to run this skill.</span>
+            ) : (
+              <span>
+                <Icon name="check_circle" size={13} style={{ color: canRun ? "var(--tiffany-400)" : "var(--bc-muted)" }} />
+                {selectedCount} trade{selectedCount === 1 ? "" : "s"} selected · {selectedFileCount} bid file{selectedFileCount === 1 ? "" : "s"} will be analyzed
+              </span>
+            )}
+          </div>
+          <div className="bid-run-foot-actions">
+            <button className="btn" onClick={onClose}>Cancel</button>
+            <button className="btn-primary" onClick={handleRun} disabled={!canRun}>
+              <Icon name="play_arrow" size={14} />Run analysis
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, RunBidAnalysisModal });

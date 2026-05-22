@@ -566,7 +566,7 @@ function ProjectSubnav({ ctx, setCtx, projects }) {
               <Icon name={s.icon} size={16} style={{ opacity: 0.7 }} />
               <div className="li-title" style={{ flex: 1 }}>{s.label}</div>
               {s.count != null && <span style={{ fontSize: 10, fontWeight: 700, opacity: 0.5 }}>{s.count}</span>}
-              {s.badge && <span className="badge b-working" style={{ fontSize: 9, padding: "2px 6px" }}>{s.badge}</span>}
+              {s.badge && <span className="badge b-working" style={{ fontSize: 9, padding: "2px 8px" }}>{s.badge}</span>}
             </div>
           </div>
         ))}

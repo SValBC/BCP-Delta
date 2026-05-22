@@ -4,7 +4,7 @@ const { useState: uS2, useEffect: uE2, useRef: uR2 } = React;
 // =====================================================
 // PROJECT HOME (workspace overview when project opened)
 // =====================================================
-function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const drawings = window.BC_DATA.drawings || [];
   const [drawingSort, setDrawingSort] = uS2({ key: "plan", direction: "asc" });
   const toggleDrawingSort = (key) => {
@@ -103,9 +103,9 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
       
       <div className="canvas">
         {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
-        <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 6 }}>{project.kind}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 8 }}>{project.kind}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <h2 className="page-h1" style={{ fontSize: 30 }}>
               <EditableText
                 editMode={editMode}
@@ -274,7 +274,7 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         </div>
 
         <div className="section-h"><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
           {[
           { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: null, success: false },
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
@@ -300,6 +300,11 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
                 onOpenTab(s.id); // loading version of results
               } else if (hasResults) {
                 onOpenTab(s.id); // existing results
+              } else if (s.id === "bid" && onConfigureBid) {
+                // Bid Level Analysis requires a pre-run configuration step:
+                // user picks which trades to run on and re-categorizes files
+                // before the skill kicks off.
+                onConfigureBid(project.id);
               } else {
                 onStartSkillRun && onStartSkillRun(project.id, s.id);
               }
@@ -309,29 +314,40 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
                    className={"pin-card run-skill-card " + (running ? "is-running " : "") + (justCompleted ? "is-just-completed " : "") + (hasFreshCompletion && !justCompleted ? "is-completed" : "")}
                    style={{ minHeight: 140 }}
                    onClick={handleCardClick}>
+                {running && (
+                  <video
+                    className="run-skill-video"
+                    src="animated/skill-loading.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    aria-hidden="true"
+                  />
+                )}
                 {running && <span className="run-skill-bar" style={{ width: progress + "%" }} />}
                 {justCompleted && (
                   <div className="run-skill-celebration">
                     <Icon name="check_circle" size={56} />
                   </div>
                 )}
-                <Icon className="bg" name={s.icon} />
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <div className="run-skill-icon-wrap" style={{ width: 34, height: 34, borderRadius: 8, background: running ? "rgba(232,70,0,0.12)" : "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {running
-                      ? <span className="run-skill-spinner" />
-                      : <Icon name={s.icon} size={19} style={{ opacity: 0.55 }} />
-                    }
+                <div style={{ display: "flex", gap: 12, alignItems: "center", position: "relative", zIndex: 1 }}>
+                  <div className="run-skill-icon-wrap" style={{ width: 32, height: 32, borderRadius: 8, background: running ? "rgba(232,70,0,0.08)" : "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name={s.icon} size={19} style={{ opacity: running ? 0.9 : 0.55, color: running ? "var(--orange-500)" : undefined }} />
                   </div>
-                  <div className="pin-title">{s.title}</div>
+                  <div className="pin-title" style={{ flex: 1, minWidth: 0 }}>{s.title}</div>
+                  {running && (
+                    <span style={{ fontFamily: "var(--font-data)", fontWeight: 700, fontSize: 13, color: "var(--raisin-800)", flexShrink: 0 }}>
+                      {Math.round(progress)}%
+                    </span>
+                  )}
                 </div>
                 {running ? (
                   <>
-                    <div style={{ fontSize: 12, color: "var(--bc-strong)", lineHeight: 1.4 }}>
+                    <div style={{ fontSize: 12, color: "var(--bc-strong)", lineHeight: 1.4, position: "relative", zIndex: 1 }}>
                       <span className="run-skill-stage"><span className="dot" />{stage}</span>
                     </div>
-                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <span style={{ fontFamily: "var(--font-data)", fontWeight: 700, fontSize: 13, color: "var(--orange-500)" }}>{Math.round(progress)}%</span>
+                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, position: "relative", zIndex: 1 }}>
                       <button className="run-skill-stop" onClick={(e) => { e.stopPropagation(); onStopSkillRun && onStopSkillRun(project.id, s.id); }} title="Stop run">
                         <Icon name="stop" size={14} />Stop
                       </button>
@@ -341,7 +357,7 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
                   <>
                     <div style={{ fontSize: 12, color: "var(--bc-muted)", lineHeight: 1.4 }}>{s.desc}</div>
                     <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: effectiveSuccess ? "var(--tiffany-400)" : "var(--orange-500)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: effectiveSuccess ? "var(--tiffany-400)" : "var(--orange-500)" }}>
                         {effectiveSuccess && <Icon name="check_circle" size={14} style={{ color: "var(--tiffany-400)" }} />}
                         <span>{hasResults ? "View results" : "Click to run"}</span>
                         {hasResults && <Icon name="arrow_forward" size={12} />}
@@ -359,16 +375,81 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
           })}
         </div>
 
+        {/* RECENT SKILL RUNS — table only, no section heading. Scoped to this project. */}
+        {(() => {
+          const allRuns = (window.BC_DATA && window.BC_DATA.runs) || [];
+          const projectRuns = allRuns.filter(r => r.projectId === project.id);
+          if (projectRuns.length === 0) return null;
+          const skillIcon = (name) =>
+            name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
+            name === "Bid Level Analysis" ? "compare_arrows" :
+            name === "Clarifications & Potential RFIs" ? "rule" :
+            "auto_awesome";
+          const skillToTab = (name) =>
+            name === "Rough Order of Magnitude (ROM) Estimate" ? "estimation" :
+            name === "Bid Level Analysis" ? "bid" :
+            name === "Clarifications & Potential RFIs" ? "rfc" :
+            null;
+          return (
+            <div className="card no-pad" style={{ marginBottom: 28 }}>
+              <table className="bc-table">
+                <thead>
+                  <tr>
+                    <th>Skill</th>
+                    <th>Status</th>
+                    <th>When</th>
+                    <th>Duration</th>
+                    <th className="num">Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {projectRuns.map(r => (
+                    <tr key={r.id}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => {
+                          const tab = r.status === "done" ? skillToTab(r.skill) : null;
+                          if (tab && onOpenTab) onOpenTab(tab);
+                        }}>
+                      <td>
+                        <div className="item-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} />
+                          </div>
+                          {r.skill}
+                        </div>
+                      </td>
+                      <td>
+                        {r.status === "done"
+                          ? <span className="badge b-done">Done</span>
+                          : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>
+                        }
+                      </td>
+                      <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
+                      <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.duration}</span></td>
+                      <td className="num">
+                        {r.ai && r.ai.total && <b>{r.ai.total}</b>}
+                        {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
+                        {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
+                        {!r.ai && "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+
         {/* DRAWINGS */}
         <div className="section-h">
           <Icon name="architecture" size={16} style={{ color: "var(--orange-500)" }} />
           <h3>Drawings</h3>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
           <div style={{ fontSize: 11, color: "var(--bc-muted)" }}>
             {visibleDrawings.length} of {drawings.length} sheets · {visibleDrawings.reduce((a, d) => a + d.markups, 0)} AI markups
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             {/* Trade filter — chip group */}
             <div className="chip-group">
               {trades.map((t) =>
@@ -432,8 +513,8 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
             </div>
           )}
           {visibleDrawings.length === 0 &&
-          <div style={{ gridColumn: "1 / -1", padding: "32px 16px", textAlign: "center", color: "var(--bc-muted)", fontSize: 13, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 10 }}>
-              No drawings tagged <b>{drawingTrade}</b>. <button className="btn-ghost" style={{ display: "inline-flex", marginLeft: 6 }} onClick={() => setDrawingTrade("All")}>Clear filter</button>
+          <div style={{ gridColumn: "1 / -1", padding: "32px 16px", textAlign: "center", color: "var(--bc-muted)", fontSize: 13, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12 }}>
+              No drawings tagged <b>{drawingTrade}</b>. <button className="btn-ghost" style={{ display: "inline-flex", marginLeft: 8 }} onClick={() => setDrawingTrade("All")}>Clear filter</button>
             </div>
           }
         </div>
@@ -503,7 +584,7 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
         switcher={projectSwitcher} />
       
       <div className="canvas">
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 16 }}>
           <h2 className="page-h1">{files.length} files uploaded</h2>
           <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>Cody sorts new files automatically. Change category inline if anything's wrong.</div>
         </div>
@@ -518,7 +599,7 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
         </div>
 
         {/* Filters row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 10px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0 12px", flexWrap: "wrap" }}>
           <div className="chip-group">
             <button className={"chip " + (categoryFilter === "All" ? "active" : "")} onClick={() => setCategoryFilter("All")}>
               All<span className="chip-count">{files.length}</span>
@@ -541,7 +622,7 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{
-                padding: "7px 10px 7px 30px", fontSize: 12,
+                padding: "8px 12px 8px 32px", fontSize: 12,
                 border: "1px solid rgba(39,38,53,0.14)", borderRadius: 8,
                 background: "var(--bc-bg, #fff)", color: "var(--bc-strong)",
                 width: 220, outline: "none", fontFamily: "inherit"
@@ -557,8 +638,8 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
               <tr>
                 <th style={{ width: 36 }}></th>
                 <th>Name</th>
-                <th style={{ width: 170 }}>Category</th>
-                <th style={{ width: 90 }}>Confidence</th>
+                <th style={{ width: 168 }}>Category</th>
+                <th style={{ width: 88 }}>Confidence</th>
                 <th style={{ width: 80 }}>Size</th>
                 <th style={{ width: 200 }}>Uploaded</th>
                 <th style={{ width: 36 }}></th>
@@ -597,7 +678,7 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
               )}
               {visible.length === 0 &&
               <tr><td colSpan={7} style={{ padding: "32px 16px", textAlign: "center", color: "var(--bc-muted)", fontSize: 13 }}>
-                  No files match.{query && <> <button className="btn-ghost" style={{ display: "inline-flex", marginLeft: 6 }} onClick={() => setQuery("")}>Clear search</button></>}
+                  No files match.{query && <> <button className="btn-ghost" style={{ display: "inline-flex", marginLeft: 8 }} onClick={() => setQuery("")}>Clear search</button></>}
                 </td></tr>
               }
             </tbody>

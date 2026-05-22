@@ -50,10 +50,10 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
       <div className="canvas">
         <div className="greet">
           <div className="greet-content">
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "rgba(39,38,53,0.55)", marginBottom: 6 }}>Tuesday morning · April 28</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "rgba(39,38,53,0.55)", marginBottom: 8 }}>Tuesday morning · April 28</div>
             <h1>Welcome back, Jamie.</h1>
             <p>Cody wrapped 3 runs overnight. The Recreational and Wellness Center estimate is ready for your review — there's a flag on Division 09 that's worth a look.</p>
-            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
               <button className="ai-pill" onClick={onOpenDailyReport || onAskAI}><Icon name="auto_awesome" size={14} style={{ color: "#fff" }} />Brief me on overnight</button>
               <button className="quick-pill" onClick={onNewProject}><Icon name="add" size={14} />Create new project</button>
               <button className="quick-pill" onClick={() => onOpenProject("rec-wellness", { tab: "files" })}><Icon name="upload_file" size={14} />Add files to an existing project</button>
@@ -64,7 +64,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
 
         {pinnedCards.length > 0 && (
           <>
-            <div className="section-h">
+            <div className="section-h" style={{ marginTop: 64 }}>
               <Icon name="push_pin" size={16} style={{ color: "var(--orange-500)" }} />
               <h3>Pinned</h3>
             </div>
@@ -139,142 +139,35 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
           </>
         )}
 
-        <div className="home-grid">
-          <div>
-            <div className="section-h">
-              <Icon name="auto_awesome" size={16} style={{ color: "var(--orange-500)" }} />
-              <h3>RECENT SKILL RUNS</h3>
-            </div>
-            <div className="card no-pad">
-              <table className="bc-table">
-                <thead><tr><th>Skill</th><th>Project</th><th>Status</th><th>When</th><th className="num">Result</th></tr></thead>
-                <tbody>
-                  {runs.map((r) =>
-                  <tr key={r.id} style={{ cursor: "pointer" }} onClick={() => {
-                    const tab = r.status === "done" ? skillToTab(r.skill) : null;
-                    if (tab) onOpenProject(r.projectId, { tab });
-                    else onOpenProject(r.projectId);
-                  }}>
-                      <td><div className="item-title" style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} /></div>{r.skill}</div></td>
-                      <td><div style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.project}</div></td>
-                      <td>{r.status === "done" ? <span className="badge b-done">Done</span> : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>}</td>
-                      <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
-                      <td className="num">
-                        {r.ai && r.ai.total && <b>{r.ai.total}</b>}
-                        {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
-                        {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
-                        {!r.ai && "—"}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="section-h" style={{ marginTop: 24 }}>
-              <Icon name="event" size={16} style={{ color: "var(--orange-500)" }} />
-              <h3>SCHEDULED RUNS</h3>
-            </div>
-            <div className="card" style={{ padding: "0 16px" }}>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 0", borderBottom: "1px solid rgba(39,38,53,0.06)" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon name="calculate" size={18} style={{ opacity: 0.55 }} />
-                  </div>
-                  <div style={{ flex: 1, fontSize: 13 }}>
-                    <div style={{ fontWeight: 700, color: "var(--bc-strong)" }}>Re-run Estimation</div>
-                    <div style={{ color: "var(--bc-muted)", fontSize: 12 }}>Rivergrove · Nightly · 2:00 AM PT</div>
-                  </div>
-                  <div className="toggle on" />
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 0", borderBottom: "1px solid rgba(39,38,53,0.06)" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon name="rule" size={18} style={{ opacity: 0.55 }} />
-                  </div>
-                  <div style={{ flex: 1, fontSize: 13 }}>
-                    <div style={{ fontWeight: 700, color: "var(--bc-strong)" }}>RFC sweep · 4 projects</div>
-                    <div style={{ color: "var(--bc-muted)", fontSize: 12 }}>Weekly · Mondays 6:00 AM</div>
-                  </div>
-                  <div className="toggle on" />
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 0" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon name="compare_arrows" size={18} style={{ opacity: 0.55 }} />
-                  </div>
-                  <div style={{ flex: 1, fontSize: 13 }}>
-                    <div style={{ fontWeight: 700, color: "var(--bc-strong)" }}>Bid Level Analysis · Mercy</div>
-                    <div style={{ color: "var(--bc-muted)", fontSize: 12 }}>Triggers when 3+ bids uploaded</div>
-                  </div>
-                  <div className="toggle" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="home-activity-col">
-            <div className="section-h">
-              <Icon name="history" size={16} style={{ color: "var(--orange-500)" }} />
-              <h3>RECENT ACTIVITY</h3>
-            </div>
-            <div className="card" style={{ padding: "4px 18px", flex: 1, overflow: "auto" }}>
-              <div className="feed-item">
-                <div className="av ai"><Icon name="calculate" size={14} /></div>
-                <div className="body">
-                  <span><b>Rough Order of Magnitude (ROM) Estimate</b> finished on <b>Rec & Wellness Center</b>.</span>
-                  <div className="when">12 min ago · 11m 32s · 1,284 lines</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av ai"><Icon name="auto_awesome" size={14} /></div>
-                <div className="body">
-                  <span><b>Cody</b> generated a ROM update for <b>Mercy Health Annex</b>.</span>
-                  <div className="when">1h ago · 4m 12s</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av"><Icon name="upload_file" /></div>
-                <div className="body">
-                  <span><b>Sam Lee</b> uploaded 3 drawings to <b>Rec & Wellness Center</b>.</span>
-                  <div className="when">3h ago</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av ai"><Icon name="rule" size={14} /></div>
-                <div className="body">
-                  <span>Cody flagged a <b>conflicting ceiling height</b> on Lobby 101.</span>
-                  <div className="when">3h ago · A-101 vs A-301</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av ai"><Icon name="compare_arrows" size={14} /></div>
-                <div className="body">
-                  <span><b>Bid Level Analysis</b> finished on <b>Pinnacle Interiors</b>. Recommended pick saves $74k.</span>
-                  <div className="when">Yesterday · 4:21 PM</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av"><Icon name="upload_file" /></div>
-                <div className="body">
-                  <span><b>Jamie Park</b> uploaded the <b>final spec book</b> to Rivergrove Heights.</span>
-                  <div className="when">Yesterday</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av ai"><Icon name="calculate" size={14} /></div>
-                <div className="body">
-                  <span><b>Rough Order of Magnitude (ROM) Estimate</b> v2 ran on <b>Mercy Health Annex</b>. ROM dropped 1.2%.</span>
-                  <div className="when">2 days ago</div>
-                </div>
-              </div>
-              <div className="feed-item">
-                <div className="av"><Icon name="share" /></div>
-                <div className="body">
-                  <span><b>Sam Lee</b> shared the <b>Rec & Wellness</b> bid proposal externally.</span>
-                  <div className="when">2 days ago</div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* RECENT SKILL RUNS — full width, 64px gap from previous section */}
+        <div className="section-h" style={{ marginTop: 64 }}>
+          <Icon name="auto_awesome" size={16} style={{ color: "var(--orange-500)" }} />
+          <h3>RECENT SKILL RUNS</h3>
+        </div>
+        <div className="card no-pad">
+          <table className="bc-table">
+            <thead><tr><th>Skill</th><th>Project</th><th>Status</th><th>When</th><th className="num">Result</th></tr></thead>
+            <tbody>
+              {runs.map((r) =>
+              <tr key={r.id} style={{ cursor: "pointer" }} onClick={() => {
+                const tab = r.status === "done" ? skillToTab(r.skill) : null;
+                if (tab) onOpenProject(r.projectId, { tab });
+                else onOpenProject(r.projectId);
+              }}>
+                  <td><div className="item-title" style={{ display: "flex", alignItems: "center", gap: 12 }}><div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} /></div>{r.skill}</div></td>
+                  <td><div style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.project}</div></td>
+                  <td>{r.status === "done" ? <span className="badge b-done">Done</span> : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>}</td>
+                  <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
+                  <td className="num">
+                    {r.ai && r.ai.total && <b>{r.ai.total}</b>}
+                    {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
+                    {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
+                    {!r.ai && "—"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>);
@@ -357,9 +250,9 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
         onAskAI={onAskAI} />
 
       <div className="canvas">
-        <h2 className="page-h1" style={{ marginBottom: 14 }}>Projects</h2>
+        <h2 className="page-h1" style={{ marginBottom: 16 }}>Projects</h2>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, gap: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
           {/* Filter 1 — Active / Archived (below title, left) */}
           <div className="chip-group">
             <button
@@ -374,7 +267,7 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
             </button>
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             {/* Filter 2 — All / Draft / Bid Phase / Won / Lost (only when Active) */}
             {localStatus === "active" && (
               <div className="chip-group">
@@ -439,13 +332,13 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          <div className="pin-card" onClick={onNewProject} style={{ gridColumn: "1 / -1", justifySelf: "start", width: 280, minHeight: 180, padding: "20px 22px", background: "transparent", border: "1.5px dashed rgba(39,38,53,0.20)", color: "var(--bc-muted)", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <div className="pin-card" onClick={onNewProject} style={{ gridColumn: "1 / -1", justifySelf: "start", width: 280, minHeight: 180, padding: "20px 24px", background: "transparent", border: "1.5px dashed rgba(39,38,53,0.20)", color: "var(--bc-muted)", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
             <Icon name="add_circle_outline" size={40} style={{ color: "var(--orange-500)" }} />
             <div style={{ fontWeight: 700, marginTop: 8, color: "var(--bc-strong)" }}>Start a new project</div>
             <div style={{ fontSize: 12 }}>Upload plans and specs to get started</div>
           </div>
           {sorted.map((p) =>
-          <div key={p.id} className="pin-card" style={{ minHeight: 180, padding: "20px 22px" }} onClick={() => onOpen(p.id)}
+          <div key={p.id} className="pin-card" style={{ minHeight: 180, padding: "20px 24px" }} onClick={() => onOpen(p.id)}
                onContextMenu={(e) => onCtxMenu && onCtxMenu([
                  { label: "Open", icon: "open_in_browser", onClick: () => onOpen(p.id) },
                  { label: "Open in new tab", icon: "tab", onClick: () => onOpenInNewTab && onOpenInNewTab(p.id) },
@@ -473,7 +366,7 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
             </div>
           )}
           {sorted.length === 0 && (
-            <div className="pin-card" style={{ minHeight: 180, padding: "20px 22px", background: "transparent", border: "1.5px dashed rgba(39,38,53,0.20)", color: "var(--bc-muted)", alignItems: "center", justifyContent: "center", textAlign: "center", gridColumn: "1 / -1" }}>
+            <div className="pin-card" style={{ minHeight: 180, padding: "20px 24px", background: "transparent", border: "1.5px dashed rgba(39,38,53,0.20)", color: "var(--bc-muted)", alignItems: "center", justifyContent: "center", textAlign: "center", gridColumn: "1 / -1" }}>
               <Icon name="inbox" size={40} style={{ color: "var(--bc-muted)" }} />
               <div style={{ fontWeight: 700, marginTop: 8, color: "var(--bc-strong)" }}>No projects match these filters</div>
               <div style={{ fontSize: 12 }}>Try a different phase or clear the filter</div>

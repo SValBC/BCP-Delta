@@ -9,7 +9,7 @@ function SkillLoadingShell({ projectName, title, progress }) {
     : "Finalizing report";
   return (
     <div className="canvas">
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{projectName}</div>
         <h2 className="page-h1">{title}</h2>
         <p className="page-sub">Cody is analyzing your project documents…</p>
@@ -73,12 +73,12 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
         <h2 className="page-h1">Run a skill</h2>
         <p className="page-sub">Cody will read your project files and produce a report you can review and export.</p>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginTop: 22 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 24 }}>
           {window.BC_DATA.skills.map(s => (
             <div key={s.id} className="pin-card" style={{ minHeight: 200, cursor: "default", border: skillId === s.id ? "1.5px solid var(--orange-500)" : undefined }}
                  onClick={() => setCtx({ ...ctx, skill: s.id })}>
               <Icon className="bg" name={s.icon} />
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(232,70,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(232,70,0,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <Icon name={s.icon} size={22} style={{ color: "var(--orange-500)" }} />
               </div>
               <div className="pin-title">{s.name}</div>
@@ -87,7 +87,7 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
                 <span>{s.duration}</span>
                 <span>{s.runs} runs on this project</span>
               </div>
-              <button className="btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: 6 }}
+              <button className="btn-primary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}
                       onClick={() => { setCtx({ ...ctx, skill: s.id }); start(); }}
                       disabled={running}>
                 <Icon name="play_arrow" size={16} />{running && skillId === s.id ? "Running…" : "Run skill"}
@@ -98,13 +98,13 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
 
         {running && (
           <div className="card" style={{ marginTop: 20, background: "rgba(232,70,0,0.04)", borderColor: "rgba(232,70,0,0.20)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <Sparkle size={14} spin />
               <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16 }}>{skill.name} · working</div>
               <div style={{ marginLeft: "auto", fontFamily: "var(--font-data)", fontWeight: 700, fontSize: 13 }}>{progress}%</div>
             </div>
             <div className="bar-track"><div className="bar-fill gradient" style={{ width: progress + "%" }} /></div>
-            <div style={{ marginTop: 10, fontSize: 13, color: "rgba(39,38,53,0.70)" }}><span className="working" style={{ fontSize: 13 }}><span className="dot" />{stage}</span></div>
+            <div style={{ marginTop: 12, fontSize: 13, color: "rgba(39,38,53,0.70)" }}><span className="working" style={{ fontSize: 13 }}><span className="dot" />{stage}</span></div>
           </div>
         )}
       </div>
@@ -261,14 +261,14 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
               />
             </p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <span className="badge b-done"><Icon name="verified" size={12} style={{ opacity: 0.7 }} />91% confidence</span>
             <span className="badge b-warn">2 flags</span>
           </div>
         </div>
 
         {/* REPORT TABS */}
-        <div className="report-tabs" style={{ marginTop: 18 }}>
+        <div className="report-tabs" style={{ marginTop: 20 }}>
           <button className={"report-tab " + (reportTab === "overview" ? "active" : "")} onClick={() => setReportTab("overview")}>
             <Icon name="dashboard" size={14} />Overview
           </button>
@@ -286,7 +286,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
 
 
         {/* SUMMARY */}
-        <div className="summary-row" style={{ marginTop: 18 }}>
+        <div className="summary-row" style={{ marginTop: 20 }}>
           <div className="kpi-strip" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             <div className="kpi">
               <Icon className="bg" name="payments" />
@@ -349,7 +349,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         </div>
 
         {/* Cody's flag — below the KPI strip */}
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 20 }}>
           <CodyMessage
             eyebrow="Cody flagged something"
             title={
@@ -384,7 +384,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                 </p>
               </>;
             })()}
-            <div className="suggest" style={{ marginTop: 10 }}>
+            <div className="suggest" style={{ marginTop: 12 }}>
               <button className="chip">Yes, break it down</button>
               <button className="chip">Show comps</button>
               <button className="chip">Mark as final</button>
@@ -401,7 +401,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
           <table className="bc-table">
             <thead>
               <tr>
-                <th style={{ width: 50 }}>Div</th>
+                <th style={{ width: 48 }}>Div</th>
                 <th>Line item</th>
                 <th className="num">Qty</th>
                 <th className="num">Unit</th>
@@ -409,7 +409,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                 <th className="num">Total</th>
                 <th>Drawing Ref</th>
                 <th className="center">Conf.</th>
-                <th className="center" style={{ width: 90 }}>{editMode ? "Action" : ""}</th>
+                <th className="center" style={{ width: 88 }}>{editMode ? "Action" : ""}</th>
               </tr>
             </thead>
             <tbody>
@@ -506,7 +506,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
               <button className="btn-ghost"><Icon name="download" size={14} />CSV</button>
             </div>
           </div>
-          <div style={{ padding: "12px 22px 18px" }}>
+          <div style={{ padding: "12px 24px 20px" }}>
             {sortedDivisions.map(d => {
               const isOpen = expandedDiv === d.code;
               const hasItems = d.items && d.items.length > 0;
@@ -531,7 +531,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                         <div key={i} className="div-detail-row">
                           <div className="di-name">
                             {it.name}
-                            {it.flagged && <Icon name="flag" size={11} style={{ color: "var(--orange-500)", marginLeft: 6, verticalAlign: "middle" }} />}
+                            {it.flagged && <Icon name="flag" size={11} style={{ color: "var(--orange-500)", marginLeft: 8, verticalAlign: "middle" }} />}
                             {it.note && <small style={{ color: "var(--orange-500)", fontWeight: 600 }}>{it.note}</small>}
                           </div>
                           <span className="di-num">{it.qty.toLocaleString()} {it.unit}</span>
@@ -619,7 +619,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                             <div key={i} className="da-takeoff-row">
                               <div className="da-takeoff-name">
                                 {it.name}
-                                {it.flagged && <Icon name="flag" size={11} style={{ color: "var(--orange-500)", marginLeft: 6, verticalAlign: "middle" }} />}
+                                {it.flagged && <Icon name="flag" size={11} style={{ color: "var(--orange-500)", marginLeft: 8, verticalAlign: "middle" }} />}
                                 {it.note && <small style={{ color: "var(--orange-500)", fontWeight: 600 }}>{it.note}</small>}
                               </div>
                               <span className="di-num">{it.qty.toLocaleString()} {it.unit}</span>
@@ -672,12 +672,12 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                   { id: "comps", icon: "compare", label: "Comparable projects", body: (
                     <>
                       <p>Cody benchmarked this division against <b>14 similar projects in the PNW</b> over the last 36 months. The closest comps:</p>
-                      <ul style={{ margin: "8px 0 0 18px", padding: 0, fontSize: 13, color: "var(--bc-strong)", lineHeight: 1.6 }}>
+                      <ul style={{ margin: "8px 0 0 20px", padding: 0, fontSize: 13, color: "var(--bc-strong)", lineHeight: 1.6 }}>
                         <li>Beaverton Aquatic Center (2024) — Division {activeDivision.code} at {fullMoney(activeDivision.amount * 0.86)}, {(activeDivision.pct - 0.4).toFixed(1)}% of total</li>
                         <li>Tualatin Civic Pool (2023) — Division {activeDivision.code} at {fullMoney(activeDivision.amount * 1.04)}, {(activeDivision.pct + 0.2).toFixed(1)}% of total</li>
                         <li>Hillsboro Rec & Wellness (2022) — Division {activeDivision.code} at {fullMoney(activeDivision.amount * 0.95)}, {(activeDivision.pct - 0.1).toFixed(1)}% of total</li>
                       </ul>
-                      <p style={{ marginTop: 10 }}>Cody's estimate for this project sits <b>within range</b> of the comp set, with {(activeDivision.pct - 0.1).toFixed(1)}% being typical for this building type.</p>
+                      <p style={{ marginTop: 12 }}>Cody's estimate for this project sits <b>within range</b> of the comp set, with {(activeDivision.pct - 0.1).toFixed(1)}% being typical for this building type.</p>
                     </>
                   )},
                   { id: "risks", icon: "warning", label: "Risks & flags", body: (
@@ -693,7 +693,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                   { id: "cited", icon: "menu_book", label: "Cited documents", body: (
                     <>
                       <p>Cody cited the following sheets and specs while assembling this division. Click any reference to open it in a tab.</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                         {(() => {
                           const allRefs = new Set();
                           items.forEach(it => (it.refs || []).forEach(r => allRefs.add(r)));
@@ -732,9 +732,9 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
           ) : (
             /* TILES GRID — all CSI divisions */
             <div className="da-tiles" key="tiles">
-              <div className="card" style={{ padding: 18, marginBottom: 16 }}>
+              <div className="card" style={{ padding: 20, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon name="analytics" size={20} style={{ color: "var(--raisin-800)", opacity: 0.65 }} />
                   </div>
                   <div>
@@ -742,7 +742,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                     <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "var(--bc-strong)" }}>
                       Each CSI MasterFormat division is shown below. Click any tile for Cody's in-depth writeup — methodology, quantity takeoff, comparable projects, risks, and cited documents.
                     </p>
-                    <div style={{ display: "flex", gap: 18, marginTop: 12, fontSize: 11.5, color: "var(--bc-muted)", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 11.5, color: "var(--bc-muted)", flexWrap: "wrap" }}>
                       <span><b style={{ color: "var(--bc-strong)" }}>Sum of divisions</b> · {fullMoney(data.divisions.reduce((a, d) => a + d.amount, 0))}</span>
                       <span><b style={{ color: "var(--bc-strong)" }}>+ Contingency ({(data.contingency * 100).toFixed(0)}%)</b> · {fullMoney(data.divisions.reduce((a, d) => a + d.amount, 0) * data.contingency)}</span>
                       <span><b style={{ color: "var(--tiffany-400)" }}>= Total project ROM</b> · {fullMoney(data.grandTotal)}</span>
@@ -772,7 +772,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
 
         {/* FILES ANALYZED TAB */}
         {reportTab === "files" && (
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 16 }}>
             <div className="card no-pad">
               <div className="card-h">
                 <Icon name="folder_open" style={{ color: "var(--orange-500)" }} />
@@ -920,7 +920,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
             </div>
             <p className="page-sub" style={{ marginTop: 4 }}>{issues.length} detected · Run finished 1h ago · Drag a card to change priority</p>
           </div>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <span className="badge b-high">{issues.filter(i => i.priority === "critical").length} critical</span>
             <span className="badge b-warn">{issues.filter(i => i.priority === "med").length} medium</span>
           </div>
@@ -944,7 +944,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
           const resolvedCount = issues.filter(i => i.resolved).length;
           return (
             <>
-              <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
+              <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
                 <div className="kpi">
                   <Icon className="bg" name="rule" />
                   <div className="label">
@@ -1237,7 +1237,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
       />
       <div className="canvas">
         {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{project.name}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <h2 className="page-h1" style={{ marginBottom: 0 }}>
@@ -1279,7 +1279,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
           activeTrade={trade}
         />
 
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 18 }}>
+        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
           <div className="kpi">
             <Icon className="bg" name="emoji_events" />
             <div className="label">
@@ -1455,9 +1455,9 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
 
       {bidTab === "detailed" && (
         <div className="da-tiles" key="bid-detailed">
-          <div className="card" style={{ padding: 18, marginBottom: 16 }}>
+          <div className="card" style={{ padding: 20, marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Icon name="analytics" size={20} style={{ color: "var(--raisin-800)", opacity: 0.65 }} />
               </div>
               <div>

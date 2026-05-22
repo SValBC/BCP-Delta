@@ -354,6 +354,80 @@ window.BC_DATA = {
     ]
   },
 
+  // Pre-run configuration for the Bid Level Analysis skill.
+  // Cody scans each project's uploaded bid files (only) and auto-categorizes
+  // them into trades. Users can re-assign files to a different trade before
+  // running the skill, and multi-select which trades to actually run on.
+  // Shape per project: { trades: [{ id, division, name }], files: [{ id, name, size, uploaded, uploadedBy, tradeId }] }
+  bidConfig: {
+    "rec-wellness": {
+      trades: [
+        { id: "div-09", division: "09", name: "Finishes" },
+        { id: "div-22", division: "22", name: "Plumbing" },
+        { id: "div-23", division: "23", name: "HVAC" },
+        { id: "div-26", division: "26", name: "Electrical" },
+        { id: "div-13", division: "13", name: "Special Construction (Pool)" },
+      ],
+      files: [
+        { id: "rw-bid-1",  name: "Northwest Drywall Co — bid.pdf",      size: "182 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-2",  name: "Pinnacle Interiors — finishes bid.pdf", size: "204 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-3",  name: "Apex Finishes Group — bid.xlsx",       size: "94 KB",  uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-4",  name: "Cascade Wall Systems — bid.pdf",       size: "172 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-5",  name: "ThermalTech Solutions — plumbing.pdf", size: "198 KB", uploaded: "May 2, 2026",  uploadedBy: "Jamie Park", tradeId: "div-22" },
+        { id: "rw-bid-6",  name: "Ewing Plumbing — bid response.pdf",    size: "186 KB", uploaded: "May 2, 2026",  uploadedBy: "Jamie Park", tradeId: "div-22" },
+        { id: "rw-bid-7",  name: "Summit Mechanical — plumbing.pdf",     size: "210 KB", uploaded: "May 2, 2026",  uploadedBy: "Jamie Park", tradeId: "div-22" },
+        { id: "rw-bid-8",  name: "Apex Mechanical — HVAC bid.xlsx",      size: "120 KB", uploaded: "May 5, 2026",  uploadedBy: "Jamie Park", tradeId: "div-23" },
+        { id: "rw-bid-9",  name: "Northwest HVAC Co — bid.pdf",          size: "224 KB", uploaded: "May 5, 2026",  uploadedBy: "Jamie Park", tradeId: "div-23" },
+        { id: "rw-bid-10", name: "Stark Electric Inc — bid.pdf",         size: "212 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
+        { id: "rw-bid-11", name: "Cascade Power & Light — bid.pdf",      size: "188 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
+        { id: "rw-bid-12", name: "Greenline Electric — bid.pdf",         size: "176 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
+        { id: "rw-bid-13", name: "Pacific Aquatics — pool tank bid.pdf", size: "412 KB", uploaded: "May 5, 2026",  uploadedBy: "Jamie Park", tradeId: "div-13" },
+        { id: "rw-bid-14", name: "Aquatic Edge — pool systems.pdf",      size: "388 KB", uploaded: "May 5, 2026",  uploadedBy: "Jamie Park", tradeId: "div-13" },
+      ]
+    },
+    "rivergrove": {
+      trades: [
+        { id: "div-09", division: "09", name: "Finishes" },
+        { id: "div-22", division: "22", name: "Plumbing" },
+        { id: "div-26", division: "26", name: "Electrical" },
+      ],
+      files: [
+        { id: "rg-bid-1", name: "Northwest Drywall Co — bid.pdf",       size: "182 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-2", name: "Pinnacle Interiors — bid.pdf",         size: "204 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-3", name: "Apex Finishes Group — bid.xlsx",       size: "94 KB",  uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-4", name: "Cascade Wall Systems — bid.pdf",       size: "172 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-5", name: "ThermalTech Solutions — plumbing.pdf", size: "198 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-22" },
+        { id: "rg-bid-6", name: "Stark Electric Inc — bid.pdf",         size: "212 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-26" },
+      ]
+    },
+    "mercy-clinic": {
+      trades: [
+        { id: "div-09", division: "09", name: "Finishes" },
+        { id: "div-22", division: "22", name: "Plumbing" },
+        { id: "div-23", division: "23", name: "HVAC" },
+      ],
+      files: [
+        { id: "mc-bid-1", name: "Northwest Drywall Co — fit-out bid.pdf", size: "164 KB", uploaded: "May 2, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "mc-bid-2", name: "Apex Mechanical — HVAC bid.xlsx",        size: "110 KB", uploaded: "May 2, 2026", uploadedBy: "Jamie Park", tradeId: "div-23" },
+        { id: "mc-bid-3", name: "Summit Plumbing — bid.pdf",              size: "176 KB", uploaded: "May 2, 2026", uploadedBy: "Jamie Park", tradeId: "div-22" },
+      ]
+    },
+    "bayside": {
+      trades: [
+        { id: "div-03", division: "03", name: "Concrete" },
+        { id: "div-05", division: "05", name: "Metals" },
+        { id: "div-26", division: "26", name: "Electrical" },
+      ],
+      files: [
+        { id: "bs-bid-1", name: "Riverview Concrete — bid.pdf",    size: "228 KB", uploaded: "Mar 20, 2026", uploadedBy: "Jamie Park", tradeId: "div-03" },
+        { id: "bs-bid-2", name: "Cascade Steel Erectors — bid.pdf", size: "244 KB", uploaded: "Mar 20, 2026", uploadedBy: "Jamie Park", tradeId: "div-05" },
+        { id: "bs-bid-3", name: "Stark Electric Inc — warehouse.pdf", size: "212 KB", uploaded: "Mar 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-26" },
+      ]
+    },
+    "westlake": { trades: [], files: [] },
+    "emerson-tower": { trades: [], files: [] },
+  },
+
   // Bid leveling
   bidLeveling: {
     project: "Rivergrove Residences Phase II",
