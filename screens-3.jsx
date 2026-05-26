@@ -125,6 +125,21 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
   const [reportTab, setReportTab] = uS3("overview"); // overview | detailed | files
   const [selectedDivision, setSelectedDivision] = uS3(null); // CSI code or null
   const [accordionOpen, setAccordionOpen] = uS3(new Set(["summary"]));
+  // Out-of-scope tile tooltip — { code } or null. Appears after a 2s hover or on click.
+  const [oosTooltip, setOosTooltip] = uS3(null);
+  const oosTimerRef = uR3(null);
+  const showOosTooltip = (code) => {
+    if (oosTimerRef.current) clearTimeout(oosTimerRef.current);
+    oosTimerRef.current = setTimeout(() => setOosTooltip(code), 2000);
+  };
+  const cancelOosTooltip = () => {
+    if (oosTimerRef.current) { clearTimeout(oosTimerRef.current); oosTimerRef.current = null; }
+    setOosTooltip(null);
+  };
+  const flashOosTooltip = (code) => {
+    if (oosTimerRef.current) clearTimeout(oosTimerRef.current);
+    setOosTooltip(code);
+  };
   const toggleAccordion = (id) => setAccordionOpen(prev => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -224,9 +239,6 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         actions={
           <>
             <PinButton pinId={"skill:" + project.id + "/estimation"} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
-              <Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}
-            </button>
             <button className="btn"><Icon name="picture_as_pdf" size={16} />Export</button>
             <button className="btn"><Icon name="add_chart" size={16} />Build report</button>
           </>
@@ -752,19 +764,42 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
               </div>
 
               <div className="da-tile-grid">
-                {csiWithAmounts.map(c => (
-                  <button key={c.code} className={"da-tile " + (c.inScope ? "in-scope " : "out-of-scope ") + (c.flagged ? "flagged" : "")}
-                          onClick={() => { setSelectedDivision(c.code); setAccordionOpen(new Set(["summary"])); }}>
-                    <div className="da-tile-code">{c.code}</div>
-                    <div className="da-tile-name">{c.name}</div>
-                    <div className="da-tile-foot">
-                      {c.inScope
-                        ? <><span className="da-tile-amt">{fullMoney(c.amount)}</span><span className="da-tile-pct">{c.pct.toFixed(1)}%</span></>
-                        : <span className="da-tile-empty">Not in scope</span>}
+                {csiWithAmounts.map(c => {
+                  if (c.inScope) {
+                    return (
+                      <button key={c.code} className={"da-tile in-scope " + (c.flagged ? "flagged" : "")}
+                              onClick={() => { setSelectedDivision(c.code); setAccordionOpen(new Set(["summary"])); }}>
+                        <div className="da-tile-code">{c.code}</div>
+                        <div className="da-tile-name">{c.name}</div>
+                        <div className="da-tile-foot">
+                          <span className="da-tile-amt">{fullMoney(c.amount)}</span>
+                          <span className="da-tile-pct">{c.pct.toFixed(1)}%</span>
+                        </div>
+                        {c.flagged && <span className="da-tile-flag"><Icon name="flag" size={10} />Flag</span>}
+                      </button>
+                    );
+                  }
+                  // Out-of-scope — non-clickable, muted, with hover-2s / click tooltip
+                  const showing = oosTooltip === c.code;
+                  return (
+                    <div key={c.code} className={"da-tile out-of-scope " + (showing ? "is-tipping" : "")}
+                         aria-disabled="true"
+                         onMouseEnter={() => showOosTooltip(c.code)}
+                         onMouseLeave={cancelOosTooltip}
+                         onClick={(e) => { e.preventDefault(); flashOosTooltip(c.code); }}>
+                      <div className="da-tile-code">{c.code}</div>
+                      <div className="da-tile-name">{c.name}</div>
+                      <div className="da-tile-foot">
+                        <span className="da-tile-empty">Not in scope</span>
+                      </div>
+                      {showing && (
+                        <div className="da-tile-tooltip" role="tooltip" onClick={(e) => e.stopPropagation()}>
+                          Cody didn't find scope items that fall under <b>Division {c.code} — {c.name}</b>. If this is unexpected, please add the relevant documents and re-run the estimate.
+                        </div>
+                      )}
                     </div>
-                    {c.flagged && <span className="da-tile-flag"><Icon name="flag" size={10} />Flag</span>}
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )
@@ -891,9 +926,6 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
         actions={
           <>
             <PinButton pinId={"skill:" + project.id + "/rfc"} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
-              <Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}
-            </button>
             <button className="btn"><Icon name="email" size={16} />Draft RFI emails</button>
             <button className="btn"><Icon name="download" size={16} />Export</button>
           </>
@@ -1231,7 +1263,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
     <div className="col-detail">
       <Taskbar
         crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]}
-        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}><Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}</button><button className="btn"><Icon name="download" size={16} />Export</button></>}
+        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className="btn"><Icon name="download" size={16} />Export</button></>}
         onAskAI={onAskAI}
         switcher={projectSwitcher}
       />

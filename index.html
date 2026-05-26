@@ -61,7 +61,13 @@
       const [tabs, setTabs] = useState([initialTab]);
       const [activeTabId, setActiveTabId] = useState("t-home");
       const [tabHistory, setTabHistory] = useState([]); // recently visited stack
-      const [aiOpen, setAiOpen] = useState(true);
+      const [aiOpen, setAiOpen] = useState(false);
+      const [navCollapsed, setNavCollapsed] = useState(false);
+      const toggleNavCollapsed = () => setNavCollapsed(v => !v);
+      // Tracks the panel state before entering a Drawing tab so we can restore
+      // exactly what the user had configured when they leave. `null` means we
+      // are NOT currently overriding anything.
+      const drawingPrevPanelsRef = React.useRef(null);
       const [pinned, setPinned] = useState(new Set([
         "rec-wellness",
         "rivergrove",
@@ -172,6 +178,25 @@
       const activeTab = tabs.find(tb => tb.id === activeTabId) || tabs[0];
 
       useEffect(() => { document.body.dataset.theme = t.theme; }, [t.theme]);
+
+      // ---- Auto-collapse both side panels while viewing a Drawing tab ----
+      // Drawings benefit from maximum horizontal space. We snapshot the panel
+      // state on entry and restore exactly that state on exit so the user
+      // doesn't lose their preferred sidebar layout.
+      useEffect(() => {
+        const isDrawing = activeTab && activeTab.kind === "drawing";
+        if (isDrawing && drawingPrevPanelsRef.current === null) {
+          drawingPrevPanelsRef.current = { navCollapsed, aiOpen };
+          if (!navCollapsed) setNavCollapsed(true);
+          if (aiOpen) setAiOpen(false);
+        } else if (!isDrawing && drawingPrevPanelsRef.current !== null) {
+          const prev = drawingPrevPanelsRef.current;
+          drawingPrevPanelsRef.current = null;
+          setNavCollapsed(prev.navCollapsed);
+          setAiOpen(prev.aiOpen);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [activeTab && activeTab.kind]);
 
       // ---- Track tab history (for "Recently visited" in nav) ----
       useEffect(() => {
@@ -450,8 +475,8 @@
       // hold metadata for richer status (logo, brand color) so the nav rail
       // doesn't need its own catalog.
       const [connections, setConnections] = useState({
-        bluebeam: { id: "bluebeam", name: "Bluebeam Revu", icon: "draw", brand: "#1B6EC7" },
-        procore:  { id: "procore",  name: "Procore",       icon: "domain", brand: "#F7941E" },
+        bluebeam: { id: "bluebeam", name: "Bluebeam Revu", icon: "draw",   brand: "#1B6EC7", domain: "bluebeam.com", category: "Construction", desc: "PDF markup, takeoffs, and quantification." },
+        procore:  { id: "procore",  name: "Procore",       icon: "domain", brand: "#F7941E", domain: "procore.com",  category: "Construction", desc: "Project management, drawings, and submittals." },
       });
       const [showAddConnection, setShowAddConnection] = useState(false);
       const onAddConnection = () => setShowAddConnection(true);
@@ -459,7 +484,9 @@
         setConnections(prev => {
           const next = { ...prev };
           if (shouldConnect) {
-            next[id] = meta ? { id: meta.id, name: meta.name, icon: meta.icon, brand: meta.brand } : { id };
+            next[id] = meta
+              ? { id: meta.id, name: meta.name, icon: meta.icon, brand: meta.brand, domain: meta.domain, category: meta.category, desc: meta.desc }
+              : { id };
           } else {
             delete next[id];
           }
@@ -468,6 +495,19 @@
       };
 
       const onAskAI = () => setAiOpen(true);
+
+      // ---- Cody guided flows triggered from the Home greeting ----
+      // pendingAction is consumed by <AIAssistant> via a useEffect — every new
+      // trigger gets a fresh token so the same action can fire repeatedly.
+      const [pendingAction, setPendingAction] = useState(null); // { id, token, payload }
+      const triggerCody = (id, payload) => {
+        setAiOpen(true);
+        setPendingAction({ id, token: Date.now(), payload });
+      };
+      const askCodyPrompt = (text) => triggerCody("free-text", text);
+      const startCreateProjectFlow = () => triggerCody("create-project");
+      const startAddFilesFlow = () => triggerCody("add-files");
+      const startRomEstimateFlow = () => triggerCody("rom-estimate");
       const onToggleTheme = () => {
         const next = t.theme === "light" ? "hybrid" : t.theme === "hybrid" ? "dark" : "light";
         setTweak("theme", next);
@@ -493,13 +533,13 @@
             onPin={onPin}
           />
         );
-      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} />;
+      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} onAskCodyPrompt={askCodyPrompt} onStartCreateProjectFlow={startCreateProjectFlow} onStartAddFilesFlow={startAddFilesFlow} onStartRomEstimateFlow={startRomEstimateFlow} />;
       else if (screen === "projects") detail = <ProjectsScreen ctx={ctx} projects={projects} pinnedSet={pinned} onPin={onPin} onOpen={openProject} onOpenInNewTab={openProjectInNewTab} onAskAI={onAskAI} onNewProject={openNewProject} onCtxMenu={openCtxMenu} />;
       else if (screen === "skills") detail = <SkillRunScreen project={projects[0]} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} />;
       else if (screen === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} />;
       else if (screen === "labor") detail = <LaborScreen ctx={ctx} onAskAI={onAskAI} />;
       else if (screen === "files") detail = <WorkspaceFilesScreen ctx={ctx} onAskAI={onAskAI} projects={projects} filesByProject={filesByProject} onDeleteFile={requestDeleteFile} onCtxMenu={openCtxMenu} />;
-      else if (screen === "settings") detail = <SettingsScreen ctx={ctx} onAskAI={onAskAI} theme={t.theme} onToggleTheme={onToggleTheme} />;
+      else if (screen === "settings") detail = <SettingsScreen ctx={ctx} onAskAI={onAskAI} theme={t.theme} onToggleTheme={onToggleTheme} connections={connections} onAddConnection={onAddConnection} onToggleConnection={toggleConnection} />;
       else if (screen === "project" || screen === "skill-run") {
         const p = activeProject || projects[0];
         const tab = ctx.tab || "overview";
@@ -523,15 +563,28 @@
       }
 
       // ---- Recently visited (from history excluding workspace nav items) ----
-      const recentlyVisited = tabHistory
-        .filter(h => h.key !== activeTabId)
-        .filter(h => {
-          const tb = tabs.find(t => t.id === h.key);
-          return tb && tb.kind !== "static";
-        })
-        .slice(0, 4);
+      const recentlyVisited = (() => {
+        const fromHistory = tabHistory
+          .filter(h => h.key !== activeTabId)
+          .filter(h => {
+            const tb = tabs.find(t => t.id === h.key);
+            return tb && tb.kind !== "static";
+          })
+          .slice(0, 4);
+        if (fromHistory.length > 0) return fromHistory;
+        // Fallback seed — recent skill results across the user's pinned projects
+        // so the section never reads as empty on a fresh session.
+        return [
+          { key: "seed-est",      label: "ROM Estimate",        subLabel: "Recreational Wellness", icon: "calculate",       onClick: () => openProject("rec-wellness", { tab: "estimation" }) },
+          { key: "seed-rfc",      label: "Clarifications & RFIs", subLabel: "Recreational Wellness", icon: "rule",          onClick: () => openProject("rec-wellness", { tab: "rfc" }) },
+          { key: "seed-bid",      label: "Bid Level Analysis",  subLabel: "Rivergrove Residences", icon: "compare_arrows",  onClick: () => openProject("rivergrove", { tab: "bid" }) },
+          { key: "seed-drawing",  label: "A-101 — Level 1 plan", subLabel: "Recreational Wellness", icon: "architecture", onClick: () => openDrawing("A-101", "rec-wellness") },
+        ];
+      })();
 
-      // Recent projects = most-recently-visited project tabs, deduped by projectId
+      // Recent projects = most-recently-visited project tabs, deduped by projectId.
+      // Falls back to the first 4 non-archived projects when there's no history yet,
+      // so the nav rail section never appears empty on a fresh session.
       const recentProjects = useMemo(() => {
         const seen = new Set();
         const out = [];
@@ -548,13 +601,22 @@
           const p = projects.find(p => p.id === activeTab.projectId);
           if (p) out.unshift(p);
         }
+        if (out.length === 0) {
+          // Seed the rail on first load with the most relevant projects so the
+          // "Recent projects" group always has content.
+          for (const p of projects) {
+            if (p.archived) continue;
+            out.push(p);
+            if (out.length >= 4) break;
+          }
+        }
         return out.slice(0, 4);
       }, [tabHistory, tabs, projects, activeTabId]);
 
       const newTabFromButton = () => goToScreen("home");
 
       return (
-        <div className="app" data-density={t.density} data-no-list="true" data-ai-open={aiOpen}>
+        <div className="app" data-density={t.density} data-no-list="true" data-ai-open={aiOpen} data-nav-collapsed={navCollapsed}>
           <NavRail
             screen={screen}
             setScreen={goToScreen}
@@ -572,6 +634,8 @@
             onAddConnection={onAddConnection}
             onCtxMenu={openCtxMenu}
             connections={connections}
+            collapsed={navCollapsed}
+            onToggleCollapsed={toggleNavCollapsed}
           />
           <div className="col-detail-wrap">
             {(activeTab.kind !== "static" || tabs.length > 1) && (
@@ -594,6 +658,10 @@
             onClose={() => setAiOpen(false)}
             onOpen={() => setAiOpen(true)}
             context={{ screen, ctx, project: activeProject }}
+            projects={projects}
+            pendingAction={pendingAction}
+            onOpenProject={openProject}
+            onStartSkillRun={startSkillRunCard}
           />
 
           <TweaksPanel>

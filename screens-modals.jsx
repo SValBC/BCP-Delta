@@ -866,4 +866,4 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
   );
 }
 
-Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, RunBidAnalysisModal });
+Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, ConnectLogo, RunBidAnalysisModal });

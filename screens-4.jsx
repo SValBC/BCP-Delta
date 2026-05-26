@@ -396,17 +396,48 @@ function WorkspaceFilesScreen({ ctx, onAskAI, projects, filesByProject, onDelete
   );
 }
 
-function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
-  const tab = ctx.tab || "profile";
+function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme, connections, onAddConnection, onToggleConnection }) {
+  const [tab, setTab] = uS4((ctx && ctx.tab) || "profile");
+  const sections = [
+    { id: "profile",     label: "Profile",       icon: "person" },
+    { id: "appearance",  label: "Appearance",    icon: "palette" },
+    { id: "ai",          label: "AI assistant",  icon: "auto_awesome" },
+    { id: "connections", label: "Connections",   icon: "hub" },
+  ];
+  const activeMeta = sections.find(s => s.id === tab) || sections[0];
+  const titleByTab = {
+    profile: "Profile",
+    appearance: "Appearance",
+    ai: "AI assistant",
+    connections: "Connections",
+  };
   return (
     <div className="col-detail">
       <Taskbar
-        crumbs={[{ label: "Workspace" }, { label: "Settings", bold: true }, { label: tab }]}
-        actions={<button className="btn-primary"><Icon name="save" size={16}/>Save</button>}
+        crumbs={[{ label: "Workspace" }, { label: "Settings", bold: true }, { label: activeMeta.label }]}
+        actions={
+          <span className="autosave-hint" title="Changes are saved automatically">
+            <Icon name="cloud_done" size={14} />Autosaved
+          </span>
+        }
         onAskAI={onAskAI}
       />
       <div className="canvas">
-        <h2 className="page-h1">{tab === "profile" ? "Profile" : tab === "appearance" ? "Appearance" : tab === "ai" ? "AI assistant" : tab.charAt(0).toUpperCase() + tab.slice(1)}</h2>
+        <div className="settings-layout">
+          {/* Left side-nav for Settings sections */}
+          <aside className="settings-side">
+            {sections.map(s => (
+              <button key={s.id}
+                      className={"settings-side-item " + (tab === s.id ? "is-active" : "")}
+                      onClick={() => setTab(s.id)}>
+                <Icon name={s.icon} size={16} />
+                <span>{s.label}</span>
+              </button>
+            ))}
+          </aside>
+
+          <section className="settings-content">
+            <h2 className="page-h1">{titleByTab[tab] || activeMeta.label}</h2>
 
         {tab === "profile" && (
           <div style={{ maxWidth: 640, marginTop: 16 }}>
@@ -465,6 +496,58 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme }) {
             </div>
           </div>
         )}
+
+        {tab === "connections" && (() => {
+          const list = connections ? Object.values(connections) : [];
+          return (
+            <div style={{ maxWidth: 760, marginTop: 16 }}>
+              <p className="page-sub" style={{ marginTop: 0, marginBottom: 20 }}>
+                Connect BuildCrew to the tools you use to manage your projects. Cody will pull drawings, specs, bids, and notes from these sources to power skill runs.
+              </p>
+
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)" }}>
+                  {list.length} active connection{list.length === 1 ? "" : "s"}
+                </div>
+                <button className="btn-primary" onClick={onAddConnection}>
+                  <Icon name="add_link" size={14} />Add connection
+                </button>
+              </div>
+
+              {list.length === 0 ? (
+                <div style={{ border: "1px solid rgba(39,38,53,0.08)", borderRadius: 12, padding: 32, textAlign: "center" }}>
+                  <Icon name="hub" size={36} style={{ color: "rgba(39,38,53,0.30)" }} />
+                  <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "var(--raisin-800)", marginTop: 8 }}>No connections yet</div>
+                  <div style={{ fontSize: 12.5, color: "var(--bc-muted)", maxWidth: 380, margin: "8px auto 0", lineHeight: 1.5 }}>
+                    Add connections to Bluebeam, Procore, Dropbox, and more so Cody can pull files directly from the tools you already use.
+                  </div>
+                </div>
+              ) : (
+                <div className="connect-list">
+                  {list.map(c => (
+                    <div key={c.id} className="connect-row is-connected">
+                      <ConnectLogo domain={c.domain} brand={c.brand || "#272635"} icon={c.icon} name={c.name} />
+                      <div className="connect-row-meta">
+                        <div className="connect-row-name-row">
+                          <span className="connect-name">{c.name}</span>
+                          {c.category && <span className="connect-row-cat">{c.category}</span>}
+                        </div>
+                        {c.desc && <div className="connect-desc">{c.desc}</div>}
+                      </div>
+                      <span className="connect-status"><span className="connect-status-dot" />Connected</span>
+                      <button className="btn-ghost connect-btn-disc"
+                              onClick={() => onToggleConnection && onToggleConnection(c.id, false)}>
+                        <Icon name="link_off" size={14} />Disconnect
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+          </section>
+        </div>
       </div>
     </div>
   );

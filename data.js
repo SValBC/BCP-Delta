@@ -268,10 +268,12 @@ window.BC_DATA = {
 
   // Skill runs (for project home and home page)
   runs: [
-    { id: "r1", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness", status: "done", when: "12 min ago", duration: "11m 32s", ai: { lines: 1284, total: "$4.82M", confidence: 0.91 } },
-    { id: "r2", skill: "Clarifications & Potential RFIs", project: "Recreational and Wellness Center", projectId: "rec-wellness", status: "done", when: "1h ago", duration: "5m 18s", ai: { issues: 23, critical: 3, high: 7, med: 9, low: 4 } },
-    { id: "r3", skill: "Bid Level Analysis", project: "Rivergrove Residences Phase II", projectId: "rivergrove", status: "done", when: "yesterday", duration: "9m 04s", ai: { subs: 6, divisions: 22, savings: "$184k" } },
-    { id: "r4", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Mercy Outpatient Clinic", projectId: "mercy-clinic", status: "working", when: "now", duration: "running", progress: 0.42 }
+    // startedAt is an ISO timestamp used to sort the Recent Skill Runs tables.
+    // Most recent first when rendered.
+    { id: "r4", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Mercy Outpatient Clinic",            projectId: "mercy-clinic",  status: "working", when: "now",        startedAt: "2026-05-26T16:00:00", duration: "running",  progress: 0.42 },
+    { id: "r1", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "12 min ago", startedAt: "2026-05-26T15:48:00", duration: "11m 32s", ai: { lines: 1284, total: "$4.82M", confidence: 0.91 } },
+    { id: "r2", skill: "Clarifications & Potential RFIs",         project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "1h ago",     startedAt: "2026-05-26T15:00:00", duration: "5m 18s",  ai: { issues: 23, critical: 3, high: 7, med: 9, low: 4 } },
+    { id: "r3", skill: "Bid Level Analysis",                      project: "Rivergrove Residences Phase II",   projectId: "rivergrove",    status: "done",    when: "yesterday",  startedAt: "2026-05-25T16:21:00", duration: "9m 04s",  ai: { subs: 6, divisions: 22, savings: "$184k" } }
   ],
 
   // Estimation report — line items

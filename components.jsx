@@ -270,25 +270,15 @@ const DrawingThumb = ({ kind = "level1", color = "#E84600", markups = 12 }) => {
 // =====================================================
 // COLUMN 1 — PRIMARY NAV
 // =====================================================
-function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu, connections }) {
+function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu, connections, collapsed, onToggleCollapsed }) {
   const items = [
     { id: "home", label: "Home", icon: "home" },
-    { id: "projects", label: "Projects", icon: "folder_open", count: 6 },
-    { id: "skills", label: "Skills", icon: "auto_awesome", count: 3 },
+    { id: "projects", label: "Projects", icon: "folder_open" },
+    { id: "skills", label: "Skills", icon: "auto_awesome" },
     { id: "reports", label: "Reports", icon: "assessment" },
     { id: "labor", label: "Labor rates", icon: "engineering" },
     { id: "files", label: "Files", icon: "folder_copy" },
   ];
-
-  // Only connected integrations are listed; everything else hides behind "Add connection".
-  // The list now comes from app-level state (via the `connections` prop) so the AddConnectionModal
-  // can toggle integrations on/off and have the nav update immediately.
-  const connectedIntegrations = connections
-    ? Object.values(connections).map(c => ({ id: c.id, label: c.name || c.id, icon: c.icon || "link" }))
-    : [
-        { id: "bluebeam", label: "Bluebeam Revu", icon: "draw" },
-        { id: "procore", label: "Procore", icon: "domain" },
-      ];
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
@@ -302,15 +292,28 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
   }, [userMenuOpen]);
 
   return (
-    <aside className="col-nav">
+    <aside className={"col-nav " + (collapsed ? "is-collapsed" : "")}>
       <div className="brand">
-        <img src="design-system/logo-full-light.svg" alt="BuildCrew.AI" className="brand-full" />
+        {collapsed
+          ? <img src="design-system/logo_icon.svg" alt="BuildCrew.AI" className="brand-icon" />
+          : <img src="design-system/logo-full-light.svg" alt="BuildCrew.AI" className="brand-full" />
+        }
       </div>
+
+      {/* Toggle button — collapses/expands the nav rail */}
+      {onToggleCollapsed && (
+        <button className="nav-collapse-btn"
+                onClick={onToggleCollapsed}
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          <Icon name={collapsed ? "chevron_right" : "chevron_left"} size={16} />
+        </button>
+      )}
 
       <div className="nav-section">Workspace</div>
       {items.map(it => (
         <div key={it.id}
              className={"nav-item " + (screen === it.id ? "active" : "")}
+             title={collapsed ? it.label : undefined}
              onClick={() => setScreen(it.id)}
              onContextMenu={(e) => onCtxMenu && onCtxMenu([
                { label: "Open", icon: "open_in_browser", onClick: () => setScreen(it.id) },
@@ -326,7 +329,9 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
         <>
           <div className="nav-section">Pinned</div>
           {pinnedItems.slice(0, 6).map(p => (
-            <div key={p.id} className="nav-item" onClick={() => onOpenPinned && onOpenPinned(p)}
+            <div key={p.id} className="nav-item"
+                 title={collapsed ? p.label : undefined}
+                 onClick={() => onOpenPinned && onOpenPinned(p)}
                  onContextMenu={(e) => onCtxMenu && onCtxMenu([
                    { label: "Open", icon: "open_in_browser", onClick: () => onOpenPinned && onOpenPinned(p) },
                    ...(p.kind === "project" ? [{ label: "Open in new tab", icon: "tab", onClick: () => onOpenProjectInNewTab && onOpenProjectInNewTab(p.id) }] : []),
@@ -342,7 +347,9 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
         <>
           <div className="nav-section">Recently visited</div>
           {recentlyVisited.slice(0, 4).map(rv => (
-            <div key={rv.key} className="nav-item nav-recent" onClick={() => rv.onClick && rv.onClick()}
+            <div key={rv.key} className="nav-item nav-recent"
+                 title={collapsed ? (rv.label + (rv.subLabel ? " · " + rv.subLabel : "")) : undefined}
+                 onClick={() => rv.onClick && rv.onClick()}
                  onContextMenu={(e) => onCtxMenu && onCtxMenu([
                    { label: "Open", icon: "open_in_browser", onClick: () => rv.onClick && rv.onClick() },
                  ], e)}>
@@ -359,7 +366,9 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
         <>
           <div className="nav-section">Recent projects</div>
           {recentProjects.slice(0, 4).map(p => (
-            <div key={p.id} className="nav-item" onClick={() => onOpenProject && onOpenProject(p.id)}
+            <div key={p.id} className="nav-item"
+                 title={collapsed ? p.name : undefined}
+                 onClick={() => onOpenProject && onOpenProject(p.id)}
                  onContextMenu={(e) => onCtxMenu && onCtxMenu([
                    { label: "Open", icon: "open_in_browser", onClick: () => onOpenProject && onOpenProject(p.id) },
                    { label: "Open in new tab", icon: "tab", onClick: () => onOpenProjectInNewTab && onOpenProjectInNewTab(p.id) },
@@ -370,19 +379,6 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
           ))}
         </>
       )}
-
-      <div className="nav-section">Connect</div>
-      {connectedIntegrations.map(it => (
-        <div key={it.id} className="nav-item nav-integration">
-          <Icon name={it.icon} />
-          <span>{it.label}</span>
-          <span className="conn-pill on"><span className="dot" />On</span>
-        </div>
-      ))}
-      <div className="nav-item nav-add-connection" onClick={() => onAddConnection && onAddConnection()}>
-        <Icon name="add" />
-        <span>Add connection</span>
-      </div>
 
       <div className="nav-footer">
         <div className="nav-item theme-cycle" onClick={onToggleTheme} style={{ fontSize: 12.5 }} title={`Theme: ${theme === "light" ? "Light" : theme === "hybrid" ? "Hybrid" : "Dark"} mode (click to cycle)`}>
@@ -743,6 +739,21 @@ function CodyMessage({
   className = ""
 }) {
   const [hidden, setHidden] = useState(defaultDismissed);
+  const listRef = useRef(null);
+  // Cap the items list at exactly 4 visible — measure the 5th item's
+  // offsetTop after render and set max-height to that, so taller items
+  // don't bleed past the cutoff and shorter ones don't show a 5th.
+  useEffect(() => {
+    if (!items || items.length <= 4 || !listRef.current) {
+      if (listRef.current) listRef.current.style.maxHeight = "";
+      return;
+    }
+    const children = listRef.current.children;
+    if (children.length > 4) {
+      const fifth = children[4];
+      listRef.current.style.maxHeight = fifth.offsetTop + "px";
+    }
+  }, [items]);
   if (hidden) return null;
   const handleDismiss = () => {
     setHidden(true);
@@ -756,7 +767,14 @@ function CodyMessage({
         </div>
         <div className="cody-msg-title">
           <div className="cody-msg-eyebrow"><CodyMark size={14} />{eyebrow}</div>
-          {title && <div className="cody-msg-h">{title}</div>}
+          {title && (
+            <div className="cody-msg-h">
+              {title}
+              {items && items.length > 0 && (
+                <span className="cody-msg-count">{items.length}</span>
+              )}
+            </div>
+          )}
         </div>
         <div className="cody-msg-actions">
           {dismissible && (
@@ -768,7 +786,7 @@ function CodyMessage({
       </div>
       {children && <div className="cody-msg-body">{children}</div>}
       {items && items.length > 0 && (
-        <div className="cody-msg-list">
+        <div className="cody-msg-list" ref={listRef}>
           {items.map((it, i) => (
             <div key={i} className={"cody-msg-list-item " + (it.kind === "alert" ? "alert" : "")}>
               <div className="ic"><Icon name={it.icon} size={15} /></div>
@@ -818,11 +836,13 @@ function Taskbar({ crumbs, actions, onAskAI, switcher }) {
 // =====================================================
 // AI ASSISTANT — Docked right rail (collapsible)
 // =====================================================
-function AIAssistant({ open, onClose, onOpen, context }) {
+function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, onOpenProject, onStartSkillRun }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [working, setWorking] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  // Guided-flow state machine — { id, step, projectId?, projectPickerPage?, projectName? }
+  const [flow, setFlow] = useState(null);
   const dragCounter = useRef(0);
   const bodyRef = useRef(null);
   const resizeRef = useRef(null);
@@ -916,7 +936,154 @@ function AIAssistant({ open, onClose, onOpen, context }) {
     }, 1400);
   };
 
-  const resetChat = () => { setMessages([]); setInput(""); setWorking(false); };
+  const resetChat = () => { setMessages([]); setInput(""); setWorking(false); setFlow(null); };
+
+  // ---- GUIDED FLOWS (Create project / Add files / Get ROM estimate) ----
+  // Helpers push specialized AI messages with embedded interactive UI
+  // (project picker, dropzone, success link). The reducer-style handlers
+  // below advance the flow based on user input.
+  const pushAI = (msg) => setMessages(m => [...m, { role: "ai", ...msg }]);
+  const pushUser = (text) => setMessages(m => [...m, { role: "user", text }]);
+
+  const projectPickerStep = (introText, page = 0) => {
+    // 4 projects per page, ordered most-recent-edit first
+    const sorted = [...(projects || [])].filter(p => !p.archived);
+    const pageStart = page * 4;
+    const pageEnd = pageStart + 4;
+    const slice = sorted.slice(pageStart, pageEnd);
+    const hasMore = sorted.length > pageEnd;
+    pushAI({
+      text: introText,
+      picker: {
+        projects: slice,
+        page,
+        hasMore,
+        allowTypeAhead: true,
+      }
+    });
+  };
+
+  const startCreateProjectFlow = () => {
+    resetChat();
+    setFlow({ id: "create-project", step: "drop" });
+    setTimeout(() => {
+      pushAI({
+        text: "Great — let's set up a new project. Drag and drop your project files (plans, specs, owner narratives) anywhere into this panel and I'll get started.",
+        dropzone: { instruction: "Drop your project files here", kind: "create" }
+      });
+    }, 200);
+  };
+
+  const startAddFilesFlow = () => {
+    resetChat();
+    setFlow({ id: "add-files", step: "pick-project", pickerPage: 0 });
+    setTimeout(() => {
+      projectPickerStep("Sure — which project would you like to add files to?", 0);
+    }, 200);
+  };
+
+  const startRomEstimateFlow = () => {
+    resetChat();
+    setFlow({ id: "rom-estimate", step: "existing-or-new" });
+    setTimeout(() => {
+      pushAI({
+        text: "Happy to run a ROM estimate. Is this for an existing project, or do you want to set up a new one?",
+        choice: {
+          options: [
+            { label: "Existing project", value: "existing", icon: "folder_open" },
+            { label: "New project", value: "new", icon: "add" },
+          ]
+        }
+      });
+    }, 200);
+  };
+
+  // React to pendingAction tokens from the App (greet pills / prompt bar)
+  useEffect(() => {
+    if (!pendingAction || !pendingAction.token) return;
+    if (pendingAction.id === "free-text" && pendingAction.payload) {
+      send(pendingAction.payload);
+    } else if (pendingAction.id === "create-project") {
+      startCreateProjectFlow();
+    } else if (pendingAction.id === "add-files") {
+      startAddFilesFlow();
+    } else if (pendingAction.id === "rom-estimate") {
+      startRomEstimateFlow();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAction && pendingAction.token]);
+
+  // ---- USER ACTIONS within an active flow ----
+  const onPickProject = (proj) => {
+    if (!flow) return;
+    pushUser(proj.name);
+    if (flow.id === "add-files") {
+      setFlow({ ...flow, step: "drop", projectId: proj.id });
+      setTimeout(() => {
+        pushAI({
+          text: `Perfect — I'll add files to ${proj.name}. Drag and drop them anywhere into this panel.`,
+          dropzone: { instruction: "Drop your files here", kind: "add-files", projectId: proj.id, projectName: proj.name }
+        });
+      }, 600);
+    } else if (flow.id === "rom-estimate") {
+      setFlow({ ...flow, step: "rom-new-files", projectId: proj.id });
+      setTimeout(() => {
+        pushAI({
+          text: `Got it — running ROM on ${proj.name}. Do you have any new files you'd like to add before I run the estimate?`,
+          dropzone: { instruction: "Drop new files here", kind: "rom-files", projectId: proj.id, projectName: proj.name, optional: true }
+        });
+      }, 600);
+    }
+  };
+  const onPickerMore = (currentPage) => {
+    const nextPage = currentPage + 1;
+    setFlow(f => f ? { ...f, pickerPage: nextPage } : f);
+    setTimeout(() => projectPickerStep("Here are some more — pick one or type the name.", nextPage), 200);
+  };
+  const onPickerTypeProject = (name) => {
+    if (!name.trim() || !flow) return;
+    const fake = { id: "typed-" + Date.now().toString(36), name: name.trim() };
+    onPickProject(fake);
+  };
+  const onChoice = (value) => {
+    if (!flow) return;
+    if (flow.id === "rom-estimate" && flow.step === "existing-or-new") {
+      pushUser(value === "existing" ? "Existing project" : "New project");
+      if (value === "existing") {
+        setFlow({ ...flow, step: "pick-project", pickerPage: 0 });
+        setTimeout(() => projectPickerStep("Which project should I estimate?", 0), 600);
+      } else {
+        setFlow({ ...flow, step: "drop", subFlow: "new-then-rom" });
+        setTimeout(() => {
+          pushAI({
+            text: "Let's set up the new project first. Drag and drop the project files into this panel.",
+            dropzone: { instruction: "Drop your project files here", kind: "create-then-rom" }
+          });
+        }, 600);
+      }
+    }
+  };
+  const onNothingNewToAdd = () => {
+    if (!flow) return;
+    pushUser("Nothing new to add.");
+    const projName = flow.projectName || (projects || []).find(p => p.id === flow.projectId)?.name || "this project";
+    setFlow({ ...flow, step: "running-rom" });
+    setTimeout(() => {
+      pushAI({
+        text: `Kicking off the ROM Estimate skill on ${projName}. I'll let you know when it finishes — you can keep working in the meantime.`,
+        successLink: { projectId: flow.projectId, projectName: projName, label: "Open " + projName, kind: "rom-running" }
+      });
+      // Fire the actual skill run animation
+      if (flow.projectId && onStartSkillRun) onStartSkillRun(flow.projectId, "estimation");
+      setFlow(null);
+    }, 800);
+  };
+  const onSuccessLinkClick = (link) => {
+    if (link.projectId && onOpenProject) {
+      onOpenProject(link.projectId);
+      onClose && onClose();
+    }
+  };
 
   // Drag-and-drop files anywhere in the body. Drag counter handles nested
   // dragenter/dragleave from child elements.
@@ -941,15 +1108,54 @@ function AIAssistant({ open, onClose, onOpen, context }) {
     const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
     if (files.length === 0) return;
     const fileList = files.map(f => f.name).join(", ");
-    setMessages(m => [...m, { role: "user", text: `Uploaded: ${fileList}` }]);
+    pushUser(`Uploaded: ${fileList}`);
     setWorking(true);
+
+    // Flow-aware drop handling — the active flow determines the AI response
+    const activeFlow = flow;
     setTimeout(() => {
       setWorking(false);
-      setMessages(m => [...m, {
-        role: "ai",
-        text: `Got it — I've indexed ${files.length} ${files.length === 1 ? "file" : "files"} (${fileList}). Want me to extract takeoffs, summarize the content, or run a skill against ${files.length === 1 ? "it" : "them"}?`,
-        suggest: ["Extract takeoffs", "Summarize the content", "Run a skill on these"],
-      }]);
+      if (activeFlow && (activeFlow.id === "create-project" || (activeFlow.id === "rom-estimate" && activeFlow.step === "drop"))) {
+        // Cody "creates" the project from the dropped files
+        const newProjectId = "new-" + Date.now().toString(36);
+        const newProjectName = "Crestview Aquatic Center"; // demo placeholder
+        if (activeFlow.id === "create-project") {
+          pushAI({
+            text: `Indexed ${files.length} ${files.length === 1 ? "file" : "files"} and set up your new project. I detected it's a ${files.length > 2 ? "civic recreation" : "commercial"} build — feel free to adjust the project name and details on Project Home.`,
+            successLink: { projectId: "rec-wellness", projectName: newProjectName, label: "Open " + newProjectName, kind: "project-created" }
+          });
+          setFlow(null);
+        } else {
+          // rom-estimate path — files dropped during new-project sub-step
+          setFlow({ ...activeFlow, step: "rom-new-files", projectId: "rec-wellness", projectName: newProjectName });
+          pushAI({
+            text: `Indexed ${files.length} ${files.length === 1 ? "file" : "files"} and created ${newProjectName}. Any other files you'd like to add before I run the ROM estimate?`,
+            dropzone: { instruction: "Drop additional files here", kind: "rom-files", projectId: "rec-wellness", projectName: newProjectName, optional: true }
+          });
+        }
+      } else if (activeFlow && activeFlow.id === "add-files" && activeFlow.step === "drop") {
+        const proj = (projects || []).find(p => p.id === activeFlow.projectId);
+        const name = proj ? proj.name : "your project";
+        pushAI({
+          text: `Done — I added ${files.length} ${files.length === 1 ? "file" : "files"} to ${name} and indexed ${files.length === 1 ? "it" : "them"} so I can reference ${files.length === 1 ? "it" : "them"} in any future skill run.`,
+          successLink: { projectId: activeFlow.projectId, projectName: name, label: "Open " + name, kind: "files-added" }
+        });
+        setFlow(null);
+      } else if (activeFlow && activeFlow.id === "rom-estimate" && activeFlow.step === "rom-new-files") {
+        const projName = activeFlow.projectName || (projects || []).find(p => p.id === activeFlow.projectId)?.name || "your project";
+        pushAI({
+          text: `Indexed ${files.length} new ${files.length === 1 ? "file" : "files"}. Kicking off the ROM Estimate on ${projName} now — I'll surface results when it's done.`,
+          successLink: { projectId: activeFlow.projectId, projectName: projName, label: "Open " + projName, kind: "rom-running" }
+        });
+        if (activeFlow.projectId && onStartSkillRun) onStartSkillRun(activeFlow.projectId, "estimation");
+        setFlow(null);
+      } else {
+        // Default behavior — no active flow
+        pushAI({
+          text: `Got it — I've indexed ${files.length} ${files.length === 1 ? "file" : "files"} (${fileList}). Want me to extract takeoffs, summarize the content, or run a skill against ${files.length === 1 ? "it" : "them"}?`,
+          suggest: ["Extract takeoffs", "Summarize the content", "Run a skill on these"],
+        });
+      }
     }, 1100);
   };
 
@@ -1011,7 +1217,17 @@ function AIAssistant({ open, onClose, onOpen, context }) {
         {messages.map((m, i) => (
           m.role === "user"
             ? <div key={i} className="chat-msg user"><div className="user-bubble">{m.text}</div></div>
-            : <AIResponse key={i} message={m} onSendSuggest={send} />
+            : <AIResponse
+                key={i}
+                message={m}
+                onSendSuggest={send}
+                onPickProject={onPickProject}
+                onPickerMore={onPickerMore}
+                onPickerTypeProject={onPickerTypeProject}
+                onChoice={onChoice}
+                onNothingNewToAdd={onNothingNewToAdd}
+                onSuccessLinkClick={onSuccessLinkClick}
+              />
         ))}
         {working && (
           <div className="chat-msg ai">
@@ -1049,12 +1265,98 @@ function AIAssistant({ open, onClose, onOpen, context }) {
   );
 }
 
-function AIResponse({ message, onSendSuggest }) {
+function AIResponse({ message, onSendSuggest, onPickProject, onPickerMore, onPickerTypeProject, onChoice, onNothingNewToAdd, onSuccessLinkClick }) {
+  const [typeAheadValue, setTypeAheadValue] = useState("");
   return (
     <div className="chat-msg ai">
       <Sparkle size={11} className="ai-resp-sparkle" />
       <div className="ai-resp-content">
         {message.text && <p>{message.text}</p>}
+
+        {/* Choice prompt — radio-style buttons (e.g. "Existing project" / "New project") */}
+        {message.choice && message.choice.options && (
+          <div className="ai-choice">
+            {message.choice.options.map((opt, i) => (
+              <button key={i} className="ai-choice-btn" onClick={() => onChoice && onChoice(opt.value)}>
+                {opt.icon && <Icon name={opt.icon} size={16} />}
+                <span>{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Project picker — list of 4 projects with optional "Another project" pager + type-ahead */}
+        {message.picker && (
+          <div className="ai-picker">
+            {message.picker.projects.map((p, i) => (
+              <button key={p.id || i} className="ai-picker-row" onClick={() => onPickProject && onPickProject(p)}>
+                <Icon name={p.icon || "folder_open"} size={16} className="ai-picker-icon" />
+                <div className="ai-picker-meta">
+                  <div className="ai-picker-name">{p.name}</div>
+                  {p.kind && <div className="ai-picker-sub">{p.kind}</div>}
+                </div>
+                <Icon name="arrow_forward" size={14} className="ai-picker-go" />
+              </button>
+            ))}
+            {message.picker.hasMore && (
+              <button className="ai-picker-more" onClick={() => onPickerMore && onPickerMore(message.picker.page)}>
+                <Icon name="more_horiz" size={14} />Another project
+              </button>
+            )}
+            {message.picker.allowTypeAhead && (
+              <div className="ai-picker-typeahead">
+                <Icon name="search" size={14} />
+                <input
+                  type="text"
+                  placeholder="Or type a project name…"
+                  value={typeAheadValue}
+                  onChange={(e) => setTypeAheadValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && typeAheadValue.trim()) { onPickerTypeProject && onPickerTypeProject(typeAheadValue); setTypeAheadValue(""); } }}
+                />
+                <button
+                  className="ai-picker-typeahead-go"
+                  disabled={!typeAheadValue.trim()}
+                  onClick={() => { onPickerTypeProject && onPickerTypeProject(typeAheadValue); setTypeAheadValue(""); }}>
+                  Use
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Inline dropzone — instructs user to drop files anywhere in the panel */}
+        {message.dropzone && (
+          <div className="ai-inline-dropzone">
+            <Icon name="cloud_upload" size={28} />
+            <div className="ai-inline-dropzone-title">{message.dropzone.instruction}</div>
+            <div className="ai-inline-dropzone-sub">Drag files anywhere into this panel</div>
+            {message.dropzone.optional && (
+              <button className="ai-inline-dropzone-skip" onClick={() => onNothingNewToAdd && onNothingNewToAdd()}>
+                <Icon name="check" size={14} />Nothing new to add
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Success card — primary CTA links back to the relevant project */}
+        {message.successLink && (
+          <div className={"ai-success-link " + (message.successLink.kind === "rom-running" ? "running" : "")}>
+            <div className="ai-success-icon">
+              <Icon name={message.successLink.kind === "rom-running" ? "auto_awesome" : "check_circle"} size={20} />
+            </div>
+            <div className="ai-success-meta">
+              <div className="ai-success-title">{message.successLink.projectName}</div>
+              <div className="ai-success-sub">
+                {message.successLink.kind === "project-created" && "Project created · ready to explore"}
+                {message.successLink.kind === "files-added" && "Files added · indexed and ready"}
+                {message.successLink.kind === "rom-running" && "ROM estimate is running"}
+              </div>
+            </div>
+            <button className="ai-success-cta" onClick={() => onSuccessLinkClick && onSuccessLinkClick(message.successLink)}>
+              Open<Icon name="arrow_forward" size={14} />
+            </button>
+          </div>
+        )}
         {message.table && (
           <div className="ai-resp-table">
             <div className="ai-resp-table-title">{message.table.title}</div>

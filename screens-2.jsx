@@ -91,9 +91,6 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         actions={
         <>
             <PinButton pinId={project.id} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className={"btn " + (editMode ? "btn-primary" : "")} onClick={() => setEditMode && setEditMode(!editMode)} style={editMode ? { background: "var(--orange-500)", color: "#fff", border: "none" } : {}}>
-              <Icon name={editMode ? "check" : "edit"} size={16} />{editMode ? "Done editing" : "Edit mode"}
-            </button>
             <button className="btn"><Icon name="share" size={16} />Share</button>
             <button className="btn-primary" onClick={() => onOpenTab("skills")}><Icon name="play_arrow" size={16} />Run a skill</button>
           </>
@@ -103,38 +100,35 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
       
       <div className="canvas">
         {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 8 }}>{project.kind}</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <h2 className="page-h1" style={{ fontSize: 30 }}>
-              <EditableText
-                editMode={editMode}
-                editKey={"project:" + project.id + ":name"}
-                original={project.name}
-                value={edits && edits["project:" + project.id + ":name"] && edits["project:" + project.id + ":name"].value}
-                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Project name")}
-              />
-            </h2>
-            {project.scope &&
-            <div className="scope-tip" tabIndex="0">
-                <Icon name="info" size={18} style={{ color: "#007BA7", cursor: "help" }} />
-                <div className="scope-pop">
-                  <div className="scope-pop-h">
-                    <CodyMark size={14} />
-                    <span>Project scope</span>
-                    <button className="scope-edit-btn" onClick={(e) => {e.stopPropagation();onAskAI && onAskAI();}}><Icon name="edit" size={11} />Edit</button>
+        <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
+          {/* LEFT — heading text (kind eyebrow · project name · address/stage) */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 8 }}>{project.kind}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <h2 className="page-h1" style={{ fontSize: 30, margin: 0 }}>
+                <EditableText
+                  editMode={editMode}
+                  editKey={"project:" + project.id + ":name"}
+                  original={project.name}
+                  value={edits && edits["project:" + project.id + ":name"] && edits["project:" + project.id + ":name"].value}
+                  onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Project name")}
+                />
+              </h2>
+              {project.scope &&
+              <div className="scope-tip" tabIndex="0">
+                  <Icon name="info" size={18} style={{ color: "#007BA7", cursor: "help" }} />
+                  <div className="scope-pop">
+                    <div className="scope-pop-h">
+                      <CodyMark size={14} />
+                      <span>Project scope</span>
+                      <button className="scope-edit-btn" onClick={(e) => {e.stopPropagation();onAskAI && onAskAI();}}><Icon name="edit" size={11} />Edit</button>
+                    </div>
+                    <p>{project.scope}</p>
+                    <div className="scope-source">Generated from 14 documents · Cody · Apr 28</div>
                   </div>
-                  <p>{project.scope}</p>
-                  <div className="scope-source">Generated from 14 documents · Cody · Apr 28</div>
                 </div>
-              </div>
-            }
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-              {project.status === "working" && <span className="badge b-working"><span className="dot" />{project.statusLabel}</span>}
-              {project.status === "done" && <span className="badge b-done">{project.statusLabel}</span>}
+              }
             </div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginTop: 4, flexWrap: "wrap" }}>
             <p className="page-sub" style={{ margin: 0 }}>
               <EditableText
                 editMode={editMode}
@@ -152,6 +146,16 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
                 onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Stage")}
               />
             </p>
+          </div>
+
+          {/* RIGHT — status badge stacked above the revision selector, bottom-aligned with page-sub */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+            {(project.status === "working" || project.status === "done") && (
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {project.status === "working" && <span className="badge b-working"><span className="dot" />{project.statusLabel}</span>}
+                {project.status === "done" && <span className="badge b-done">{project.statusLabel}</span>}
+              </div>
+            )}
             {revisions.length > 0 && (
               <div className="rev-dd" ref={revRef}>
                 <button className="rev-trigger" onClick={(e) => { e.stopPropagation(); setRevOpen(o => !o); }}>
@@ -266,12 +270,30 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
 
         {/* RUN A SKILL — full-width 3-card row */}
         {/* QUICK GLANCE — KPI strip (heading-less) */}
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 28 }}>
-          <div className="kpi"><Icon className="bg" name="payments" /><div className="label">Latest ROM Estimate</div><div className="value">{project.estimate}</div><div className="delta up"><Icon name="trending_up" size={14} />+2.3% vs v2</div></div>
-          <div className="kpi"><Icon className="bg" name="upload_file" /><div className="label">Documents</div><div className="value">{project.files}</div><div className="delta" style={{ color: "var(--bc-muted)" }}>3 added today</div></div>
-          <div className="kpi"><Icon className="bg" name="rule" /><div className="label">Open clarifications</div><div className="value">23</div><div className="delta up"><Icon name="warning" size={14} />3 critical</div></div>
-          <div className="kpi"><Icon className="bg" name="auto_awesome" /><div className="label">Skill confidence</div><div className="value">91%</div><div className="delta down"><Icon name="check" size={14} />High</div></div>
-        </div>
+        {(() => {
+          // Derive bid submission counts from the project's bid configuration
+          const cfg = (window.BC_DATA && window.BC_DATA.bidConfig && window.BC_DATA.bidConfig[project.id]) || { trades: [], files: [] };
+          const bidsSubmitted = (cfg.files || []).length;
+          const tradesWithBids = new Set((cfg.files || []).map(f => f.tradeId)).size;
+          return (
+            <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 28 }}>
+              <div className="kpi"><Icon className="bg" name="payments" /><div className="label">Latest ROM Estimate</div><div className="value">{project.estimate}</div><div className="delta up"><Icon name="trending_up" size={14} />+2.3% vs v2</div></div>
+              <div className="kpi"><Icon className="bg" name="rule" /><div className="label">Open clarifications</div><div className="value">23</div><div className="delta up"><Icon name="warning" size={14} />3 critical</div></div>
+              <div className="kpi">
+                <Icon className="bg" name="inventory" />
+                <div className="label">Bids Submitted</div>
+                <div className="value">{bidsSubmitted}</div>
+                <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                  {bidsSubmitted === 0
+                    ? "No bids received yet"
+                    : <>Across <b style={{ color: "var(--bc-strong)" }}>{tradesWithBids}</b> trade{tradesWithBids === 1 ? "" : "s"}</>
+                  }
+                </div>
+              </div>
+              <div className="kpi"><Icon className="bg" name="upload_file" /><div className="label">Documents</div><div className="value">{project.files}</div><div className="delta" style={{ color: "var(--bc-muted)" }}>3 added today</div></div>
+            </div>
+          );
+        })()}
 
         <div className="section-h"><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
@@ -378,7 +400,10 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         {/* RECENT SKILL RUNS — table only, no section heading. Scoped to this project. */}
         {(() => {
           const allRuns = (window.BC_DATA && window.BC_DATA.runs) || [];
-          const projectRuns = allRuns.filter(r => r.projectId === project.id);
+          const projectRuns = allRuns
+            .filter(r => r.projectId === project.id)
+            .slice()
+            .sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
           if (projectRuns.length === 0) return null;
           const skillIcon = (name) =>
             name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :

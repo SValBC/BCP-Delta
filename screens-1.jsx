@@ -4,7 +4,14 @@ const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 // =====================================================
 // HOME
 // =====================================================
-function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu }) {
+function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu, onAskCodyPrompt, onStartCreateProjectFlow, onStartAddFilesFlow, onStartRomEstimateFlow }) {
+  const [greetPrompt, setGreetPrompt] = useS("");
+  const submitGreetPrompt = () => {
+    const t = greetPrompt.trim();
+    if (!t) return;
+    onAskCodyPrompt && onAskCodyPrompt(t);
+    setGreetPrompt("");
+  };
   const skillIcon = (name) =>
     name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
     name === "Bid Level Analysis" ? "compare_arrows" :
@@ -52,11 +59,37 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
           <div className="greet-content">
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "rgba(39,38,53,0.55)", marginBottom: 8 }}>Tuesday morning · April 28</div>
             <h1>Welcome back, Jamie.</h1>
-            <p>Cody wrapped 3 runs overnight. The Recreational and Wellness Center estimate is ready for your review — there's a flag on Division 09 that's worth a look.</p>
+
+            {/* Inline Cody prompt bar — submitting routes the text into the Ask Cody panel */}
+            <div className="greet-prompt" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
+              <CodyMark size={16} className="greet-prompt-spark" />
+              <input
+                type="text"
+                placeholder="Ask Cody anything — or pick a quick action below"
+                value={greetPrompt}
+                onChange={(e) => setGreetPrompt(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
+              />
+              <button
+                className="greet-prompt-send"
+                disabled={!greetPrompt.trim()}
+                onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
+                title="Send to Cody">
+                <Icon name="arrow_forward" size={16} />
+              </button>
+            </div>
+
             <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
               <button className="ai-pill" onClick={onOpenDailyReport || onAskAI}><Icon name="auto_awesome" size={14} style={{ color: "#fff" }} />Brief me on overnight</button>
-              <button className="quick-pill" onClick={onNewProject}><Icon name="add" size={14} />Create new project</button>
-              <button className="quick-pill" onClick={() => onOpenProject("rec-wellness", { tab: "files" })}><Icon name="upload_file" size={14} />Add files to an existing project</button>
+              <button className="quick-pill" onClick={() => onStartCreateProjectFlow ? onStartCreateProjectFlow() : (onNewProject && onNewProject())}>
+                <Icon name="add" size={14} />Create new project
+              </button>
+              <button className="quick-pill" onClick={() => onStartRomEstimateFlow && onStartRomEstimateFlow()}>
+                <Icon name="calculate" size={14} />Get a ROM estimate
+              </button>
+              <button className="quick-pill" onClick={() => onStartAddFilesFlow ? onStartAddFilesFlow() : onOpenProject("rec-wellness", { tab: "files" })}>
+                <Icon name="upload_file" size={14} />Add files to an existing project
+              </button>
             </div>
           </div>
           <span className="robot"><img src="design-system/cody.png" alt="" /></span>
@@ -148,7 +181,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
           <table className="bc-table">
             <thead><tr><th>Skill</th><th>Project</th><th>Status</th><th>When</th><th className="num">Result</th></tr></thead>
             <tbody>
-              {runs.map((r) =>
+              {[...runs].sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || "")).map((r) =>
               <tr key={r.id} style={{ cursor: "pointer" }} onClick={() => {
                 const tab = r.status === "done" ? skillToTab(r.skill) : null;
                 if (tab) onOpenProject(r.projectId, { tab });
@@ -332,11 +365,6 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          <div className="pin-card" onClick={onNewProject} style={{ gridColumn: "1 / -1", justifySelf: "start", width: 280, minHeight: 180, padding: "20px 24px", background: "transparent", border: "1.5px dashed rgba(39,38,53,0.20)", color: "var(--bc-muted)", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-            <Icon name="add_circle_outline" size={40} style={{ color: "var(--orange-500)" }} />
-            <div style={{ fontWeight: 700, marginTop: 8, color: "var(--bc-strong)" }}>Start a new project</div>
-            <div style={{ fontSize: 12 }}>Upload plans and specs to get started</div>
-          </div>
           {sorted.map((p) =>
           <div key={p.id} className="pin-card" style={{ minHeight: 180, padding: "20px 24px" }} onClick={() => onOpen(p.id)}
                onContextMenu={(e) => onCtxMenu && onCtxMenu([
