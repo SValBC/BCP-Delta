@@ -272,14 +272,14 @@ button { font-family: inherit; }
 }
 .tab:hover { background: rgba(255,255,255,0.10); }
 .tab.active {
-  background: var(--cream-50);
+  background: #fff;
   color: var(--raisin-800);
   border-color: rgba(0,0,0,0.06);
 }
 .tab.active::after {
   content: "";
   position: absolute; left: 0; right: 0; bottom: -1px;
-  height: 2px; background: var(--cream-50);
+  height: 2px; background: #fff;
 }
 .tab-progress {
   position: absolute; left: 0; bottom: 0;
@@ -915,7 +915,7 @@ button { font-family: inherit; }
   border-radius: 100px;
   padding: 8px 8px 8px 16px;
   margin-top: 20px;
-  max-width: 580px;
+  width: 100%;
   cursor: text;
   transition: border-color 120ms, box-shadow 120ms;
 }
@@ -1175,6 +1175,27 @@ button { font-family: inherit; }
 .kpi .delta { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 .kpi .delta.up { color: var(--orange-500); }
 .kpi .delta.down { color: var(--tiffany-400); }
+/* Clickable KPI cards — navigate to a skill result. Orange new-tab hint
+   sits top-right; the whole card lifts subtly on hover. */
+.kpi.kpi-clickable { cursor: pointer; transition: border-color 140ms, box-shadow 140ms, transform 140ms; }
+.kpi.kpi-clickable:hover {
+  box-shadow: 0 4px 12px rgba(39,38,53,0.08);
+  transform: translateY(-1px);
+}
+.kpi.kpi-clickable:focus-visible {
+  outline: 2px solid var(--orange-500);
+  outline-offset: 2px;
+}
+.kpi-open-hint {
+  position: absolute; top: 12px; right: 12px;
+  color: var(--orange-500);
+  opacity: 0.55;
+  z-index: 2;
+  display: inline-flex;
+  transition: opacity 140ms;
+}
+.kpi.kpi-clickable:hover .kpi-open-hint { opacity: 1; }
+
 .kpi .mi.bg {
   position: absolute; right: -16px; bottom: -28px;
   font-size: 130px; color: var(--raisin-800); opacity: 0.04;
@@ -1380,7 +1401,7 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   min-height: 112px;
   transition: border-color 140ms, box-shadow 140ms, transform 140ms;
 }
-.da-tile:hover { border-color: var(--orange-500); box-shadow: 0 4px 14px rgba(232,70,0,0.10); transform: translateY(-1px); }
+.da-tile:hover { box-shadow: 0 4px 12px rgba(39,38,53,0.08); transform: translateY(-1px); }
 .da-tile-code {
   font-family: var(--font-data); font-weight: 700; font-size: 10.5px;
   color: var(--bc-muted); letter-spacing: 0.04em;
@@ -1471,11 +1492,8 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .da-back { padding: 4px 8px !important; margin-bottom: 12px; }
 .da-writeup-h {
   display: flex; align-items: center; gap: 20px;
-  background: #fff;
-  border: 1px solid rgba(39,38,53,0.10);
-  border-radius: 12px;
-  padding: 20px 24px;
-  margin-bottom: 16px;
+  padding-top: 24px;
+  padding-bottom: 16px;
 }
 .da-writeup-code {
   font-family: var(--font-display); font-weight: 800; font-size: 30px;
@@ -1584,7 +1602,6 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 [data-theme="dark"] .da-tile-tooltip { background: #1c1b25; box-shadow: 0 6px 24px rgba(0,0,0,0.40); }
 [data-theme="dark"] .da-tile-tooltip::before { background: #1c1b25; }
 [data-theme="dark"] .da-tile-amt { color: #fff; }
-[data-theme="dark"] .da-writeup-h { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
 [data-theme="dark"] .da-writeup-title h2 { color: #fff; }
 [data-theme="dark"] .da-stat-value { color: #fff; }
 [data-theme="dark"] .da-acc-item { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.10); }
@@ -1994,19 +2011,25 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .greet { justify-content: flex-start; }
 .greet .robot {
   display: block;
-  width: 128px; height: 200px;
+  width: 160px; height: 200px;
   overflow: hidden;
-  margin: 0 48px -24px 0;
+  margin: 0 24px -24px 0;
   flex-shrink: 0;
   pointer-events: none;
   align-self: flex-end;
   order: -1;
 }
-.greet .robot img {
+.greet .robot img,
+.greet .robot video {
   display: block;
   height: 100%; width: auto;
   margin-left: -16px;
   transform: scaleX(-1);
+}
+/* Video plays in its native orientation, left-aligned in the 160px box. */
+.greet .robot video {
+  transform: none;
+  margin-left: 0;
 }
 .greet-content { flex: 0 1 auto; min-width: 0; max-width: 800px; position: relative; z-index: 2; }
 
@@ -2584,7 +2607,6 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   display: flex; flex-direction: column;
 }
 .drawing-card:hover {
-  border-color: var(--orange-500);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(39,38,53,0.08);
 }
@@ -3428,6 +3450,18 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   box-shadow: 0 2px 10px rgba(232,70,0,0.06);
 }
 .skill-loading-h { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+/* Stop button on the skill-result loading shell */
+.skill-loading-stop {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+  background: transparent; border: 1px solid rgba(168,25,13,0.30);
+  color: var(--danger);
+  font-family: var(--font-ui); font-size: 12px; font-weight: 700;
+  padding: 6px 14px; border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.skill-loading-stop:hover { background: rgba(168,25,13,0.08); border-color: var(--danger); }
 .skill-loading-spinner {
   width: 28px; height: 28px; border-radius: 100px;
   border: 3px solid rgba(232,70,0,0.20);
@@ -4424,6 +4458,57 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
    COLLAPSED NAV — icons-only sidebar (.col-nav.is-collapsed)
    ============================================================ */
 
+/* Shared transition tokens — applied across the side panels to give the
+   collapse / expand animation a deliberate "advanced machinery" feel.
+   The cubic-bezier curve is a strong ease-in-out (slow start, swift mid,
+   gentle settle) so the panels feel heavy and engineered rather than
+   springy. */
+:root {
+  --panel-shift-curve: cubic-bezier(0.76, 0, 0.24, 1);
+  --panel-shift-duration: 600ms;
+}
+
+/* The grid columns themselves animate when --col-1 or --col-ai change.
+   Modern browsers transition grid-template-columns when the values are
+   the same shape (length → length), which is true here. */
+.app {
+  transition: grid-template-columns var(--panel-shift-duration) var(--panel-shift-curve);
+}
+
+/* Nav rail container — padding shifts (12px → 4px) as the rail collapses */
+.col-nav {
+  transition:
+    padding var(--panel-shift-duration) var(--panel-shift-curve),
+    background 140ms ease;
+}
+
+/* Individual nav items — their box dimensions animate alongside the rail.
+   Keep hover/color feedback fast so interactions stay snappy. */
+.col-nav .nav-item {
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    width var(--panel-shift-duration) var(--panel-shift-curve),
+    height var(--panel-shift-duration) var(--panel-shift-curve),
+    padding var(--panel-shift-duration) var(--panel-shift-curve),
+    gap var(--panel-shift-duration) var(--panel-shift-curve);
+}
+
+/* AI panel — when --col-ai shifts, the grid column transition above
+   carries the width animation. Padding/border smoothing keeps the
+   internal chrome from popping during the resize. */
+.ai-panel,
+.ai-rail-collapsed {
+  transition:
+    width var(--panel-shift-duration) var(--panel-shift-curve),
+    padding var(--panel-shift-duration) var(--panel-shift-curve);
+}
+
+/* Brand area — padding animates so the logo recenters smoothly */
+.col-nav .brand {
+  transition: padding var(--panel-shift-duration) var(--panel-shift-curve);
+}
+
 /* Collapse toggle button — sits in the top-right of the rail */
 .nav-collapse-btn {
   position: absolute; top: 16px; right: -12px;
@@ -4439,15 +4524,51 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   z-index: 5;
 }
 .nav-collapse-btn:hover { background: var(--orange-500); border-color: var(--orange-500); color: #fff; }
+/* Chevron rotates 180° as the panel collapses — adds a subtle mechanical
+   detail to the toggle gesture. */
+.nav-collapse-btn .mi {
+  transition: transform var(--panel-shift-duration) var(--panel-shift-curve);
+}
 .col-nav { position: relative; }
 
-/* Brand swap — hex-only logo when collapsed. Natural aspect ratio (108:120)
-   sized by height to keep proportions correct inside the 56px rail. */
-.brand .brand-icon { width: auto; height: 32px; display: block; }
-.col-nav.is-collapsed .brand {
-  justify-content: center;
-  padding: 4px 0 16px;
+/* Brand area — both logos always mounted (cross-fade), but positioned
+   differently per state: full logo is LEFT-aligned when expanded, hex icon
+   is CENTERED when collapsed. */
+.brand { position: relative; min-height: 32px; }
+.brand .brand-full,
+.brand .brand-icon {
+  position: absolute;
+  top: 50%;
+  transition:
+    opacity calc(var(--panel-shift-duration) * 0.7) var(--panel-shift-curve),
+    transform var(--panel-shift-duration) var(--panel-shift-curve);
 }
+/* Full logo — left-aligned inside the expanded rail */
+.brand .brand-full {
+  width: auto; height: 26px;
+  left: 12px;
+  transform: translateY(-50%) scale(1);
+  opacity: 1;
+  transform-origin: left center;
+}
+.brand .brand-full.is-hidden {
+  opacity: 0;
+  transform: translateY(-50%) scale(0.9);
+  pointer-events: none;
+}
+/* Hex icon — centered in the collapsed rail */
+.brand .brand-icon {
+  width: auto; height: 32px; display: block;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.85);
+  opacity: 0;
+  pointer-events: none;
+}
+.brand .brand-icon:not(.is-hidden) {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.col-nav.is-collapsed .brand { padding: 4px 0 16px; }
 
 /* When collapsed: center icons, hide labels/counts/sublabels/section headers.
    Sized to match the 56px width of .ai-rail-collapsed on the opposite side. */
@@ -4455,7 +4576,26 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   padding: 20px 4px 12px;
   align-items: center;
 }
-.col-nav.is-collapsed .nav-section { display: none; }
+/* Section headers — slide-collapse smoothly instead of disappearing.
+   max-height + opacity gives the heading a wipe-away effect that aligns
+   with the rest of the panel's mechanical-feel transition. */
+.nav-section {
+  transition:
+    opacity calc(var(--panel-shift-duration) * 0.55) var(--panel-shift-curve),
+    max-height var(--panel-shift-duration) var(--panel-shift-curve),
+    padding var(--panel-shift-duration) var(--panel-shift-curve),
+    margin var(--panel-shift-duration) var(--panel-shift-curve);
+  opacity: 1;
+  max-height: 48px;
+  overflow: hidden;
+}
+.col-nav.is-collapsed .nav-section {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+}
 .col-nav.is-collapsed .nav-item {
   width: 40px; height: 40px;
   padding: 0;
@@ -4463,10 +4603,30 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   gap: 0;
   flex-shrink: 0;
 }
-.col-nav.is-collapsed .nav-item > span,
+/* Labels and counts — fade + collapse rather than snap-hide so the nav
+   item visually compresses around the icon as the rail shrinks. */
+.col-nav .nav-item > span:not(.mi):not(.run-dot),
+.col-nav .nav-item > .count,
+.col-nav .nav-item .recent-label,
+.col-nav .nav-item .recent-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    opacity calc(var(--panel-shift-duration) * 0.5) var(--panel-shift-curve),
+    max-width var(--panel-shift-duration) var(--panel-shift-curve),
+    margin var(--panel-shift-duration) var(--panel-shift-curve);
+  opacity: 1;
+  max-width: 220px;
+}
+.col-nav.is-collapsed .nav-item > span:not(.mi):not(.run-dot),
 .col-nav.is-collapsed .nav-item > .count,
 .col-nav.is-collapsed .nav-item .recent-label,
-.col-nav.is-collapsed .nav-item .recent-sub { display: none; }
+.col-nav.is-collapsed .nav-item .recent-sub {
+  opacity: 0;
+  max-width: 0;
+  margin: 0;
+  pointer-events: none;
+}
 .col-nav.is-collapsed .nav-item .run-dot {
   position: absolute;
   top: 8px; right: 8px;
@@ -4479,18 +4639,63 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   width: 40px; height: 40px;
   padding: 0; justify-content: center; gap: 0;
 }
-.col-nav.is-collapsed .theme-cycle > span:not(.theme-cycle-dots) { display: none; }
-.col-nav.is-collapsed .theme-cycle-dots { display: none; }
+.theme-cycle > span:not(.theme-cycle-dots):not(.mi),
+.theme-cycle-dots {
+  transition:
+    opacity calc(var(--panel-shift-duration) * 0.5) var(--panel-shift-curve),
+    max-width var(--panel-shift-duration) var(--panel-shift-curve),
+    margin var(--panel-shift-duration) var(--panel-shift-curve);
+  opacity: 1;
+  max-width: 220px;
+  overflow: hidden;
+}
+.col-nav.is-collapsed .theme-cycle > span:not(.theme-cycle-dots):not(.mi),
+.col-nav.is-collapsed .theme-cycle-dots {
+  opacity: 0;
+  max-width: 0;
+  margin: 0;
+  pointer-events: none;
+}
 .col-nav.is-collapsed .nav-divider { margin: 8px 0; width: 32px; }
 .col-nav.is-collapsed .user-card-wrap { width: 40px; }
 .col-nav.is-collapsed .user-card {
   padding: 0;
+  /* gap: 0 — collapse the flex gaps so hidden children don't push the
+     avatar off-center inside the 40px rail. */
+  gap: 0;
   justify-content: center;
   background: transparent;
 }
-.col-nav.is-collapsed .user-card .who { display: none; }
+.user-card { transition: gap var(--panel-shift-duration) var(--panel-shift-curve), padding var(--panel-shift-duration) var(--panel-shift-curve); }
+.user-card .who {
+  transition:
+    opacity calc(var(--panel-shift-duration) * 0.5) var(--panel-shift-curve),
+    max-width var(--panel-shift-duration) var(--panel-shift-curve),
+    margin var(--panel-shift-duration) var(--panel-shift-curve);
+  opacity: 1;
+  max-width: 220px;
+  overflow: hidden;
+}
+.user-card .avatar { transition: margin var(--panel-shift-duration) var(--panel-shift-curve); }
+.col-nav.is-collapsed .user-card .who {
+  opacity: 0;
+  max-width: 0;
+  margin: 0;
+}
 .col-nav.is-collapsed .user-card .avatar { margin: 0; }
-.col-nav.is-collapsed .user-card .mi { display: none; }
+.col-nav.is-collapsed .user-card .mi {
+  opacity: 0;
+  max-width: 0;
+  margin: 0;
+  pointer-events: none;
+}
+.user-card .mi {
+  transition:
+    opacity calc(var(--panel-shift-duration) * 0.5) var(--panel-shift-curve),
+    max-width var(--panel-shift-duration) var(--panel-shift-curve);
+  opacity: 0.5;
+  max-width: 24px;
+}
 .col-nav.is-collapsed .user-menu { left: calc(100% + 12px); top: 0; min-width: 220px; }
 
 /* Icon coloring in the collapsed rail — explicit per theme. Forces full

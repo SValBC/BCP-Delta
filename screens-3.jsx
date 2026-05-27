@@ -1,7 +1,7 @@
 // BuildCrew.AI — Skill results: Estimation (HERO), RFC, Bid Leveling
 
 // Shared loading skeleton used by every skill result screen while a run is in progress.
-function SkillLoadingShell({ projectName, title, progress }) {
+function SkillLoadingShell({ projectName, title, progress, onStop }) {
   const p = Math.max(0, Math.min(100, progress || 0));
   const stage = p < 25 ? "Reading project documents"
     : p < 55 ? "Extracting line items"
@@ -17,10 +17,15 @@ function SkillLoadingShell({ projectName, title, progress }) {
       <div className="skill-loading-card">
         <div className="skill-loading-h">
           <span className="skill-loading-spinner" />
-          <div>
+          <div style={{ flex: 1 }}>
             <div className="skill-loading-stage"><span className="dot" />{stage}…</div>
             <div className="skill-loading-pct">{Math.round(p)}% complete</div>
           </div>
+          {onStop && (
+            <button className="skill-loading-stop" onClick={onStop} title="Stop this run">
+              <Icon name="stop" size={14} />Stop run
+            </button>
+          )}
         </div>
         <div className="skill-loading-bar"><div style={{ width: p + "%" }} /></div>
       </div>
@@ -115,7 +120,7 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
 // =====================================================
 // ESTIMATION REPORT — HERO, with edit mode
 // =====================================================
-function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress, onRerun, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const data = window.BC_DATA.estimation;
   const [edits, setEdits] = uS3({}); // line item id -> { unitCost, qty, name }
   const [editingCell, setEditingCell] = uS3(null); // {id, field}
@@ -226,7 +231,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Rough Order of Magnitude (ROM) Estimate", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
-      <SkillLoadingShell projectName={project.name} title="Rough Order of Magnitude (ROM) Estimate" progress={loadProgress} />
+      <SkillLoadingShell projectName={project.name} title="Rough Order of Magnitude (ROM) Estimate" progress={loadProgress} onStop={onStop} />
     </div>
   );
 
@@ -875,7 +880,7 @@ function Donut({ items, total }) {
 // =====================================================
 // RFC — Kanban-style by priority + edit category
 // =====================================================
-function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   // Seed each issue with a resolved flag — defaults to true for "No clarification needed".
   const initial = window.BC_DATA.rfc.issues.map(i => ({
     ...i,
@@ -915,7 +920,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Clarifications & Potential RFIs", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
-      <SkillLoadingShell projectName={project.name} title="Clarifications & Potential RFIs" progress={loadProgress} />
+      <SkillLoadingShell projectName={project.name} title="Clarifications & Potential RFIs" progress={loadProgress} onStop={onStop} />
     </div>
   );
 
@@ -1216,7 +1221,7 @@ function TradeDropdown({ trades, activeTradeId, setActiveTradeId, tradeOpen, set
   );
 }
 
-function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const data = window.BC_DATA.bidLeveling;
   const trades = data.trades || [];
   const [activeTradeId, setActiveTradeId] = uS3(trades[0] && trades[0].id);
@@ -1255,7 +1260,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
-      <SkillLoadingShell projectName={project.name} title="Bid Level Analysis" progress={loadProgress} />
+      <SkillLoadingShell projectName={project.name} title="Bid Level Analysis" progress={loadProgress} onStop={onStop} />
     </div>
   );
 

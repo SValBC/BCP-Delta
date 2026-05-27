@@ -7,7 +7,7 @@ window.BC_DATA = {
       id: "rec-wellness",
       name: "Recreational and Wellness Center",
       kind: "Commercial · 84,000 SF",
-      icon: "pool",
+      icon: "folder_open",
       status: "working",
       statusLabel: "3 skills running",
       lastEdit: "2h ago",
@@ -31,7 +31,7 @@ window.BC_DATA = {
       id: "rivergrove",
       name: "Rivergrove Residences Phase II",
       kind: "Multifamily · 48 units",
-      icon: "apartment",
+      icon: "folder_open",
       status: "done",
       statusLabel: "Estimate ready",
       lastEdit: "yesterday",
@@ -54,7 +54,7 @@ window.BC_DATA = {
       id: "westlake",
       name: "Westlake Elementary Addition",
       kind: "Education · 32,000 SF",
-      icon: "school",
+      icon: "folder_open",
       status: "draft",
       statusLabel: "Draft",
       lastEdit: "3d ago",
@@ -74,7 +74,7 @@ window.BC_DATA = {
       id: "mercy-clinic",
       name: "Mercy Outpatient Clinic",
       kind: "Healthcare · Fit-out",
-      icon: "local_hospital",
+      icon: "folder_open",
       status: "working",
       statusLabel: "1 skill running",
       lastEdit: "14m ago",
@@ -96,7 +96,7 @@ window.BC_DATA = {
       id: "bayside",
       name: "Bayside Industrial Warehouse",
       kind: "Industrial · 120,000 SF",
-      icon: "warehouse",
+      icon: "folder_open",
       status: "done",
       statusLabel: "Bid ready",
       lastEdit: "5d ago",
@@ -117,7 +117,7 @@ window.BC_DATA = {
       id: "emerson-tower",
       name: "Emerson Tower Lobby Renovation",
       kind: "Commercial · Renovation",
-      icon: "business",
+      icon: "folder_open",
       status: "draft",
       statusLabel: "Draft",
       lastEdit: "1w ago",
@@ -428,6 +428,39 @@ window.BC_DATA = {
     },
     "westlake": { trades: [], files: [] },
     "emerson-tower": { trades: [], files: [] },
+  },
+
+  // Bid Leveling sessions per project — each entry is one run of the skill,
+  // surfaced in the Project Home "Bid Tracker" tab. Clicking revisits the
+  // Bid Level Analysis result screen.
+  bidSessions: {
+    "rec-wellness": [
+      { id: "sess-rw-3", date: "May 5, 2026",  division: "Division 26", trade: "Electrical",  winner: "Stark Electric Inc.",  amount: "$502,400", savings: "$26,500", subs: 3, spread: "8.5%",  when: "2h ago" },
+      { id: "sess-rw-2", date: "May 2, 2026",  division: "Division 22", trade: "Plumbing",    winner: "ThermalTech Solutions", amount: "$369,800", savings: "$42,200", subs: 4, spread: "11.4%", when: "3d ago" },
+      { id: "sess-rw-1", date: "Apr 28, 2026", division: "Division 09", trade: "Finishes",    winner: "Pinnacle Interiors LLC", amount: "$384,720", savings: "$66,380", subs: 4, spread: "17.3%", when: "1w ago" },
+    ],
+    "rivergrove": [
+      { id: "sess-rg-2", date: "Apr 20, 2026", division: "Division 22", trade: "Plumbing", winner: "ThermalTech Solutions",  amount: "$369,800", savings: "$42,200", subs: 4, spread: "11.4%", when: "yesterday" },
+      { id: "sess-rg-1", date: "Apr 18, 2026", division: "Division 09", trade: "Finishes", winner: "Pinnacle Interiors LLC", amount: "$384,720", savings: "$66,380", subs: 4, spread: "17.3%", when: "3d ago" },
+    ],
+    "mercy-clinic": [
+      { id: "sess-mc-1", date: "May 2, 2026", division: "Division 23", trade: "HVAC", winner: "Apex Mechanical", amount: "$214,500", savings: "$18,900", subs: 3, spread: "9.8%", when: "5d ago" },
+    ],
+    "bayside": [
+      { id: "sess-bs-1", date: "Mar 15, 2026", division: "Division 05", trade: "Metals", winner: "Cascade Steel Erectors", amount: "$612,000", savings: "$54,000", subs: 3, spread: "10.2%", when: "2w ago" },
+    ],
+    "westlake": [],
+    "emerson-tower": [],
+  },
+
+  // Per-project labor rate overrides. When a project has an entry here, those
+  // rows override the global laborRates; otherwise the project inherits global.
+  laborRatesByProject: {
+    "rec-wellness": [
+      { trade: "Project Manager",     rate: 148, fringe: 0.42, region: "PDX metro", overridden: true },
+      { trade: "Superintendent",      rate: 122, fringe: 0.42, region: "PDX metro", overridden: true },
+      { trade: "Carpenter, Journey",  rate: 74,  fringe: 0.58, region: "PDX metro", overridden: true },
+    ],
   },
 
   // Bid leveling

@@ -92,8 +92,56 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
               </button>
             </div>
           </div>
-          <span className="robot"><img src="design-system/cody.png" alt="" /></span>
+          <span className="robot">
+            <video
+              src="animated/cody-greet.mp4"
+              poster="design-system/cody.png"
+              autoPlay
+              muted
+              playsInline
+              aria-hidden="true"
+              onEnded={(e) => {
+                const v = e.currentTarget;
+                // Pause on the last frame, then replay after a 10s delay.
+                setTimeout(() => { try { v.currentTime = 0; v.play(); } catch (err) {} }, 10000);
+              }}
+            />
+          </span>
         </div>
+
+        {/* RECENT PROJECTS — card grid, 64px gap from the greeting */}
+        {(() => {
+          const recent = projects.filter(p => !p.archived).slice(0, 4);
+          if (recent.length === 0) return null;
+          return (
+            <>
+              <div className="section-h" style={{ marginTop: 64 }}>
+                <Icon name="folder_open" size={16} style={{ color: "var(--orange-500)" }} />
+                <h3>RECENT PROJECTS</h3>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+                {recent.map((p) => (
+                  <div key={p.id} className="pin-card" onClick={() => onOpenProject(p.id)}
+                       onContextMenu={(e) => onCtxMenu && onCtxMenu([
+                         { label: "Open", icon: "open_in_browser", onClick: () => onOpenProject(p.id) },
+                         { label: "Open in new tab", icon: "tab", onClick: () => onOpenProjectInNewTab && onOpenProjectInNewTab(p.id) },
+                         { divider: true },
+                         { label: pinnedSet.has(p.id) ? "Unpin" : "Pin", icon: "push_pin", onClick: () => onPin(p.id) },
+                       ], e)}>
+                    <Icon className="bg" name={p.icon} />
+                    <span className="pin-kind">{p.kind}</span>
+                    <span className="pin-title">{p.name}</span>
+                    <span className="pin-meta">
+                      <Icon name="schedule" size={13} style={{ opacity: 0.55 }} />
+                      <span>Last viewed · {p.lastEdit}</span>
+                      <span style={{ marginLeft: "auto", fontWeight: 700, color: "var(--bc-strong)" }}>{p.estimate}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
         {pinnedCards.length > 0 && (
           <>
@@ -128,6 +176,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
                 if (c.kind === "drawing") {
                   return (
                     <div key={c.pinId} className="pin-card"
+                         style={{ background: "rgba(0,116,232,0.04)", border: "1px solid rgba(0,116,232,0.20)" }}
                          onClick={() => onOpenDrawing && onOpenDrawing(c.drawing.id, c.proj.id)}
                          onContextMenu={(e) => onCtxMenu && onCtxMenu([
                            { label: "Open", icon: "open_in_browser", onClick: () => onOpenDrawing && onOpenDrawing(c.drawing.id, c.proj.id) },
@@ -136,12 +185,12 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
                          ], e)}>
                       <span className="pin-toggle" onClick={(e) => {e.stopPropagation();onPin(c.pinId);}}><Icon name="push_pin" /></span>
                       <Icon className="bg" name="architecture" />
-                      <span className="pin-kind">Drawing · {c.drawing.trade}</span>
+                      <span className="pin-kind" style={{ color: "#0074E8" }}>Drawing · {c.drawing.trade}</span>
                       <span className="pin-title">{c.drawing.id} — {c.drawing.title}</span>
                       <span className="pin-meta">
-                        <Icon name="folder_open" size={13} style={{ opacity: 0.55 }} />
+                        <Icon name="folder_open" size={13} style={{ opacity: 0.55, color: "#0074E8" }} />
                         <span>{c.proj.name}</span>
-                        <span style={{ marginLeft: "auto", color: "var(--bc-muted)" }}>{c.drawing.scale}</span>
+                        <span style={{ marginLeft: "auto", color: "#0074E8", fontWeight: 700 }}>{c.drawing.scale}</span>
                       </span>
                     </div>
                   );

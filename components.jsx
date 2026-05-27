@@ -294,18 +294,22 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
   return (
     <aside className={"col-nav " + (collapsed ? "is-collapsed" : "")}>
       <div className="brand">
-        {collapsed
-          ? <img src="design-system/logo_icon.svg" alt="BuildCrew.AI" className="brand-icon" />
-          : <img src="design-system/logo-full-light.svg" alt="BuildCrew.AI" className="brand-full" />
-        }
+        {/* Both logos always mounted — visibility cross-fades on collapse for
+            a smoother mechanical transition. */}
+        <img src="design-system/logo-full-light.svg" alt="BuildCrew.AI"
+             className={"brand-full " + (collapsed ? "is-hidden" : "")} />
+        <img src="design-system/logo_icon.svg" alt=""
+             className={"brand-icon " + (collapsed ? "" : "is-hidden")}
+             aria-hidden="true" />
       </div>
 
-      {/* Toggle button — collapses/expands the nav rail */}
+      {/* Toggle button — collapses/expands the nav rail. The chevron rotates
+          180° instead of swapping glyphs so the motion stays continuous. */}
       {onToggleCollapsed && (
         <button className="nav-collapse-btn"
                 onClick={onToggleCollapsed}
                 title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          <Icon name={collapsed ? "chevron_right" : "chevron_left"} size={16} />
+          <Icon name="chevron_left" size={16} style={collapsed ? { transform: "rotate(180deg)" } : undefined} />
         </button>
       )}
 

@@ -98,7 +98,13 @@
         setShowPushGlobal(false);
       };
       const editCount = Object.keys(edits).length;
-      const [skillRuns, setSkillRuns] = useState({}); // key: "projectId/skillId" → { startTime, progress }
+      // key: "projectId/skillId" → { startTime, progress }
+      // Seeded so the Mercy Outpatient Clinic ROM card shows a loading state at
+      // 42%, matching its "running · 42%" Recent Skill Run line item. `static`
+      // means no timer drives it — it just holds at 42% conceptually.
+      const [skillRuns, setSkillRuns] = useState({
+        "mercy-clinic/estimation": { progress: 42, static: true },
+      });
       const [skillCompletions, setSkillCompletions] = useState({}); // key → { completedAt, justCompleted }
       const skillRunTimers = React.useRef({});
       const SKILL_RUN_DURATION = 7000;
@@ -334,13 +340,17 @@
         };
         const tabLabels = { overview:"", files:" — Files", skills:" — Skills", reports:" — Reports", schedule:" — Schedule" };
         const label = skillLabels[tab] || (proj.name + (tabLabels[tab] || ""));
+        // Skill-result tabs (estimation / rfc / bid) carry the skill's own icon;
+        // everything else uses the project's folder icon.
+        const skillTabIcons = { estimation: "calculate", rfc: "rule", bid: "compare_arrows" };
+        const tabIcon = skillTabIcons[tab] || (proj.icon || "folder_open");
         addTab({
           kind: "project",
           screen: "project",
           ctx: { projectId: id, tab },
           label,
           subLabel: proj.kind,
-          icon: proj.icon || "folder_open",
+          icon: tabIcon,
           projectId: id,
           force: !!opts.force
         });
@@ -552,12 +562,12 @@
             onOpenInTab={openProjectInNewTab}
           />
         );
-        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onOpenTabInNewTab={(t) => openProject(p.id, { tab: t, force: true })} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} onCtxMenu={openCtxMenu} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
         else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
         else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
-        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
-        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "rfc")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
-        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "bid")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} onStop={() => stopSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "rfc")} onStop={() => stopSkillRunCard(p.id, "rfc")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "bid")} onStop={() => stopSkillRunCard(p.id, "bid")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
         else if (tab === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} projectSwitcher={projectSwitcher} />;
         else if (tab === "schedule") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
       }

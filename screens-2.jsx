@@ -4,8 +4,10 @@ const { useState: uS2, useEffect: uE2, useRef: uR2 } = React;
 // =====================================================
 // PROJECT HOME (workspace overview when project opened)
 // =====================================================
-function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, onCtxMenu, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal }) {
   const drawings = window.BC_DATA.drawings || [];
+  // Project Home sub-tabs: overview | files | bids | labor
+  const [homeTab, setHomeTab] = uS2("overview");
   const [drawingSort, setDrawingSort] = uS2({ key: "plan", direction: "asc" });
   const toggleDrawingSort = (key) => {
     setDrawingSort(prev => prev.key === key
@@ -198,7 +200,29 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
           </div>
         </div>
 
+        {/* PROJECT HOME SUB-TABS */}
+        <div className="report-tabs" style={{ marginBottom: 4 }}>
+          <button className={"report-tab " + (homeTab === "overview" ? "active" : "")} onClick={() => setHomeTab("overview")}>
+            <Icon name="dashboard" size={14} />Overview
+          </button>
+          <button className={"report-tab " + (homeTab === "files" ? "active" : "")} onClick={() => setHomeTab("files")}>
+            <Icon name="folder_copy" size={14} />Files
+          </button>
+          <button className={"report-tab " + (homeTab === "bids" ? "active" : "")} onClick={() => setHomeTab("bids")}>
+            <Icon name="gavel" size={14} />Bid Tracker
+          </button>
+          <button className={"report-tab " + (homeTab === "labor" ? "active" : "")} onClick={() => setHomeTab("labor")}>
+            <Icon name="engineering" size={14} />Labor Rates
+          </button>
+        </div>
+
+        {homeTab === "files" && <ProjectFilesTab project={project} onOpenDrawing={onOpenDrawing} />}
+        {homeTab === "bids" && <BidTrackerTab project={project} onOpenTab={onOpenTab} onOpenTabInNewTab={onOpenTabInNewTab} onCtxMenu={onCtxMenu} />}
+        {homeTab === "labor" && <ProjectLaborTab project={project} />}
+
+        {homeTab === "overview" && <>
         {/* CODY'S BRIEF — AI-generated, top of screen, dismissible */}
+        <div style={{ marginTop: 16 }}>
         <CodyMessage
           eyebrow="Cody's brief · since yesterday at 4:42 PM"
           title="Here's what's changed since you were last here"
@@ -211,11 +235,13 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
           { kind: "platform", icon: "upload_file", title: "3 drawings indexed", body: <>Sam uploaded M-201, M-202, M-203. I extracted <b>47 new takeoff items</b> and refreshed the mechanical sheet group.</>, when: "3h ago" },
           { kind: "alert", icon: "help_outline", title: "Pool deck slip resistance missing", body: <>09 65 00 needs a <b>DCOF target</b> before this section goes out. I drafted clarification language — review and send.</>, when: "Yesterday" }]
           } />
+        </div>
 
         {/* LABOR RATES PROMPT — dismissible, drag/drop the whole card, blue theme */}
         {!laborDismissed && (
           <div
             className={"labor-prompt " + (laborDrag ? "drag" : "")}
+            style={{ marginTop: 64 }}
             onClick={() => !laborFile && laborInputRef.current && laborInputRef.current.click()}
             onDragOver={(e) => { if (!laborFile) { e.preventDefault(); setLaborDrag(true); } }}
             onDragLeave={() => setLaborDrag(false)}
@@ -275,11 +301,54 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
           const cfg = (window.BC_DATA && window.BC_DATA.bidConfig && window.BC_DATA.bidConfig[project.id]) || { trades: [], files: [] };
           const bidsSubmitted = (cfg.files || []).length;
           const tradesWithBids = new Set((cfg.files || []).map(f => f.tradeId)).size;
+
+          // ROM delta — Tiffany Blue when the estimate moved up, red when it dropped.
+          const romDeltaStr = "+2.3% vs v2";
+          const romIsIncrease = romDeltaStr.trim().startsWith("-") ? false : true;
+          const romDeltaColor = romIsIncrease ? "#48C1B5" : "#DC2626";
+
+          // Shared helper — wraps a KPI in a clickable card that opens a skill
+          // result tab, with an orange new-tab affordance + right-click menu.
+          const linkProps = (tab, skillLabel) => ({
+            className: "kpi kpi-clickable",
+            role: "button",
+            tabIndex: 0,
+            onClick: () => onOpenTab && onOpenTab(tab),
+            onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenTab && onOpenTab(tab); } },
+            onContextMenu: (e) => onCtxMenu && onCtxMenu([
+              { label: "Open", icon: "open_in_browser", onClick: () => onOpenTab && onOpenTab(tab) },
+              { label: "Open in new tab", icon: "tab", onClick: () => onOpenTabInNewTab && onOpenTabInNewTab(tab) },
+            ], e),
+            title: "Open " + skillLabel,
+          });
+          const NewTabHint = () => (
+            <span className="kpi-open-hint" title="Opens the skill result">
+              <Icon name="open_in_new" size={15} />
+            </span>
+          );
+
           return (
-            <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 28 }}>
-              <div className="kpi"><Icon className="bg" name="payments" /><div className="label">Latest ROM Estimate</div><div className="value">{project.estimate}</div><div className="delta up"><Icon name="trending_up" size={14} />+2.3% vs v2</div></div>
-              <div className="kpi"><Icon className="bg" name="rule" /><div className="label">Open clarifications</div><div className="value">23</div><div className="delta up"><Icon name="warning" size={14} />3 critical</div></div>
-              <div className="kpi">
+            <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 64, marginBottom: 28 }}>
+              <div {...linkProps("estimation", "ROM Estimate")}>
+                <NewTabHint />
+                <Icon className="bg" name="payments" />
+                <div className="label">Latest ROM Estimate</div>
+                <div className="value">{project.estimate}</div>
+                <div className="delta" style={{ color: romDeltaColor }}>
+                  <Icon name={romIsIncrease ? "trending_up" : "trending_down"} size={14} />{romDeltaStr}
+                </div>
+              </div>
+
+              <div {...linkProps("rfc", "Clarifications & Potential RFIs")}>
+                <NewTabHint />
+                <Icon className="bg" name="rule" />
+                <div className="label">Open clarifications</div>
+                <div className="value">23</div>
+                <div className="delta up"><Icon name="warning" size={14} />3 critical</div>
+              </div>
+
+              <div {...linkProps("bid", "Bid Level Analysis")}>
+                <NewTabHint />
                 <Icon className="bg" name="inventory" />
                 <div className="label">Bids Submitted</div>
                 <div className="value">{bidsSubmitted}</div>
@@ -290,13 +359,14 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
                   }
                 </div>
               </div>
+
               <div className="kpi"><Icon className="bg" name="upload_file" /><div className="label">Documents</div><div className="value">{project.files}</div><div className="delta" style={{ color: "var(--bc-muted)" }}>3 added today</div></div>
             </div>
           );
         })()}
 
-        <div className="section-h"><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
+        <div className="section-h" style={{ marginTop: 64 }}><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
           {[
           { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: null, success: false },
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
@@ -466,7 +536,7 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
         })()}
 
         {/* DRAWINGS */}
-        <div className="section-h">
+        <div className="section-h" style={{ marginTop: 64 }}>
           <Icon name="architecture" size={16} style={{ color: "var(--orange-500)" }} />
           <h3>Drawings</h3>
         </div>
@@ -543,10 +613,231 @@ function ProjectHomeScreen({ project, onOpenTab, onAskAI, onOpenDrawing, project
             </div>
           }
         </div>
+        </>}
 
       </div>
     </div>);
 
+}
+
+// =====================================================
+// PROJECT HOME — FILES TAB (content-only, scoped to the project)
+// =====================================================
+function ProjectFilesTab({ project, onOpenDrawing }) {
+  const fbp = (window.BC_DATA && window.BC_DATA.filesByProject && window.BC_DATA.filesByProject[project.id]) || [];
+  const revisions = project.revisions || [];
+  const ftypeIcon = (t) => {
+    const tt = (t || "").toLowerCase();
+    if (tt === "pdf") return { icon: "picture_as_pdf", tone: "pdf" };
+    if (tt === "dwg" || tt === "dxf") return { icon: "architecture", tone: "dwg" };
+    if (tt === "xlsx" || tt === "xls" || tt === "csv") return { icon: "table_view", tone: "sheet" };
+    if (tt === "docx" || tt === "doc" || tt === "txt") return { icon: "description", tone: "doc" };
+    if (tt === "jpg" || tt === "jpeg" || tt === "png" || tt === "image") return { icon: "image", tone: "image" };
+    return { icon: "insert_drive_file", tone: "other" };
+  };
+  const initialExpanded = {};
+  revisions.forEach((r, i) => { initialExpanded[r.id] = i >= revisions.length - 2; }); // open latest 2
+  const [expanded, setExpanded] = uS2(initialExpanded);
+  const toggleRev = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+
+  if (fbp.length === 0) {
+    return (
+      <div style={{ marginTop: 24, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12, padding: 40, textAlign: "center", color: "var(--bc-muted)" }}>
+        <Icon name="folder_off" size={36} style={{ color: "rgba(39,38,53,0.30)" }} />
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "var(--raisin-800)", marginTop: 8 }}>No files uploaded yet</div>
+        <div style={{ fontSize: 12.5, maxWidth: 360, margin: "8px auto 0", lineHeight: 1.5 }}>Drop plans, specs, and bid forms into this project and Cody will organize them by revision.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>{fbp.length} files across {revisions.length} revision{revisions.length === 1 ? "" : "s"}</div>
+        <button className="btn"><Icon name="upload" size={16} />Upload files</button>
+      </div>
+      <div className="files-tree">
+        {revisions.map(r => {
+          const revFiles = fbp.filter(f => f.revisionId === r.id);
+          const open = !!expanded[r.id];
+          return (
+            <div key={r.id} className={"files-rev " + (open ? "is-open" : "")} style={{ marginBottom: 8 }}>
+              <button className="files-rev-h" onClick={() => toggleRev(r.id)}>
+                <Icon name={open ? "expand_more" : "chevron_right"} size={16} className="files-chev" />
+                <Icon name="history" size={14} className="files-rev-icon" />
+                <div className="files-rev-meta">
+                  <div className="files-rev-name">{r.name}</div>
+                  <div className="files-rev-sub">{r.date}{r.note ? " · " + r.note : ""}</div>
+                </div>
+                <span className="files-count-pill files-count-pill-sm">{revFiles.length}</span>
+              </button>
+              {open && (revFiles.length === 0 ? (
+                <div className="files-empty files-empty-rev">No files in this revision.</div>
+              ) : (
+                <table className="bc-table files-table">
+                  <thead><tr><th style={{ width: "46%" }}>Filename</th><th style={{ width: 80 }}>Type</th><th className="num" style={{ width: 90 }}>Size</th><th style={{ width: 150 }}>Uploaded</th><th style={{ width: 140 }}>By</th></tr></thead>
+                  <tbody>
+                    {revFiles.map(f => {
+                      const ft = ftypeIcon(f.ftype);
+                      const isDrawing = /^[A-Z]-\d{3}/.test(f.name);
+                      return (
+                        <tr key={f.id} style={isDrawing ? { cursor: "pointer" } : undefined}
+                            onClick={isDrawing && onOpenDrawing ? () => { const m = f.name.match(/^([A-Z]-\d{3})/); if (m) onOpenDrawing(m[1], project.id); } : undefined}>
+                          <td><div className="files-name-cell"><span className={"files-ftype-icon files-ftype-" + ft.tone}><Icon name={ft.icon} size={16} /></span><span className="item-title files-name-text">{f.name}</span></div></td>
+                          <td><span className={"files-type-pill files-type-" + ft.tone}>{(f.ftype || "file").toUpperCase()}</span></td>
+                          <td className="num">{f.size}</td>
+                          <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-strong)" }}>{f.uploaded}</span></td>
+                          <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{f.uploadedBy}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// PROJECT HOME — BID TRACKER TAB
+// =====================================================
+function BidTrackerTab({ project, onOpenTab, onOpenTabInNewTab, onCtxMenu }) {
+  const sessions = (window.BC_DATA && window.BC_DATA.bidSessions && window.BC_DATA.bidSessions[project.id]) || [];
+
+  if (sessions.length === 0) {
+    return (
+      <div style={{ marginTop: 24, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12, padding: 40, textAlign: "center", color: "var(--bc-muted)" }}>
+        <Icon name="gavel" size={36} style={{ color: "rgba(39,38,53,0.30)" }} />
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "var(--raisin-800)", marginTop: 8 }}>No bid sessions yet</div>
+        <div style={{ fontSize: 12.5, maxWidth: 380, margin: "8px auto 0", lineHeight: 1.5 }}>Run the Bid Level Analysis skill to compare subcontractor bids. Each run will be logged here with its recommended winner.</div>
+      </div>
+    );
+  }
+
+  const open = (newTab) => (newTab ? onOpenTabInNewTab : onOpenTab) && (newTab ? onOpenTabInNewTab : onOpenTab)("bid");
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>{sessions.length} bid leveling session{sessions.length === 1 ? "" : "s"} run for this project</div>
+      </div>
+      <div className="card no-pad">
+        <table className="bc-table">
+          <thead>
+            <tr>
+              <th>Trade</th>
+              <th>Recommended winner</th>
+              <th className="num">Bids</th>
+              <th className="num">Awarded</th>
+              <th className="num">Savings</th>
+              <th>Date Run</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sessions.map(s => (
+              <tr key={s.id} style={{ cursor: "pointer" }}
+                  onClick={() => onOpenTab && onOpenTab("bid")}
+                  onContextMenu={(e) => onCtxMenu && onCtxMenu([
+                    { label: "Open results", icon: "open_in_browser", onClick: () => onOpenTab && onOpenTab("bid") },
+                    { label: "Open in new tab", icon: "tab", onClick: () => onOpenTabInNewTab && onOpenTabInNewTab("bid") },
+                  ], e)}>
+                <td>
+                  <div className="item-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name="compare_arrows" size={18} style={{ opacity: 0.55 }} /></div>
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{s.trade}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--bc-muted)" }}>{s.division}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontWeight: 600 }}>{s.winner}</span><span className="badge b-done" style={{ fontSize: 9 }}><Icon name="check" size={10} />Pick</span></div></td>
+                <td className="num">{s.subs}</td>
+                <td className="num"><b>{s.amount}</b></td>
+                <td className="num"><b style={{ color: "var(--tiffany-400)" }}>−{s.savings}</b></td>
+                <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{s.date}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// PROJECT HOME — LABOR RATES TAB (project-scoped, overrides global)
+// =====================================================
+function ProjectLaborTab({ project }) {
+  const globalRates = (window.BC_DATA && window.BC_DATA.laborRates) || [];
+  const overrides = (window.BC_DATA && window.BC_DATA.laborRatesByProject && window.BC_DATA.laborRatesByProject[project.id]) || [];
+  // Merge: project override row wins over the matching global trade row.
+  const rows = globalRates.map(g => {
+    const o = overrides.find(x => x.trade === g.trade);
+    return o ? { ...g, ...o, overridden: true } : { ...g, overridden: false };
+  });
+  const overrideCount = rows.filter(r => r.overridden).length;
+
+  const [drag, setDrag] = uS2(false);
+  const inputRef = uR2(null);
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      {/* Upload field — above the table */}
+      <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} />
+      <div
+        className={"labor-prompt " + (drag ? "drag" : "")}
+        style={{ marginTop: 0, marginBottom: 16, padding: "28px 24px" }}
+        onClick={() => inputRef.current && inputRef.current.click()}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); }}>
+        <div className="labor-prompt-title"><Icon name="payments" size={18} />Upload project labor rates</div>
+        <p>Drop a CSV or XLSX with your trade rates and overhead burdens. Uploaded rates override the global rates for this project only.</p>
+        <div className="labor-prompt-cta">
+          <Icon name="cloud_upload" size={20} />
+          <span>Drop a CSV or XLSX, or <b>click to browse</b></span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 0 12px" }}>
+        <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>
+          {rows.length} trades · {overrideCount > 0 ? <b style={{ color: "var(--orange-500)" }}>{overrideCount} project override{overrideCount === 1 ? "" : "s"}</b> : "inheriting global rates"}
+        </div>
+        <button className="btn"><Icon name="restart_alt" size={16} />Reset to global</button>
+      </div>
+
+      <div className="card no-pad">
+        <table className="bc-table">
+          <thead><tr><th>Trade</th><th className="num">Base rate</th><th className="num">Fringe</th><th className="num">Loaded rate</th><th>Source</th></tr></thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td><div className="item-title">{r.trade}</div></td>
+                <td className="num"><span className="cell-display editable">${r.rate.toFixed(2)}</span></td>
+                <td className="num"><span className="cell-display editable">{(r.fringe * 100).toFixed(0)}%</span></td>
+                <td className="num"><b>${(r.rate * (1 + r.fringe)).toFixed(2)}</b></td>
+                <td>
+                  {r.overridden
+                    ? <span className="badge b-info" style={{ background: "rgba(232,70,0,0.10)", color: "var(--orange-500)" }}>Project override</span>
+                    : <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>Global · {r.region}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Info note — below the table */}
+      <div className="labor-prompt-title" style={{ marginTop: 16 }}>
+        <Icon name="info" size={16} style={{ color: "#0074E8" }} />
+        Project rates default to your global PDX metro rates. Any edits here override the global value for this project only.
+      </div>
+    </div>
+  );
 }
 
 // =====================================================
