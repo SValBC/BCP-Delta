@@ -93,7 +93,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         actions={
         <>
             <PinButton pinId={project.id} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className="btn"><Icon name="share" size={16} />Share</button>
+            <ShareDropdown options={[
+              { label: "Email", icon: "email", onClick: () => {} },
+            ]} />
             <button className="btn-primary" onClick={() => onOpenTab("skills")}><Icon name="play_arrow" size={16} />Run a skill</button>
           </>
         }
@@ -221,7 +223,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         {homeTab === "labor" && <ProjectLaborTab project={project} />}
 
         {homeTab === "overview" && <>
-        {/* CODY'S BRIEF — AI-generated, top of screen, dismissible */}
+        {/* CODY'S BRIEF — AI-generated, top of screen, dismissible.
+            Hidden for newly created projects (no activity to summarize yet). */}
+        {!project.isNew && (
         <div style={{ marginTop: 16 }}>
         <CodyMessage
           eyebrow="Cody's brief · since yesterday at 4:42 PM"
@@ -236,6 +240,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           { kind: "alert", icon: "help_outline", title: "Pool deck slip resistance missing", body: <>09 65 00 needs a <b>DCOF target</b> before this section goes out. I drafted clarification language — review and send.</>, when: "Yesterday" }]
           } />
         </div>
+        )}
 
         {/* LABOR RATES PROMPT — dismissible, drag/drop the whole card, blue theme */}
         {!laborDismissed && (
@@ -297,7 +302,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         {/* RUN A SKILL — full-width 3-card row */}
         {/* QUICK GLANCE — KPI strip (heading-less) */}
         {(() => {
-          // Derive bid submission counts from the project's bid configuration
+          // Bid file counts (for the Bid Level KPI populated state)
           const cfg = (window.BC_DATA && window.BC_DATA.bidConfig && window.BC_DATA.bidConfig[project.id]) || { trades: [], files: [] };
           const bidsSubmitted = (cfg.files || []).length;
           const tradesWithBids = new Set((cfg.files || []).map(f => f.tradeId)).size;
@@ -307,60 +312,107 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           const romIsIncrease = romDeltaStr.trim().startsWith("-") ? false : true;
           const romDeltaColor = romIsIncrease ? "#48C1B5" : "#DC2626";
 
-          // Shared helper — wraps a KPI in a clickable card that opens a skill
-          // result tab, with an orange new-tab affordance + right-click menu.
-          const linkProps = (tab, skillLabel) => ({
+          // "Has this skill been run?" — true for any non-new project (seeded
+          // data implies prior runs), or for new projects where the skill
+          // completed during this session.
+          const isNew = !!project.isNew;
+          const ran = (skillId) => !isNew || !!(skillCompletions && skillCompletions[project.id + "/" + skillId]);
+          const romRan = ran("estimation");
+          const rfcRan = ran("rfc");
+          const bidRan = ran("bid");
+
+          // Mock numbers used when a skill ran for the first time on a new project
+          const freshRomValue = "$3.20M";
+          const freshRfcValue = 12;
+          const freshRfcCritical = 2;
+
+          // Props for a KPI that has data + should be clickable. Primary click
+          // opens the results in a new tab (matches the open-in-new-tab hint).
+          const clickableProps = (tab, skillLabel) => ({
             className: "kpi kpi-clickable",
             role: "button",
             tabIndex: 0,
-            onClick: () => onOpenTab && onOpenTab(tab),
-            onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenTab && onOpenTab(tab); } },
+            onClick: () => onOpenTabInNewTab && onOpenTabInNewTab(tab),
+            onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenTabInNewTab && onOpenTabInNewTab(tab); } },
             onContextMenu: (e) => onCtxMenu && onCtxMenu([
               { label: "Open", icon: "open_in_browser", onClick: () => onOpenTab && onOpenTab(tab) },
               { label: "Open in new tab", icon: "tab", onClick: () => onOpenTabInNewTab && onOpenTabInNewTab(tab) },
             ], e),
-            title: "Open " + skillLabel,
+            title: "Open " + skillLabel + " in a new tab",
           });
           const NewTabHint = () => (
-            <span className="kpi-open-hint" title="Opens the skill result">
-              <Icon name="open_in_new" size={15} />
-            </span>
+            <span className="kpi-open-hint"><Icon name="open_in_new" size={15} /></span>
           );
 
           return (
             <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 64, marginBottom: 28 }}>
-              <div {...linkProps("estimation", "ROM Estimate")}>
-                <NewTabHint />
-                <Icon className="bg" name="payments" />
-                <div className="label">Latest ROM Estimate</div>
-                <div className="value">{project.estimate}</div>
-                <div className="delta" style={{ color: romDeltaColor }}>
-                  <Icon name={romIsIncrease ? "trending_up" : "trending_down"} size={14} />{romDeltaStr}
-                </div>
-              </div>
-
-              <div {...linkProps("rfc", "Clarifications & Potential RFIs")}>
-                <NewTabHint />
-                <Icon className="bg" name="rule" />
-                <div className="label">Open clarifications</div>
-                <div className="value">23</div>
-                <div className="delta up"><Icon name="warning" size={14} />3 critical</div>
-              </div>
-
-              <div {...linkProps("bid", "Bid Level Analysis")}>
-                <NewTabHint />
-                <Icon className="bg" name="inventory" />
-                <div className="label">Bids Submitted</div>
-                <div className="value">{bidsSubmitted}</div>
-                <div className="delta" style={{ color: "var(--bc-muted)" }}>
-                  {bidsSubmitted === 0
-                    ? "No bids received yet"
-                    : <>Across <b style={{ color: "var(--bc-strong)" }}>{tradesWithBids}</b> trade{tradesWithBids === 1 ? "" : "s"}</>
+              {/* ROM ESTIMATE */}
+              {romRan ? (
+                <div {...clickableProps("estimation", "ROM Estimate")}>
+                  <NewTabHint />
+                  <Icon className="bg" name="payments" />
+                  <div className="label">Latest ROM Estimate</div>
+                  <div className="value">{isNew ? freshRomValue : project.estimate}</div>
+                  {isNew
+                    ? <div className="delta" style={{ color: "var(--tiffany-400)" }}><Icon name="check_circle" size={14} />ROM ready</div>
+                    : <div className="delta" style={{ color: romDeltaColor }}><Icon name={romIsIncrease ? "trending_up" : "trending_down"} size={14} />{romDeltaStr}</div>
                   }
                 </div>
-              </div>
+              ) : (
+                <div className="kpi">
+                  <Icon className="bg" name="payments" />
+                  <div className="label">Latest ROM Estimate</div>
+                  <div className="value" style={{ color: "var(--bc-muted)" }}>—</div>
+                </div>
+              )}
 
-              <div className="kpi"><Icon className="bg" name="upload_file" /><div className="label">Documents</div><div className="value">{project.files}</div><div className="delta" style={{ color: "var(--bc-muted)" }}>3 added today</div></div>
+              {/* OPEN CLARIFICATIONS */}
+              {rfcRan ? (
+                <div {...clickableProps("rfc", "Clarifications & Potential RFIs")}>
+                  <NewTabHint />
+                  <Icon className="bg" name="rule" />
+                  <div className="label">Open clarifications</div>
+                  <div className="value">{isNew ? freshRfcValue : "23"}</div>
+                  <div className="delta up"><Icon name="warning" size={14} />{isNew ? freshRfcCritical : 3} critical</div>
+                </div>
+              ) : (
+                <div className="kpi">
+                  <Icon className="bg" name="rule" />
+                  <div className="label">Open clarifications</div>
+                  <div className="value" style={{ color: "var(--bc-muted)" }}>—</div>
+                </div>
+              )}
+
+              {/* BIDS SUBMITTED */}
+              {bidRan ? (
+                <div {...clickableProps("bid", "Bid Level Analysis")}>
+                  <NewTabHint />
+                  <Icon className="bg" name="inventory" />
+                  <div className="label">Bids Submitted</div>
+                  <div className="value">{bidsSubmitted}</div>
+                  <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                    {bidsSubmitted === 0
+                      ? "No bids received yet"
+                      : <>Across <b style={{ color: "var(--bc-strong)" }}>{tradesWithBids}</b> trade{tradesWithBids === 1 ? "" : "s"}</>}
+                  </div>
+                </div>
+              ) : (
+                <div className="kpi">
+                  <Icon className="bg" name="inventory" />
+                  <div className="label">Bids Submitted</div>
+                  <div className="value" style={{ color: "var(--bc-muted)" }}>—</div>
+                </div>
+              )}
+
+              {/* DOCUMENTS — always populated; not skill-linked */}
+              <div className="kpi">
+                <Icon className="bg" name="upload_file" />
+                <div className="label">Documents</div>
+                <div className="value">{project.files}</div>
+                <div className="delta" style={{ color: "var(--bc-muted)" }}>
+                  {isNew ? <>{project.files} just added</> : "3 added today"}
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -624,8 +676,95 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
 // PROJECT HOME — FILES TAB (content-only, scoped to the project)
 // =====================================================
 function ProjectFilesTab({ project, onOpenDrawing }) {
-  const fbp = (window.BC_DATA && window.BC_DATA.filesByProject && window.BC_DATA.filesByProject[project.id]) || [];
+  const seeded = (window.BC_DATA && window.BC_DATA.filesByProject && window.BC_DATA.filesByProject[project.id]) || [];
   const revisions = project.revisions || [];
+
+  // Pad with placeholder line items so the file list length matches the
+  // Documents KPI count on the Project Home overview. Placeholders use
+  // realistic construction-doc filenames and are distributed round-robin
+  // across revisions so each one looks populated.
+  const target = project.files || 0;
+  const placeholderCount = Math.max(0, target - seeded.length);
+  const placeholderPool = [
+    { name: "A-103 — Roof plan.pdf", ftype: "pdf" },
+    { name: "A-104 — Mezzanine plan.pdf", ftype: "pdf" },
+    { name: "A-202 — Building elevations (west).pdf", ftype: "pdf" },
+    { name: "A-203 — Building elevations (east).pdf", ftype: "pdf" },
+    { name: "A-302 — Reflected ceiling plan.pdf", ftype: "pdf" },
+    { name: "A-401 — Wall sections.pdf", ftype: "pdf" },
+    { name: "A-402 — Stair sections.pdf", ftype: "pdf" },
+    { name: "A-501 — Exterior details.pdf", ftype: "pdf" },
+    { name: "A-502 — Interior details.pdf", ftype: "pdf" },
+    { name: "A-601 — Door schedule.pdf", ftype: "pdf" },
+    { name: "A-602 — Window schedule.pdf", ftype: "pdf" },
+    { name: "A-603 — Finish schedule.pdf", ftype: "pdf" },
+    { name: "A-701 — Toilet room details.pdf", ftype: "pdf" },
+    { name: "A-702 — Millwork details.pdf", ftype: "pdf" },
+    { name: "S-201 — Foundation details.pdf", ftype: "pdf" },
+    { name: "S-301 — Level 2 framing.pdf", ftype: "pdf" },
+    { name: "S-401 — Connection details.dwg", ftype: "dwg" },
+    { name: "S-501 — Lateral system details.pdf", ftype: "pdf" },
+    { name: "M-301 — HVAC details.pdf", ftype: "pdf" },
+    { name: "M-501 — Equipment schedule.pdf", ftype: "pdf" },
+    { name: "M-601 — HVAC controls schematic.pdf", ftype: "pdf" },
+    { name: "E-201 — Lighting plan.pdf", ftype: "pdf" },
+    { name: "E-301 — Panel schedule.pdf", ftype: "pdf" },
+    { name: "E-401 — One-line diagram.pdf", ftype: "pdf" },
+    { name: "E-501 — Riser diagram.pdf", ftype: "pdf" },
+    { name: "P-201 — Plumbing fixture schedule.pdf", ftype: "pdf" },
+    { name: "P-301 — Drainage diagram.pdf", ftype: "pdf" },
+    { name: "FP-101 — Fire protection plan.pdf", ftype: "pdf" },
+    { name: "FP-201 — Sprinkler details.pdf", ftype: "pdf" },
+    { name: "C-101 — Site plan.pdf", ftype: "pdf" },
+    { name: "C-201 — Grading plan.pdf", ftype: "pdf" },
+    { name: "C-301 — Utility plan.pdf", ftype: "pdf" },
+    { name: "L-101 — Landscape plan.pdf", ftype: "pdf" },
+    { name: "ID-101 — Interior elevations.pdf", ftype: "pdf" },
+    { name: "Spec — Div 03 Concrete.pdf", ftype: "pdf" },
+    { name: "Spec — Div 05 Metals.pdf", ftype: "pdf" },
+    { name: "Spec — Div 07 Thermal & Moisture.pdf", ftype: "pdf" },
+    { name: "Spec — Div 11 Equipment.pdf", ftype: "pdf" },
+    { name: "Spec — Div 22 Plumbing.pdf", ftype: "pdf" },
+    { name: "Spec — Div 23 HVAC.pdf", ftype: "pdf" },
+    { name: "Spec — Div 26 Electrical.pdf", ftype: "pdf" },
+    { name: "Spec — Div 31 Earthwork.pdf", ftype: "pdf" },
+    { name: "Spec — Div 32 Exterior improvements.pdf", ftype: "pdf" },
+    { name: "Pre-bid meeting minutes.pdf", ftype: "pdf" },
+    { name: "Subcontractor list.xlsx", ftype: "xlsx" },
+    { name: "Cost estimate worksheet.xlsx", ftype: "xlsx" },
+    { name: "RFI log.xlsx", ftype: "xlsx" },
+    { name: "Submittal log.xlsx", ftype: "xlsx" },
+    { name: "Project schedule.pdf", ftype: "pdf" },
+    { name: "Addendum 01.pdf", ftype: "pdf" },
+    { name: "Addendum 02.pdf", ftype: "pdf" },
+    { name: "Code analysis.pdf", ftype: "pdf" },
+    { name: "Environmental site assessment.pdf", ftype: "pdf" },
+    { name: "Site photo — context view.jpg", ftype: "jpg" },
+    { name: "Site photo — adjacent buildings.jpg", ftype: "jpg" },
+    { name: "LEED scorecard.xlsx", ftype: "xlsx" },
+    { name: "Sustainability narrative.docx", ftype: "docx" },
+    { name: "Cost benchmark report.pdf", ftype: "pdf" },
+  ];
+  const sizes = ["1.4 MB", "2.1 MB", "3.6 MB", "4.8 MB", "2.9 MB", "5.2 MB", "1.8 MB", "3.2 MB", "6.4 MB", "412 KB", "2.4 MB", "1.1 MB"];
+  const uploaders = ["Jamie Park", "Sam Lee"];
+  const seededNames = new Set(seeded.map(f => f.name));
+  const available = placeholderPool.filter(p => !seededNames.has(p.name));
+  const placeholders = [];
+  for (let i = 0; i < placeholderCount && revisions.length > 0; i++) {
+    const rev = revisions[i % revisions.length];
+    const item = available[i % available.length] || { name: "Document " + (seeded.length + i + 1) + ".pdf", ftype: "pdf" };
+    placeholders.push({
+      id: project.id + "-placeholder-" + i,
+      name: item.name,
+      size: sizes[i % sizes.length],
+      ftype: item.ftype,
+      uploaded: rev.date || "—",
+      uploadedBy: uploaders[i % uploaders.length],
+      revisionId: rev.id,
+      _placeholder: true,
+    });
+  }
+  const fbp = [...seeded, ...placeholders];
   const ftypeIcon = (t) => {
     const tt = (t || "").toLowerCase();
     if (tt === "pdf") return { icon: "picture_as_pdf", tone: "pdf" };
@@ -783,6 +922,29 @@ function ProjectLaborTab({ project }) {
 
   const [drag, setDrag] = uS2(false);
   const inputRef = uR2(null);
+
+  // Newly created projects: show only the upload zone (no table, no info note)
+  if (project.isNew) {
+    return (
+      <div style={{ marginTop: 24 }}>
+        <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} />
+        <div
+          className={"labor-prompt " + (drag ? "drag" : "")}
+          style={{ marginTop: 0, padding: "48px 32px" }}
+          onClick={() => inputRef.current && inputRef.current.click()}
+          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); }}>
+          <div className="labor-prompt-title"><Icon name="payments" size={18} />Upload project labor rates</div>
+          <p>Drop a CSV or XLSX with your trade rates and overhead burdens to seed this project's rates. Until rates are uploaded, this project will use your global PDX metro rates.</p>
+          <div className="labor-prompt-cta">
+            <Icon name="cloud_upload" size={20} />
+            <span>Drop a CSV or XLSX, or <b>click to browse</b></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ marginTop: 24 }}>

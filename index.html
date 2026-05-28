@@ -382,19 +382,49 @@
 
       const openNewProject = () => setShowNewProject(true);
 
-      const createProject = ({ name, kind, address, scope }) => {
+      const createProject = ({ name, kind, address, scope, filesCount, files }) => {
         const id = "proj-" + Date.now().toString(36);
+        const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const fileNames = Array.isArray(files) ? files : [];
         const newProject = {
           id, name,
           kind: kind + " · New",
-          icon: kind === "Multifamily" ? "apartment" : kind === "Education" ? "school" : kind === "Healthcare" ? "local_hospital" : kind === "Industrial" ? "warehouse" : "business",
+          icon: "folder_open",
           status: "draft", statusLabel: "Draft",
           lastEdit: "Just now", progress: 0,
-          address: address || "—", stage: "Pre-design", scope: scope || "", estimate: "—"
+          address: address || "—", stage: "Pre-design", scope: scope || "", estimate: "—",
+          files: filesCount || fileNames.length || 0,
+          isNew: true,
+          revisions: [{ id: "rev1", name: "Revision 1 — Initial upload", date: today, note: "Initial project files" }],
         };
         setProjects(prev => [newProject, ...prev]);
+        // Seed the new project's file tree (used by Files tab + workspace Files)
+        const fileEntries = fileNames.map((n, i) => {
+          const ext = (n.split(".").pop() || "file").toLowerCase();
+          return {
+            id: id + "-f-" + i,
+            name: n,
+            size: "—",
+            sizeBytes: 0,
+            ftype: ext,
+            uploaded: today,
+            uploadedBy: data.user.name,
+            revisionId: "rev1",
+          };
+        });
+        setFilesByProject(prev => ({ ...prev, [id]: fileEntries }));
         setShowNewProject(false);
-        openProject(id);
+        // openProject() would read from the stale projects closure and miss the
+        // just-added project. Open its overview tab directly using newProject.
+        addTab({
+          kind: "project",
+          screen: "project",
+          ctx: { projectId: id, tab: "overview" },
+          label: newProject.name,
+          subLabel: newProject.kind,
+          icon: newProject.icon || "folder_open",
+          projectId: id,
+        });
       };
 
       // ---- Skill run as its own tab (with progress in tab title) ----

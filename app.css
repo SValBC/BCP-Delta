@@ -1169,19 +1169,21 @@ button { font-family: inherit; }
   padding: 20px 20px;
   display: flex; flex-direction: column; gap: 8px;
   position: relative; overflow: hidden;
+  transition: border-color 140ms, box-shadow 140ms, transform 140ms;
+}
+/* All KPI cards get a subtle hover lift, regardless of whether they're clickable. */
+.kpi:hover {
+  box-shadow: 0 4px 12px rgba(39,38,53,0.08);
+  transform: translateY(-1px);
 }
 .kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: rgba(39,38,53,0.55); }
 .kpi .value { font-family: var(--font-display); font-weight: 800; font-size: 28px; letter-spacing: -0.015em; color: var(--raisin-800); font-variant-numeric: tabular-nums; }
 .kpi .delta { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
 .kpi .delta.up { color: var(--orange-500); }
 .kpi .delta.down { color: var(--tiffany-400); }
-/* Clickable KPI cards — navigate to a skill result. Orange new-tab hint
-   sits top-right; the whole card lifts subtly on hover. */
-.kpi.kpi-clickable { cursor: pointer; transition: border-color 140ms, box-shadow 140ms, transform 140ms; }
-.kpi.kpi-clickable:hover {
-  box-shadow: 0 4px 12px rgba(39,38,53,0.08);
-  transform: translateY(-1px);
-}
+/* Clickable KPI cards — navigate to a skill result. Cursor + focus
+   affordance only; the hover lift is inherited from .kpi:hover. */
+.kpi.kpi-clickable { cursor: pointer; }
 .kpi.kpi-clickable:focus-visible {
   outline: 2px solid var(--orange-500);
   outline-offset: 2px;
@@ -1663,6 +1665,15 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .ctx-menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
 .ctx-menu-item .mi { color: rgba(39,38,53,0.55); }
 .ctx-menu-item span:first-of-type { flex: 1; }
+
+/* Share dropdown — anchors a .ctx-menu directly under its trigger button */
+.share-dd { position: relative; display: inline-flex; }
+.share-dd .share-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+}
 .ctx-menu-shortcut { font-size: 11px; color: var(--bc-muted); margin-left: 8px; }
 .ctx-menu-divider { height: 1px; background: rgba(39,38,53,0.08); margin: 4px 8px; }
 [data-theme="dark"] .ctx-menu { background: var(--raisin-900); border-color: rgba(255,255,255,0.10); box-shadow: 0 12px 28px rgba(0,0,0,0.50); }

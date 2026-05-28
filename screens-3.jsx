@@ -244,7 +244,10 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         actions={
           <>
             <PinButton pinId={"skill:" + project.id + "/estimation"} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className="btn"><Icon name="picture_as_pdf" size={16} />Export</button>
+            <ShareDropdown options={[
+              { label: "Email", icon: "email", onClick: () => {} },
+              { label: "Download as PDF", icon: "picture_as_pdf", onClick: () => {} },
+            ]} />
             <button className="btn"><Icon name="add_chart" size={16} />Build report</button>
           </>
         }
@@ -932,7 +935,11 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
           <>
             <PinButton pinId={"skill:" + project.id + "/rfc"} pinnedSet={pinnedSet} onPin={onPin} />
             <button className="btn"><Icon name="email" size={16} />Draft RFI emails</button>
-            <button className="btn"><Icon name="download" size={16} />Export</button>
+            <ShareDropdown options={[
+              { label: "Email", icon: "email", onClick: () => {} },
+              { label: "Download as PDF", icon: "picture_as_pdf", onClick: () => {} },
+              { label: "Download as Excel", icon: "table_view", onClick: () => {} },
+            ]} />
           </>
         }
         onAskAI={onAskAI}
@@ -1268,7 +1275,11 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
     <div className="col-detail">
       <Taskbar
         crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]}
-        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><button className="btn"><Icon name="download" size={16} />Export</button></>}
+        actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><ShareDropdown options={[
+          { label: "Email", icon: "email", onClick: () => {} },
+          { label: "Download as PDF", icon: "picture_as_pdf", onClick: () => {} },
+          { label: "Download as Excel", icon: "table_view", onClick: () => {} },
+        ]} /></>}
         onAskAI={onAskAI}
         switcher={projectSwitcher}
       />

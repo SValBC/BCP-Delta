@@ -146,6 +146,44 @@ const Sparkle = ({ size = 11, white, spin, style }) => (
   />
 );
 
+// Share dropdown — a button + popover with the share/export options
+// available for the current screen. Closes on outside click or Escape.
+function ShareDropdown({ options }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  if (!options || options.length === 0) return null;
+  return (
+    <div className="share-dd" ref={ref}>
+      <button className="btn" onClick={() => setOpen(v => !v)} title="Share this screen">
+        <Icon name="share" size={16} />Share
+        <Icon name="expand_more" size={14} style={{ marginLeft: 2, opacity: 0.6 }} />
+      </button>
+      {open && (
+        <div className="ctx-menu share-menu">
+          {options.map((o, i) => (
+            <button key={i} className="ctx-menu-item"
+                    onClick={() => { o.onClick && o.onClick(); setOpen(false); }}>
+              {o.icon && <Icon name={o.icon} size={14} />}
+              <span>{o.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const formatMoney = (n) => {
   if (n == null) return "—";
   if (Math.abs(n) >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
@@ -1460,4 +1498,4 @@ function makeAIReply(t, context) {
 }
 
 // expose globals
-Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });
+Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, ShareDropdown, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });

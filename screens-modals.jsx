@@ -60,7 +60,9 @@ function NewProjectModal({ open, onClose, onCreate }) {
       name: "Crestview Aquatic Center",
       kind: "Civic · Recreation",
       address: "2200 SE Crestview Dr, Portland OR",
-      scope: scope.trim()
+      scope: scope.trim(),
+      filesCount: files.length,
+      files: files.slice(),
     });
   };
 

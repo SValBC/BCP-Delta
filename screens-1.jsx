@@ -81,7 +81,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
 
             <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
               <button className="ai-pill" onClick={onOpenDailyReport || onAskAI}><Icon name="auto_awesome" size={14} style={{ color: "#fff" }} />Brief me on overnight</button>
-              <button className="quick-pill" onClick={() => onStartCreateProjectFlow ? onStartCreateProjectFlow() : (onNewProject && onNewProject())}>
+              <button className="quick-pill" onClick={() => onNewProject && onNewProject()}>
                 <Icon name="add" size={14} />Create new project
               </button>
               <button className="quick-pill" onClick={() => onStartRomEstimateFlow && onStartRomEstimateFlow()}>
