@@ -308,7 +308,7 @@ const DrawingThumb = ({ kind = "level1", color = "#E84600", markups = 12 }) => {
 // =====================================================
 // COLUMN 1 — PRIMARY NAV
 // =====================================================
-function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu, connections, collapsed, onToggleCollapsed }) {
+function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu, connections, collapsed, onToggleCollapsed, freshMode, onToggleFreshMode }) {
   const items = [
     { id: "home", label: "Home", icon: "home" },
     { id: "projects", label: "Projects", icon: "folder_open" },
@@ -339,6 +339,16 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
         <img src="design-system/logo_icon.svg" alt=""
              className={"brand-icon " + (collapsed ? "" : "is-hidden")}
              aria-hidden="true" />
+        {/* First-user-experience demo toggle — hidden when nav is collapsed (no room) */}
+        {onToggleFreshMode && !collapsed && (
+          <button
+            className={"brand-demo-toggle " + (freshMode ? "is-on" : "")}
+            onClick={onToggleFreshMode}
+            title={freshMode ? "Exit first-user experience demo" : "Switch to first-user experience demo"}>
+            <Icon name={freshMode ? "restart_alt" : "person_add"} size={14} />
+            <span>{freshMode ? "FUX · On" : "FUX"}</span>
+          </button>
+        )}
       </div>
 
       {/* Toggle button — collapses/expands the nav rail. The chevron rotates

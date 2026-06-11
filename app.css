@@ -213,6 +213,51 @@ button { font-family: inherit; }
 .user-menu-sep {
   height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0;
 }
+/* Brand-area demo toggle — small pill next to the logo. Right-aligned via
+   margin-left:auto so the absolutely-positioned logos behind it aren't
+   affected. */
+.brand-demo-toggle {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+  position: relative;
+  z-index: 2;
+}
+.brand-demo-toggle:hover {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.20);
+  color: #fff;
+}
+.brand-demo-toggle.is-on {
+  background: rgba(232,70,0,0.16);
+  border-color: rgba(232,70,0,0.40);
+  color: #fff;
+}
+.brand-demo-toggle.is-on:hover {
+  background: rgba(232,70,0,0.24);
+  border-color: var(--orange-500);
+}
+[data-theme="light"] .brand-demo-toggle {
+  background: rgba(39,38,53,0.06);
+  border-color: rgba(39,38,53,0.12);
+  color: rgba(39,38,53,0.72);
+}
+[data-theme="light"] .brand-demo-toggle:hover {
+  background: rgba(39,38,53,0.10);
+  color: var(--raisin-800);
+}
+[data-theme="light"] .brand-demo-toggle.is-on {
+  background: rgba(232,70,0,0.10);
+  border-color: rgba(232,70,0,0.40);
+  color: var(--orange-500);
+}
 
 /* Light theme for new nav features */
 [data-theme="light"] .nav-recent .recent-sub { color: rgba(39,38,53,0.45); }
@@ -3004,6 +3049,21 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .upload-mini span { display: block; font-size: 11.5px; color: rgba(39,38,53,0.60); margin-top: 2px; }
 .upload-mini > .material-icons-outlined { color: rgba(39,38,53,0.45); }
 
+/* Larger primary upload zone used in the New Project modal */
+.upload-mini.upload-mini-lg { padding: 32px 24px; gap: 20px; }
+.upload-mini.upload-mini-lg > .material-icons-outlined { color: var(--orange-500); }
+.upload-mini.upload-mini-lg b { font-size: 15px; }
+.upload-mini.upload-mini-lg span { font-size: 12.5px; }
+.upload-mini .upload-formats {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(39,38,53,0.45);
+  text-transform: uppercase;
+}
+
 /* AI-detected fields preview (after document upload) */
 .ai-detected {
   background: linear-gradient(180deg, rgba(232,70,0,0.05), rgba(232,70,0,0.02));
@@ -3038,12 +3098,83 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   font-size: 11px; color: rgba(39,38,53,0.55);
 }
 
-/* scope row — special */
+/* Scope row — label sits OUTSIDE the box; the box itself mirrors the
+   upload zone (dashed light card). */
 .scope-row {
-  background: rgba(232,70,0,0.04);
-  border: 1px solid rgba(232,70,0,0.18);
+  /* Remove the old orange-tinted card; the title now lives outside the box */
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.scope-box {
+  border: 1.5px dashed rgba(39,38,53,0.18);
   border-radius: 12px;
-  padding: 16px;
+  padding: 16px 20px;
+  background: rgba(39,38,53,0.015);
+}
+.scope-radios {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.scope-radio {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+  color: var(--raisin-800);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.scope-radio:hover { background: rgba(39,38,53,0.04); }
+.scope-radio.is-checked { background: rgba(232,70,0,0.06); }
+.scope-radio input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border: 1.5px solid rgba(39,38,53,0.30);
+  border-radius: 100px;
+  margin: 0;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 120ms;
+}
+.scope-radio input[type="radio"]:checked {
+  border-color: var(--orange-500);
+}
+.scope-radio input[type="radio"]:checked::after {
+  content: "";
+  position: absolute; inset: 3px;
+  background: var(--orange-500);
+  border-radius: 100px;
+}
+.scope-radio .sparkle,
+.scope-radio .mi { flex-shrink: 0; }
+.scope-textarea {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid rgba(39,38,53,0.14);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--font-ui); font-size: 13px;
+  color: var(--raisin-800);
+  background: #fff;
+  resize: vertical;
+  outline: none;
+  transition: border-color 120ms;
+}
+.scope-textarea:focus { border-color: var(--orange-500); }
+.scope-ai-draft {
+  margin-top: 12px;
+  background: #fff;
+  border: 1px solid rgba(39,38,53,0.10);
+  border-radius: 8px;
+  padding: 12px;
+}
+.scope-ai-draft p {
+  margin: 0;
+  font-size: 13px; line-height: 1.5;
+  color: var(--raisin-800);
 }
 .scope-help {
   position: relative;
@@ -5383,3 +5514,205 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='white' opacity='0.55'/></svg>");
 }
 [data-theme="dark"] .bid-run-empty-h { color: #fff; }
+
+/* ============================================================
+   FUX — First-user-experience onboarding (white canvas)
+   ============================================================ */
+.fux-canvas {
+  position: relative;
+  width: 100%; height: 100%;
+  background: #fff;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Hex ripple video — fills the canvas, softened to 60% so the white surface
+   reads through. */
+.fux-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center center;
+  pointer-events: none;
+  opacity: 0.60;
+  animation: fuxFadeIn 600ms ease-out;
+}
+
+/* Stage wrapper for text phases — centered, fades in then out (4s) */
+.fux-stage {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 48px;
+  text-align: center;
+  color: var(--raisin-800);
+  max-width: 900px;
+  z-index: 1;
+}
+.fux-fade { animation: fuxFadeInOut 4000ms ease-in-out both; }
+.fux-fade-in { animation: fuxFadeIn 600ms ease-out both; }
+
+@keyframes fuxFadeInOut {
+  0%, 100% { opacity: 0; transform: translateY(8px); }
+  15%, 85% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fuxFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fux-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 4.4vw, 48px);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--raisin-800);
+  max-width: 880px;
+}
+.fux-subtitle {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  color: rgba(39,38,53,0.60);
+  margin-top: 16px;
+}
+
+/* Question card — solid white surface with a soft shadow to lift it off the
+   ripple-backdrop canvas. */
+.fux-q {
+  width: 100%;
+  max-width: 720px;
+  background: #fff;
+  border: 1px solid rgba(39,38,53,0.10);
+  border-radius: 16px;
+  padding: 36px 36px 28px;
+  box-shadow: 0 12px 40px rgba(15,14,30,0.10), 0 2px 8px rgba(15,14,30,0.04);
+}
+.fux-q-progress {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--orange-500);
+  margin-bottom: 12px;
+}
+.fux-q-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.005em;
+  color: var(--raisin-800);
+  margin: 0 0 8px;
+  line-height: 1.25;
+}
+.fux-q-hint {
+  font-size: 12.5px;
+  color: rgba(39,38,53,0.55);
+  margin-bottom: 24px;
+}
+
+.fux-q-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.fux-option {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff;
+  border: 1px solid rgba(39,38,53,0.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--raisin-800);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+.fux-option:hover {
+  background: rgba(39,38,53,0.03);
+  border-color: rgba(39,38,53,0.22);
+}
+.fux-option > .mi { color: rgba(39,38,53,0.55); flex-shrink: 0; }
+.fux-option > span:first-of-type { flex: 1; min-width: 0; }
+.fux-option-check { color: rgba(39,38,53,0.30); display: inline-flex; flex-shrink: 0; }
+.fux-option.is-selected {
+  background: rgba(232,70,0,0.06);
+  border-color: rgba(232,70,0,0.45);
+  color: var(--raisin-800);
+}
+.fux-option.is-selected > .mi,
+.fux-option.is-selected .fux-option-check { color: var(--orange-500); }
+
+.fux-q-foot {
+  display: flex; justify-content: flex-end;
+}
+.fux-q-next {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-size: 14px;
+}
+.fux-q-next:disabled {
+  background: rgba(39,38,53,0.10) !important;
+  color: rgba(39,38,53,0.40) !important;
+  cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+  .fux-q-options { grid-template-columns: 1fr; }
+  .fux-q { padding: 28px 24px 24px; }
+}
+
+/* Post-FUX fade-in — applied once when the Home screen first appears after
+   the onboarding sequence, so the thank-you fades cleanly INTO Home. */
+.col-detail.fux-post-fade { animation: fuxPostFadeIn 800ms ease-out both; }
+@keyframes fuxPostFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   NEWS TICKER — prototype disclaimer
+   ============================================================
+   Pinned to the bottom of the main canvas column (between nav rail and
+   AI panel). Two identical text copies translated by 50% give a
+   seamless loop. */
+.news-ticker {
+  position: fixed;
+  bottom: 0;
+  left: var(--col-1);
+  right: var(--col-ai);
+  height: 48px;
+  background: var(--orange-500);
+  color: #fff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  z-index: 8;
+  transition: left var(--panel-shift-duration, 600ms) var(--panel-shift-curve, cubic-bezier(0.76,0,0.24,1)),
+              right var(--panel-shift-duration, 600ms) var(--panel-shift-curve, cubic-bezier(0.76,0,0.24,1));
+}
+.news-ticker-track {
+  display: flex;
+  white-space: nowrap;
+  animation: newsTickerScroll 45s linear infinite;
+  will-change: transform;
+}
+.news-ticker-track span {
+  flex: none;
+  padding-right: 4rem;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+@keyframes newsTickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Make room for the taller ticker so canvas content doesn't hide under it */
+.canvas { padding-bottom: 76px; }

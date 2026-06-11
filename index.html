@@ -68,7 +68,16 @@
       // exactly what the user had configured when they leave. `null` means we
       // are NOT currently overriding anything.
       const drawingPrevPanelsRef = React.useRef(null);
-      const [pinned, setPinned] = useState(new Set([
+      // Fresh-user demo mode — set early so seeded state can also clear out.
+      // Toggle via ?demo=fresh in the URL or the user-menu toggle in the nav.
+      const freshMode = typeof window !== "undefined" && /(\?|&)demo=fresh\b/i.test(window.location.search || "");
+      const toggleFreshMode = () => {
+        const url = new URL(window.location.href);
+        if (freshMode) url.searchParams.delete("demo");
+        else url.searchParams.set("demo", "fresh");
+        window.location.href = url.toString();
+      };
+      const [pinned, setPinned] = useState(new Set(freshMode ? [] : [
         "rec-wellness",
         "rivergrove",
         "skill:rec-wellness/estimation", // ROM estimate result that just finished
@@ -102,7 +111,7 @@
       // Seeded so the Mercy Outpatient Clinic ROM card shows a loading state at
       // 42%, matching its "running · 42%" Recent Skill Run line item. `static`
       // means no timer drives it — it just holds at 42% conceptually.
-      const [skillRuns, setSkillRuns] = useState({
+      const [skillRuns, setSkillRuns] = useState(freshMode ? {} : {
         "mercy-clinic/estimation": { progress: 42, static: true },
       });
       const [skillCompletions, setSkillCompletions] = useState({}); // key → { completedAt, justCompleted }
@@ -143,7 +152,20 @@
       const closeCtxMenu = () => setCtxMenu(null);
       const [drawingViewer, setDrawingViewer] = useState(null); // { drawing, project }
 
-      const data = window.BC_DATA;
+      // Strip the seeded workspace when in fresh-user mode. User identity
+      // (Victor + Acme Builders) is preserved; everything else is emptied.
+      const scrubData = (d) => ({
+        ...d,
+        projects: [],
+        runs: [],
+        files: [],
+        filesByProject: {},
+        bidConfig: {},
+        bidSessions: {},
+        laborRatesByProject: {},
+      });
+      const data = freshMode ? scrubData(window.BC_DATA) : window.BC_DATA;
+
       const [projects, setProjects] = useState(data.projects);
       const skills = data.skills;
       const runs = data.runs;
@@ -514,7 +536,7 @@
       // Seeded with the two integrations the nav showed before. Each value can
       // hold metadata for richer status (logo, brand color) so the nav rail
       // doesn't need its own catalog.
-      const [connections, setConnections] = useState({
+      const [connections, setConnections] = useState(freshMode ? {} : {
         bluebeam: { id: "bluebeam", name: "Bluebeam Revu", icon: "draw",   brand: "#1B6EC7", domain: "bluebeam.com", category: "Construction", desc: "PDF markup, takeoffs, and quantification." },
         procore:  { id: "procore",  name: "Procore",       icon: "domain", brand: "#F7941E", domain: "procore.com",  category: "Construction", desc: "Project management, drawings, and submittals." },
       });
@@ -573,7 +595,7 @@
             onPin={onPin}
           />
         );
-      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} onAskCodyPrompt={askCodyPrompt} onStartCreateProjectFlow={startCreateProjectFlow} onStartAddFilesFlow={startAddFilesFlow} onStartRomEstimateFlow={startRomEstimateFlow} />;
+      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} onAskCodyPrompt={askCodyPrompt} onStartCreateProjectFlow={startCreateProjectFlow} onStartAddFilesFlow={startAddFilesFlow} onStartRomEstimateFlow={startRomEstimateFlow} freshMode={freshMode} user={data.user} />;
       else if (screen === "projects") detail = <ProjectsScreen ctx={ctx} projects={projects} pinnedSet={pinned} onPin={onPin} onOpen={openProject} onOpenInNewTab={openProjectInNewTab} onAskAI={onAskAI} onNewProject={openNewProject} onCtxMenu={openCtxMenu} />;
       else if (screen === "skills") detail = <SkillRunScreen project={projects[0]} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} />;
       else if (screen === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} />;
@@ -612,6 +634,9 @@
           })
           .slice(0, 4);
         if (fromHistory.length > 0) return fromHistory;
+        // In fresh-user mode there's no workspace to seed against — leave
+        // the Recently Visited section empty so it doesn't appear in the nav.
+        if (freshMode) return [];
         // Fallback seed — recent skill results across the user's pinned projects
         // so the section never reads as empty on a fresh session.
         return [
@@ -676,6 +701,8 @@
             connections={connections}
             collapsed={navCollapsed}
             onToggleCollapsed={toggleNavCollapsed}
+            freshMode={freshMode}
+            onToggleFreshMode={toggleFreshMode}
           />
           <div className="col-detail-wrap">
             {(activeTab.kind !== "static" || tabs.length > 1) && (
@@ -756,6 +783,17 @@
           />
 
           <ContextMenu menu={ctxMenu} onClose={closeCtxMenu} />
+
+          {/* Prototype disclaimer ticker — pinned to the bottom of the main
+              canvas area, scrolling right-to-left continuously. */}
+          <div className="news-ticker" role="status" aria-live="off">
+            <div className="news-ticker-track">
+              <span>This prototype is incomplete and not in the process of being implemented.</span>
+              <span>This prototype is incomplete and not in the process of being implemented.</span>
+              <span>This prototype is incomplete and not in the process of being implemented.</span>
+              <span>This prototype is incomplete and not in the process of being implemented.</span>
+            </div>
+          </div>
         </div>
       );
     }

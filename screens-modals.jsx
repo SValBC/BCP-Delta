@@ -81,23 +81,25 @@ function NewProjectModal({ open, onClose, onCreate }) {
         <div className="modal-body">
           {/* documents — primary input; everything else is derived */}
           <div className="form-row">
-            <label>Project documents</label>
-            <div className="upload-mini" onClick={handleFakeUpload}>
+            <label>Upload project documents</label>
+            <div className="upload-mini upload-mini-lg" onClick={handleFakeUpload}>
               {files.length === 0 ? (
                 <>
-                  <Icon name="cloud_upload" size={22} />
+                  <Icon name="cloud_upload" size={36} />
                   <div>
                     <b>Drop plans, specs, or owner narratives</b>
                     <span>Cody reads your documents and fills in the project name, type, and address automatically.</span>
+                    <span className="upload-formats">Compatible formats: PDF, PNG, JPG</span>
                   </div>
                   <button className="btn-ghost" type="button"><Icon name="folder_open" size={13} />Browse</button>
                 </>
               ) : (
                 <>
-                  <Icon name="task" size={20} style={{ color: "var(--orange-500)" }} />
+                  <Icon name="task" size={28} style={{ color: "var(--orange-500)" }} />
                   <div>
                     <b>{files.length} files attached</b>
                     <span>{files.slice(0, 3).join(" · ")}{files.length > 3 ? " · …" : ""}</span>
+                    <span className="upload-formats">Compatible formats: PDF, PNG, JPG</span>
                   </div>
                   <button className="btn-ghost" type="button" onClick={(e) => { e.stopPropagation(); setFiles([]); }}><Icon name="close" size={13} />Remove</button>
                 </>
@@ -130,9 +132,9 @@ function NewProjectModal({ open, onClose, onCreate }) {
             </div>
           )}
 
-          {/* SCOPE */}
+          {/* SCOPE — label outside, box matches the upload zone */}
           <div className="form-row scope-row">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
               <label style={{ flex: 1, marginBottom: 0 }}>
                 Project scope <span className="opt">optional</span>
               </label>
@@ -144,40 +146,48 @@ function NewProjectModal({ open, onClose, onCreate }) {
                 </div>
               </span>
             </div>
-            <div className="scope-mode-row">
-              <button
-                type="button"
-                className={"mode-tab " + (scopeMode === "manual" ? "active" : "")}
-                onClick={() => setScopeMode("manual")}
-              >
-                <Icon name="edit" size={13} />Write it myself
-              </button>
-              <button
-                type="button"
-                className={"mode-tab ai " + (scopeMode === "ai" ? "active" : "")}
-                onClick={handleGenerate}
-                disabled={generating}
-              >
-                <Sparkle size={11} spin={generating} />
-                {generating ? "Cody is writing…" : "Let Cody draft from documents"}
-              </button>
-            </div>
-            <div className={"scope-textarea-wrap " + (scopeMode === "ai" ? "ai-mode" : "")}>
-              <textarea
-                rows="4"
-                placeholder={scopeMode === "ai"
-                  ? "Cody will draft a scope blurb from your uploaded documents."
-                  : "e.g. Two-story 84,000 SF municipal recreation center with a 25m pool, fitness studios, and a public lobby. Targeting LEED Silver, CMGC delivery."
-                }
-                value={scope}
-                onChange={(e) => setScope(e.target.value)}
-                readOnly={generating}
-              />
+            <div className="scope-box">
+              <div className="scope-radios">
+                <label className={"scope-radio " + (scopeMode === "ai" ? "is-checked" : "")}>
+                  <input
+                    type="radio"
+                    name="scopeMode"
+                    checked={scopeMode === "ai"}
+                    onChange={() => handleGenerate()}
+                    disabled={generating}
+                  />
+                  <Sparkle size={12} spin={generating} />
+                  <span>{generating ? "Cody is writing…" : "Let Cody draft from documents"}</span>
+                </label>
+                <label className={"scope-radio " + (scopeMode === "manual" ? "is-checked" : "")}>
+                  <input
+                    type="radio"
+                    name="scopeMode"
+                    checked={scopeMode === "manual"}
+                    onChange={() => setScopeMode("manual")}
+                  />
+                  <Icon name="edit" size={13} />
+                  <span>Write it myself</span>
+                </label>
+              </div>
+
+              {scopeMode === "manual" && (
+                <textarea
+                  className="scope-textarea"
+                  rows="4"
+                  placeholder="e.g. Two-story 84,000 SF municipal recreation center with a 25m pool, fitness studios, and a public lobby. Targeting LEED Silver, CMGC delivery."
+                  value={scope}
+                  onChange={(e) => setScope(e.target.value)}
+                />
+              )}
               {scopeMode === "ai" && scope && !generating && (
-                <div className="scope-ai-foot">
-                  <CodyMark size={12} />
-                  <span>Drafted by Cody — you can edit anytime.</span>
-                  <button type="button" className="btn-ghost" onClick={handleGenerate}><Icon name="refresh" size={12} />Re-draft</button>
+                <div className="scope-ai-draft">
+                  <p>{scope}</p>
+                  <div className="scope-ai-foot">
+                    <CodyMark size={12} />
+                    <span>Drafted by Cody — switch to "Write it myself" to edit.</span>
+                    <button type="button" className="btn-ghost" onClick={handleGenerate}><Icon name="refresh" size={12} />Re-draft</button>
+                  </div>
                 </div>
               )}
             </div>

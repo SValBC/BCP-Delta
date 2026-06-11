@@ -746,7 +746,7 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
     { name: "Cost benchmark report.pdf", ftype: "pdf" },
   ];
   const sizes = ["1.4 MB", "2.1 MB", "3.6 MB", "4.8 MB", "2.9 MB", "5.2 MB", "1.8 MB", "3.2 MB", "6.4 MB", "412 KB", "2.4 MB", "1.1 MB"];
-  const uploaders = ["Jamie Park", "Sam Lee"];
+  const uploaders = ["Victor Mezhvinsky", "Sam Lee"];
   const seededNames = new Set(seeded.map(f => f.name));
   const available = placeholderPool.filter(p => !seededNames.has(p.name));
   const placeholders = [];
@@ -1027,7 +1027,7 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
     samples.forEach((s, i) => {
       setTimeout(() => {
         setFiles((prev) => [
-        { id: "n" + Date.now() + i, name: s.name, size: "2.1 MB", uploaded: "Just now · Jamie Park", category: s.category, ftype: s.ftype, confidence: s.confidence, indexed: true, _new: true },
+        { id: "n" + Date.now() + i, name: s.name, size: "2.1 MB", uploaded: "Just now · Victor Mezhvinsky", category: s.category, ftype: s.ftype, confidence: s.confidence, indexed: true, _new: true },
         ...prev]
         );
       }, i * 350);

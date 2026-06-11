@@ -2,10 +2,205 @@
 const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 
 // =====================================================
+// FIRST-USER EXPERIENCE (FUX)
+// One-time onboarding sequence shown on a fresh account:
+//   1. Hex-ripple loading video (plays once)
+//   2. "Welcome to BuildCrew.AI, [first name]" (4s)
+//   3. "To start, tell us a little about yourself…" (4s)
+//   4. Four onboarding questions (user-paced)
+//   5. Thank-you message → onComplete → fresh-user Home
+// =====================================================
+function FUXOnboarding({ user, onComplete }) {
+  const PHASES = ["video", "welcome", "intro", "q1", "q2", "q3", "q4", "thanks"];
+  const [phase, setPhase] = useS("video");
+  const [answers, setAnswers] = useS({ q1: [], q2: [], q3: [], q4: null });
+
+  const firstName = (user && user.name) ? user.name.split(" ")[0] : "there";
+  const company = (user && user.company) || "your company";
+
+  const advance = () => {
+    const i = PHASES.indexOf(phase);
+    if (i < PHASES.length - 1) setPhase(PHASES[i + 1]);
+    else onComplete && onComplete();
+  };
+
+  // Auto-advance timers for welcome/intro/thanks
+  useE(() => {
+    if (phase === "welcome" || phase === "intro") {
+      const t = setTimeout(advance, 4000);
+      return () => clearTimeout(t);
+    }
+    if (phase === "thanks") {
+      // Hold for the full 4000ms .fux-fade keyframe (0 → 1 → 0) so the
+      // thank-you message has time to fade OUT before we unmount and
+      // hand off to the Home screen.
+      const t = setTimeout(() => onComplete && onComplete(), 4000);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // Fallback for the video phase — if for any reason `onEnded` doesn't fire
+  // (autoplay blocked, no media, etc.), advance after 8s so the flow never sticks.
+  useE(() => {
+    if (phase !== "video") return;
+    const t = setTimeout(advance, 8000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  const questions = {
+    q1: {
+      title: "What are the most time-consuming elements of your job?",
+      hint: "Select one or more",
+      multi: true,
+      options: [
+        { id: "drawings", label: "Reviewing drawings and specs", icon: "architecture" },
+        { id: "estimating", label: "Preparing estimates and takeoffs", icon: "calculate" },
+        { id: "coordination", label: "Coordinating with subcontractors", icon: "groups" },
+        { id: "rfis", label: "Tracking RFIs and clarifications", icon: "rule" },
+      ],
+    },
+    q2: {
+      title: "Which of these would you consider most problematic or annoying?",
+      hint: "Select one or more",
+      multi: true,
+      options: [
+        { id: "takeoffs", label: "Manual quantity takeoffs", icon: "straighten" },
+        { id: "bids", label: "Comparing bids across formats", icon: "compare_arrows" },
+        { id: "missing", label: "Chasing down missing documents", icon: "find_in_page" },
+        { id: "updates", label: "Updating schedules and budgets", icon: "schedule" },
+      ],
+    },
+    q3: {
+      title: "What's currently in your tech stack that supports your daily workflows?",
+      hint: "Select one or more",
+      multi: true,
+      options: [
+        { id: "bluebeam", label: "Bluebeam Revu", icon: "draw" },
+        { id: "procore", label: "Procore", icon: "domain" },
+        { id: "ost", label: "OnScreen Takeoff / PlanSwift", icon: "square_foot" },
+        { id: "excel", label: "Microsoft Excel", icon: "table_view" },
+      ],
+    },
+    q4: {
+      title: "How familiar are you with AI?",
+      hint: "Pick the one that fits best",
+      multi: false,
+      options: [
+        { id: "daily", label: "I use AI tools daily" },
+        { id: "some", label: "I've experimented with a few" },
+        { id: "heard", label: "I've heard about it but haven't tried" },
+        { id: "new", label: "Brand new to me" },
+      ],
+    },
+  };
+
+  const onPick = (qid, optId) => {
+    setAnswers(prev => {
+      const q = questions[qid];
+      if (q.multi) {
+        const cur = prev[qid] || [];
+        const next = cur.includes(optId) ? cur.filter(x => x !== optId) : [...cur, optId];
+        return { ...prev, [qid]: next };
+      }
+      return { ...prev, [qid]: optId };
+    });
+  };
+
+  const canContinue = (qid) => {
+    const q = questions[qid];
+    const val = answers[qid];
+    return q.multi ? Array.isArray(val) && val.length > 0 : !!val;
+  };
+
+  const isQuestionPhase = phase.startsWith("q");
+
+  return (
+    <div className="fux-canvas">
+      {phase === "video" && (
+        <video
+          key="fux-video"
+          className="fux-video"
+          src="animated/skill-loading.mp4"
+          autoPlay
+          muted
+          playsInline
+          onEnded={advance}
+          aria-hidden="true"
+        />
+      )}
+
+      {phase === "welcome" && (
+        <div key="fux-welcome" className="fux-stage fux-fade">
+          <div className="fux-title">Welcome to BuildCrew.AI, {firstName}.</div>
+        </div>
+      )}
+
+      {phase === "intro" && (
+        <div key="fux-intro" className="fux-stage fux-fade">
+          <div className="fux-title">To start, tell us a little about yourself and your role at {company}.</div>
+        </div>
+      )}
+
+      {isQuestionPhase && (() => {
+        const q = questions[phase];
+        return (
+          <div key={"fux-" + phase} className="fux-stage fux-fade-in">
+            <div className="fux-q">
+              <div className="fux-q-progress">Question {Number(phase.slice(1))} of 4</div>
+              <h2 className="fux-q-title">{q.title}</h2>
+              <div className="fux-q-hint">{q.hint}</div>
+              <div className="fux-q-options">
+                {q.options.map(opt => {
+                  const selected = q.multi
+                    ? (answers[phase] || []).includes(opt.id)
+                    : answers[phase] === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      className={"fux-option " + (selected ? "is-selected" : "")}
+                      onClick={() => onPick(phase, opt.id)}>
+                      {opt.icon && <Icon name={opt.icon} size={18} />}
+                      <span>{opt.label}</span>
+                      <span className="fux-option-check">
+                        <Icon name={selected ? "check_circle" : (q.multi ? "check_box_outline_blank" : "radio_button_unchecked")} size={18} />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="fux-q-foot">
+                <button
+                  className="btn-primary fux-q-next"
+                  disabled={!canContinue(phase)}
+                  onClick={advance}>
+                  {phase === "q4" ? "Finish" : "Continue"}
+                  <Icon name="arrow_forward" size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {phase === "thanks" && (
+        <div key="fux-thanks" className="fux-stage fux-fade">
+          <div className="fux-title">Thanks, {firstName}.</div>
+          <div className="fux-subtitle">Setting up your workspace…</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================
 // HOME
 // =====================================================
-function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu, onAskCodyPrompt, onStartCreateProjectFlow, onStartAddFilesFlow, onStartRomEstimateFlow }) {
+function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu, onAskCodyPrompt, onStartCreateProjectFlow, onStartAddFilesFlow, onStartRomEstimateFlow, freshMode, user }) {
   const [greetPrompt, setGreetPrompt] = useS("");
+  // FUX onboarding sequence — shown once per fresh-mode session.
+  const [fuxDone, setFuxDone] = useS(false);
   const submitGreetPrompt = () => {
     const t = greetPrompt.trim();
     if (!t) return;
@@ -47,49 +242,84 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
     }
   }
 
+  // Fresh-user mode — no projects in the workspace yet. Show a focused
+  // welcome moment with a single CTA pointing at the New Project modal.
+  const isFresh = !projects || projects.length === 0;
+
+  // First-user experience onboarding takes over the entire screen until
+  // the user finishes (or skips reaching the end of the sequence).
+  if (freshMode && !fuxDone) {
+    return (
+      <div className="col-detail">
+        <FUXOnboarding user={user} onComplete={() => setFuxDone(true)} />
+      </div>
+    );
+  }
+
+  // After completing FUX, fade the Home content in so the handoff from the
+  // onboarding thank-you to the empty Home feels continuous, not a hard cut.
+  const justFinishedFux = freshMode && fuxDone;
+
   return (
-    <div className="col-detail">
+    <div className={"col-detail " + (justFinishedFux ? "fux-post-fade" : "")}>
       <Taskbar
         crumbs={[{ label: "Home", bold: true }]}
         actions={<button className="btn-primary" onClick={onNewProject}><Icon name="add" size={16} />New project</button>}
         onAskAI={onAskAI} />
-      
+
       <div className="canvas">
         <div className="greet">
           <div className="greet-content">
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "rgba(39,38,53,0.55)", marginBottom: 8 }}>Tuesday morning · April 28</div>
-            <h1>Welcome back, Jamie.</h1>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "rgba(39,38,53,0.55)", marginBottom: 8 }}>
+              {isFresh ? "Welcome aboard" : "Tuesday morning · April 28"}
+            </div>
+            <h1>{isFresh ? "Welcome to BuildCrew, Victor." : "Welcome back, Victor."}</h1>
+            {isFresh && (
+              <p style={{ marginTop: 12, fontSize: 14, lineHeight: 1.55, color: "rgba(39,38,53,0.70)", maxWidth: 540 }}>
+                You're all set up. The fastest way to see what Cody can do is to start your first project — drop in your plans and specs and Cody will take it from there.
+              </p>
+            )}
 
             {/* Inline Cody prompt bar — submitting routes the text into the Ask Cody panel */}
-            <div className="greet-prompt" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
-              <CodyMark size={16} className="greet-prompt-spark" />
-              <input
-                type="text"
-                placeholder="Ask Cody anything — or pick a quick action below"
-                value={greetPrompt}
-                onChange={(e) => setGreetPrompt(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
-              />
-              <button
-                className="greet-prompt-send"
-                disabled={!greetPrompt.trim()}
-                onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
-                title="Send to Cody">
-                <Icon name="arrow_forward" size={16} />
-              </button>
-            </div>
+            {!isFresh && (
+              <div className="greet-prompt" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
+                <CodyMark size={16} className="greet-prompt-spark" />
+                <input
+                  type="text"
+                  placeholder="Ask Cody anything — or pick a quick action below"
+                  value={greetPrompt}
+                  onChange={(e) => setGreetPrompt(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
+                />
+                <button
+                  className="greet-prompt-send"
+                  disabled={!greetPrompt.trim()}
+                  onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
+                  title="Send to Cody">
+                  <Icon name="arrow_forward" size={16} />
+                </button>
+              </div>
+            )}
 
-            <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-              <button className="ai-pill" onClick={onOpenDailyReport || onAskAI}><Icon name="auto_awesome" size={14} style={{ color: "#fff" }} />Brief me on overnight</button>
-              <button className="quick-pill" onClick={() => onNewProject && onNewProject()}>
-                <Icon name="add" size={14} />Create new project
-              </button>
-              <button className="quick-pill" onClick={() => onStartRomEstimateFlow && onStartRomEstimateFlow()}>
-                <Icon name="calculate" size={14} />Get a ROM estimate
-              </button>
-              <button className="quick-pill" onClick={() => onStartAddFilesFlow ? onStartAddFilesFlow() : onOpenProject("rec-wellness", { tab: "files" })}>
-                <Icon name="upload_file" size={14} />Add files to an existing project
-              </button>
+            <div style={{ display: "flex", gap: 8, marginTop: isFresh ? 20 : 16, flexWrap: "wrap" }}>
+              {isFresh ? (
+                <button className="ai-pill" onClick={onNewProject}>
+                  <Icon name="add" size={14} style={{ color: "#fff" }} />Create your first project
+                </button>
+              ) : (
+                <>
+                  <button className="ai-pill" onClick={onOpenDailyReport || onAskAI}><Icon name="auto_awesome" size={14} style={{ color: "#fff" }} />Brief me on overnight</button>
+                  <button className="quick-pill" onClick={() => onNewProject && onNewProject()}>
+                    <Icon name="add" size={14} />Create new project
+                  </button>
+                  <button className="quick-pill" onClick={() => onStartRomEstimateFlow && onStartRomEstimateFlow()}>
+                    <Icon name="calculate" size={14} />Get a ROM estimate
+                  </button>
+                  <button className="quick-pill" onClick={() => onStartAddFilesFlow ? onStartAddFilesFlow() : onOpenProject("rec-wellness", { tab: "files" })}>
+                    <Icon name="upload_file" size={14} />Add files to an existing project
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <span className="robot">
@@ -110,7 +340,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
         </div>
 
         {/* RECENT PROJECTS — card grid, 64px gap from the greeting */}
-        {(() => {
+        {!isFresh && (() => {
           const recent = projects.filter(p => !p.archived).slice(0, 4);
           if (recent.length === 0) return null;
           return (
@@ -222,6 +452,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
         )}
 
         {/* RECENT SKILL RUNS — full width, 64px gap from previous section */}
+        {!isFresh && runs && runs.length > 0 && (<>
         <div className="section-h" style={{ marginTop: 64 }}>
           <Icon name="auto_awesome" size={16} style={{ color: "var(--orange-500)" }} />
           <h3>RECENT SKILL RUNS</h3>
@@ -251,6 +482,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
             </tbody>
           </table>
         </div>
+        </>)}
       </div>
     </div>);
 
@@ -413,6 +645,18 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
           </div>
         </div>
 
+        {projects.length === 0 ? (
+          <div style={{ border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 16, padding: 64, textAlign: "center", marginTop: 24 }}>
+            <Icon name="folder_open" size={48} style={{ color: "rgba(39,38,53,0.30)" }} />
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, color: "var(--raisin-800)", marginTop: 12 }}>No projects yet</div>
+            <div style={{ fontSize: 13, color: "var(--bc-muted)", maxWidth: 420, margin: "8px auto 20px", lineHeight: 1.5 }}>
+              Create your first project to start uploading drawings, running skills, and tracking bids. Cody will index everything automatically.
+            </div>
+            <button className="btn-primary" onClick={onNewProject}>
+              <Icon name="add" size={16} />Create your first project
+            </button>
+          </div>
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
           {sorted.map((p) =>
           <div key={p.id} className="pin-card" style={{ minHeight: 180, padding: "20px 24px" }} onClick={() => onOpen(p.id)}
@@ -450,6 +694,7 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
             </div>
           )}
         </div>
+        )}
       </div>
     </div>);
 

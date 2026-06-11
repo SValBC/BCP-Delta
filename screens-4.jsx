@@ -444,15 +444,15 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme, connections, onAdd
             <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 24 }}>
               <div className="avatar" style={{ width: 64, height: 64, fontSize: 22 }}>JP</div>
               <div>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Jamie Park</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18 }}>Victor Mezhvinsky</div>
                 <div style={{ color: "var(--bc-muted)", fontSize: 13 }}>Senior estimator · Acme Builders</div>
                 <button className="btn-ghost" style={{ marginTop: 8, padding: "4px 8px" }}><Icon name="upload" size={14}/>Upload photo</button>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div className="field"><label>First name</label><input defaultValue="Jamie" /></div>
-              <div className="field"><label>Last name</label><input defaultValue="Park" /></div>
-              <div className="field" style={{ gridColumn: "1 / -1" }}><label>Email</label><input defaultValue="jamie.park@acmebuilders.com" /></div>
+              <div className="field"><label>First name</label><input defaultValue="Victor" /></div>
+              <div className="field"><label>Last name</label><input defaultValue="Mezhvinsky" /></div>
+              <div className="field" style={{ gridColumn: "1 / -1" }}><label>Email</label><input defaultValue="victor.mezhvinsky@acmebuilders.com" /></div>
               <div className="field"><label>Role</label><select defaultValue="senior"><option value="senior">Senior estimator</option><option>Estimator</option><option>Project manager</option></select></div>
               <div className="field"><label>Default region</label><select defaultValue="pdx"><option value="pdx">PDX metro</option><option>Seattle metro</option><option>Boise</option></select></div>
             </div>
