@@ -56,6 +56,33 @@ button { font-family: inherit; }
 .app[data-no-list="true"] { grid-template-columns: var(--col-1) 1fr var(--col-ai); }
 .app[data-ai-open="false"] { --col-ai: 56px; }
 .app[data-nav-collapsed="true"] { --col-1: 56px; }
+/* FUX video phase — both side panels collapse to 0 so the onboarding canvas
+   takes over the screen. Panel content is clipped via overflow:hidden.
+   Same panel-shift transition handles the slide-in when --col-1/--col-ai
+   are restored to their normal values. */
+.app[data-fux-panels-hidden="true"] { --col-1: 0px; --col-ai: 0px; }
+.app[data-fux-panels-hidden="true"] .col-nav,
+.app[data-fux-panels-hidden="true"] .ai-panel,
+.app[data-fux-panels-hidden="true"] .ai-rail-collapsed {
+  overflow: hidden;
+  border: none;
+  /* Suppress the rail's drop shadow — it extends ~8px to the right and
+     would otherwise leave a visible sliver next to the FUX canvas. */
+  box-shadow: none;
+  padding: 0;
+  min-width: 0;
+}
+.app[data-fux-panels-hidden="true"] .nav-collapse-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+/* Hide the news ticker while panels are hidden — the FUX should be totally
+   focused on the welcome moment / questions. The opacity transition is on
+   the base .news-ticker rule. */
+.app[data-fux-panels-hidden="true"] .news-ticker {
+  opacity: 0;
+  pointer-events: none;
+}
 
 /* ============================================================
    COLUMN 1 — PRIMARY NAV (dark, always)
@@ -5527,7 +5554,7 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
 }
 
 /* Hex ripple video — fills the canvas, softened to 60% so the white surface
-   reads through. */
+   reads through. Fades out smoothly before handing off to the welcome phase. */
 .fux-video {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
@@ -5535,7 +5562,9 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   pointer-events: none;
   opacity: 0.60;
   animation: fuxFadeIn 600ms ease-out;
+  transition: opacity 700ms ease-out;
 }
+.fux-video.is-ending { opacity: 0; }
 
 /* Stage wrapper for text phases — centered, fades in then out (4s) */
 .fux-stage {
@@ -5634,8 +5663,18 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   background: rgba(39,38,53,0.03);
   border-color: rgba(39,38,53,0.22);
 }
-.fux-option > .mi { color: rgba(39,38,53,0.55); flex-shrink: 0; }
-.fux-option > span:first-of-type { flex: 1; min-width: 0; }
+/* Fixed icon slot — Material glyphs have variable natural widths, so
+   constrain each leading icon to a uniform 22px box with the glyph
+   centered. This keeps the label text aligned across every option. */
+.fux-option > .mi {
+  color: rgba(39,38,53,0.55);
+  flex-shrink: 0;
+  width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.fux-option > span:first-of-type { flex: 1; min-width: 0; text-align: left; }
 .fux-option-check { color: rgba(39,38,53,0.30); display: inline-flex; flex-shrink: 0; }
 .fux-option.is-selected {
   background: rgba(232,70,0,0.06);
@@ -5674,6 +5713,137 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
 }
 
 /* ============================================================
+   FUX COACHMARKS — guided tour overlay
+   ============================================================
+   Shown once after a fresh user completes the FUX onboarding and lands
+   on Home. A floating tooltip card walks the user through key UI
+   elements; the current target gets an animated orange ring. */
+.fux-coachmarks {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;            /* let highlighted target stay interactive */
+  animation: fuxCoachFadeIn 240ms ease-out both;
+}
+@keyframes fuxCoachFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fux-coach-tip {
+  position: absolute;
+  pointer-events: auto;
+  width: 320px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(15, 18, 32, 0.18),
+              0 4px 12px rgba(15, 18, 32, 0.10);
+  padding: 18px 18px 14px;
+  animation: fuxCoachPop 280ms cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+}
+@keyframes fuxCoachPop {
+  from { opacity: 0; transform: var(--coach-transform-from, translate(0, 8px) scale(0.96)); }
+  to   { opacity: 1; transform: var(--coach-transform-to, translate(0, 0) scale(1)); }
+}
+
+/* Placement variants — each anchors via its own transform so the
+   inline top/left we set in JS becomes the tooltip's logical edge. */
+.fux-coach-right  { transform: translateY(-50%); --coach-transform-from: translate(-6px, -50%) scale(0.96); --coach-transform-to: translate(0, -50%) scale(1); }
+.fux-coach-left   { transform: translate(-100%, -50%); --coach-transform-from: translate(calc(-100% + 6px), -50%) scale(0.96); --coach-transform-to: translate(-100%, -50%) scale(1); }
+.fux-coach-below  { transform: translateX(-50%); --coach-transform-from: translate(-50%, -6px) scale(0.96); --coach-transform-to: translate(-50%, 0) scale(1); }
+.fux-coach-above  { transform: translate(-50%, -100%); --coach-transform-from: translate(-50%, calc(-100% + 6px)) scale(0.96); --coach-transform-to: translate(-50%, -100%) scale(1); }
+.fux-coach-center { transform: translate(-50%, -50%); --coach-transform-from: translate(-50%, -46%) scale(0.96); --coach-transform-to: translate(-50%, -50%) scale(1); }
+
+/* Pointer arrow rendered with two stacked pseudo-elements (border + fill)
+   so the tooltip's 1px border continues smoothly around the tip. */
+.fux-coach-tip::before,
+.fux-coach-tip::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #FFFFFF;
+  transform: rotate(45deg);
+  border: 1px solid rgba(15, 18, 32, 0.08);
+}
+.fux-coach-tip::after { border: none; }
+
+.fux-coach-right::before,
+.fux-coach-right::after  { left: -8px; top: 50%; margin-top: -7px; border-top: 0; border-right: 0; }
+.fux-coach-left::before,
+.fux-coach-left::after   { right: -8px; top: 50%; margin-top: -7px; border-bottom: 0; border-left: 0; }
+.fux-coach-below::before,
+.fux-coach-below::after  { top: -8px; left: 50%; margin-left: -7px; border-bottom: 0; border-right: 0; }
+.fux-coach-above::before,
+.fux-coach-above::after  { bottom: -8px; left: 50%; margin-left: -7px; border-top: 0; border-left: 0; }
+.fux-coach-center::before,
+.fux-coach-center::after { display: none; }
+
+.fux-coach-progress {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--orange-500, #EF6C00);
+  margin-bottom: 6px;
+}
+.fux-coach-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #0F1220;
+  margin: 0 0 6px;
+}
+.fux-coach-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(39, 38, 53, 0.72);
+  margin: 0 0 14px;
+}
+.fux-coach-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.fux-coach-foot .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.fux-coach-skip {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(39, 38, 53, 0.55);
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 160ms, color 160ms;
+}
+.fux-coach-skip:hover {
+  background: rgba(15, 18, 32, 0.05);
+  color: rgba(39, 38, 53, 0.85);
+}
+
+/* Highlight ring around the active target — pulses softly so the eye
+   tracks to it without making the whole UI feel busy. */
+.is-coachmark-target {
+  position: relative;
+  z-index: 50;
+  outline: 3px solid var(--orange-500, #EF6C00);
+  outline-offset: 6px;
+  border-radius: 12px;
+  animation: fuxCoachPulse 1800ms ease-in-out infinite;
+}
+@keyframes fuxCoachPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 108, 0, 0.30); }
+  50%      { box-shadow: 0 0 0 8px rgba(239, 108, 0, 0.00); }
+}
+
+/* ============================================================
    NEWS TICKER — prototype disclaimer
    ============================================================
    Pinned to the bottom of the main canvas column (between nav rail and
@@ -5685,14 +5855,15 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   left: var(--col-1);
   right: var(--col-ai);
   height: 48px;
-  background: var(--orange-500);
+  background: #DC2626;
   color: #fff;
   overflow: hidden;
   display: flex;
   align-items: center;
   z-index: 8;
   transition: left var(--panel-shift-duration, 600ms) var(--panel-shift-curve, cubic-bezier(0.76,0,0.24,1)),
-              right var(--panel-shift-duration, 600ms) var(--panel-shift-curve, cubic-bezier(0.76,0,0.24,1));
+              right var(--panel-shift-duration, 600ms) var(--panel-shift-curve, cubic-bezier(0.76,0,0.24,1)),
+              opacity 300ms ease-out;
 }
 .news-ticker-track {
   display: flex;

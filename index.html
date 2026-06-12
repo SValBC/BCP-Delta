@@ -77,6 +77,13 @@
         else url.searchParams.set("demo", "fresh");
         window.location.href = url.toString();
       };
+      // While the entire FUX sequence is running (video → welcome → questions
+      // → thanks) both side panels collapse to 0 so the user focuses on the
+      // onboarding canvas. After the user lands on the Home screen the panels
+      // slide back to their normal widths using the same panel-shift easing
+      // as the nav/AI collapse-expand transition.
+      const [fuxPanelsHidden, setFuxPanelsHidden] = useState(freshMode);
+      const onFuxFullyComplete = () => setFuxPanelsHidden(false);
       const [pinned, setPinned] = useState(new Set(freshMode ? [] : [
         "rec-wellness",
         "rivergrove",
@@ -595,7 +602,7 @@
             onPin={onPin}
           />
         );
-      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} onAskCodyPrompt={askCodyPrompt} onStartCreateProjectFlow={startCreateProjectFlow} onStartAddFilesFlow={startAddFilesFlow} onStartRomEstimateFlow={startRomEstimateFlow} freshMode={freshMode} user={data.user} />;
+      } else if (screen === "home") detail = <HomeScreen ctx={ctx} projects={projects} runs={runs} pinnedSet={pinned} onPin={onPin} onOpenProject={openProject} onOpenProjectInNewTab={openProjectInNewTab} onOpenDrawing={openDrawing} onAskAI={onAskAI} onNewProject={openNewProject} onOpenDailyReport={() => setShowDailyReport(true)} onCtxMenu={openCtxMenu} onAskCodyPrompt={askCodyPrompt} onStartCreateProjectFlow={startCreateProjectFlow} onStartAddFilesFlow={startAddFilesFlow} onStartRomEstimateFlow={startRomEstimateFlow} freshMode={freshMode} user={data.user} onFuxFullyComplete={onFuxFullyComplete} />;
       else if (screen === "projects") detail = <ProjectsScreen ctx={ctx} projects={projects} pinnedSet={pinned} onPin={onPin} onOpen={openProject} onOpenInNewTab={openProjectInNewTab} onAskAI={onAskAI} onNewProject={openNewProject} onCtxMenu={openCtxMenu} />;
       else if (screen === "skills") detail = <SkillRunScreen project={projects[0]} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} />;
       else if (screen === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} />;
@@ -681,7 +688,7 @@
       const newTabFromButton = () => goToScreen("home");
 
       return (
-        <div className="app" data-density={t.density} data-no-list="true" data-ai-open={aiOpen} data-nav-collapsed={navCollapsed}>
+        <div className="app" data-density={t.density} data-no-list="true" data-ai-open={aiOpen} data-nav-collapsed={navCollapsed} data-fux-panels-hidden={fuxPanelsHidden}>
           <NavRail
             screen={screen}
             setScreen={goToScreen}

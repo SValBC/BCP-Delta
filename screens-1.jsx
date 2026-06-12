@@ -13,6 +13,7 @@ const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 function FUXOnboarding({ user, onComplete }) {
   const PHASES = ["video", "welcome", "intro", "q1", "q2", "q3", "q4", "thanks"];
   const [phase, setPhase] = useS("video");
+  const [videoEnding, setVideoEnding] = useS(false);
   const [answers, setAnswers] = useS({ q1: [], q2: [], q3: [], q4: null });
 
   const firstName = (user && user.name) ? user.name.split(" ")[0] : "there";
@@ -41,13 +42,23 @@ function FUXOnboarding({ user, onComplete }) {
   }, [phase]);
 
   // Fallback for the video phase — if for any reason `onEnded` doesn't fire
-  // (autoplay blocked, no media, etc.), advance after 8s so the flow never sticks.
+  // (autoplay blocked, no media, etc.), kick off the fade-out after 8s so the
+  // flow never sticks.
   useE(() => {
     if (phase !== "video") return;
-    const t = setTimeout(advance, 8000);
+    const t = setTimeout(endVideo, 8000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
+
+  // Video → welcome handoff: trigger a 700ms fade-out on the video first,
+  // THEN advance the phase. The welcome message has its own fade-in so the
+  // two transitions chain into a smooth crossfade.
+  const endVideo = () => {
+    if (videoEnding) return;
+    setVideoEnding(true);
+    setTimeout(() => advance(), 700);
+  };
 
   const questions = {
     q1: {
@@ -121,12 +132,12 @@ function FUXOnboarding({ user, onComplete }) {
       {phase === "video" && (
         <video
           key="fux-video"
-          className="fux-video"
+          className={"fux-video " + (videoEnding ? "is-ending" : "")}
           src="animated/skill-loading.mp4"
           autoPlay
           muted
           playsInline
-          onEnded={advance}
+          onEnded={endVideo}
           aria-hidden="true"
         />
       )}
@@ -195,12 +206,116 @@ function FUXOnboarding({ user, onComplete }) {
 }
 
 // =====================================================
+// FUX COACHMARKS — guided tour of key UI elements shown after a fresh
+// user lands on Home for the first time. Sequenced tooltips highlight
+// the side nav, theme switcher, Home content, Ask Cody, and the
+// Create-first-project CTA.
+// =====================================================
+function FUXCoachmarks({ onComplete, onNewProject }) {
+  const STEPS = [
+    { id: "nav",    selector: ".col-nav",                        placement: "right",  title: "Side navigation",     desc: "Your workspace lives here. Jump between Home, Projects, Skills, Reports, and Files at any time." },
+    { id: "theme",  selector: ".col-nav .theme-cycle",           placement: "right",  title: "Theme switcher",       desc: "Click to cycle between Light, Hybrid, and Dark — pick whichever reads best for your screen." },
+    { id: "home",   selector: ".greet",                          placement: "below",  title: "Your Home screen",     desc: "Personalized just for you. As you work, this is where your most important info — recent projects, pinned items, and skill runs — surfaces first." },
+    { id: "recent", selector: null,                              placement: "center", title: "Recent projects",     desc: "Quick access to the projects you've opened most recently. As soon as you create one, it'll appear here." },
+    { id: "pinned", selector: null,                              placement: "center", title: "Pinned items",         desc: "Star any project, skill result, or drawing to pin it to Home for one-click access." },
+    { id: "runs",   selector: null,                              placement: "center", title: "Recent skill runs",    desc: "A live log of every Cody skill run across your projects — with status, results, and links straight to the report." },
+    { id: "cody",   selector: ".ai-rail-collapsed, .ai-panel",   placement: "left",   title: "Ask Cody",             desc: "Your AI assistant. Drag-drop files, ask follow-up questions, or kick off a guided skill run from here." },
+    { id: "create", selector: ".greet-content .ai-pill",         placement: "below",  title: "Create your first project", desc: "Ready to get started? Drop in your plans and Cody will index them. Or skip for now and come back any time.", isFinal: true },
+  ];
+  const [step, setStep] = useS(0);
+  const [pos, setPos] = useS({ top: 0, left: 0, placement: "center" });
+  const cur = STEPS[step];
+
+  // Position the tooltip card relative to the target element on each step.
+  // Apply a temporary highlight class to the target while it's active.
+  useE(() => {
+    if (!cur) return;
+    let target = null;
+    if (cur.selector) {
+      // selector may be a comma-separated list — pick the first visible match
+      const candidates = cur.selector.split(",").map(s => s.trim());
+      for (const s of candidates) {
+        const el = document.querySelector(s);
+        if (el && el.offsetParent !== null) { target = el; break; }
+      }
+    }
+    if (target) {
+      const rect = target.getBoundingClientRect();
+      let top, left;
+      if (cur.placement === "right")      { top = rect.top + rect.height / 2;  left = rect.right + 20; }
+      else if (cur.placement === "left")  { top = rect.top + rect.height / 2;  left = rect.left - 20; }
+      else if (cur.placement === "below") { top = rect.bottom + 16;            left = rect.left + rect.width / 2; }
+      else if (cur.placement === "above") { top = rect.top - 16;               left = rect.left + rect.width / 2; }
+      else                                { top = window.innerHeight / 2;      left = window.innerWidth / 2; }
+      setPos({ top, left, placement: cur.placement });
+      target.classList.add("is-coachmark-target");
+    } else {
+      setPos({ top: window.innerHeight / 2, left: window.innerWidth / 2, placement: "center" });
+    }
+    return () => { if (target) target.classList.remove("is-coachmark-target"); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  const advance = () => {
+    if (step < STEPS.length - 1) setStep(step + 1);
+    else onComplete && onComplete();
+  };
+  const skip = () => onComplete && onComplete();
+  const startNewProject = () => {
+    onComplete && onComplete();
+    onNewProject && onNewProject();
+  };
+
+  if (!cur) return null;
+
+  const tooltipStyle = pos.placement === "center"
+    ? { top: "50%", left: "50%" }
+    : { top: pos.top, left: pos.left };
+
+  return (
+    <div className="fux-coachmarks" role="dialog" aria-modal="true" aria-label={cur.title}>
+      <div className={"fux-coach-tip fux-coach-" + pos.placement} style={tooltipStyle}>
+        <div className="fux-coach-progress">Step {step + 1} of {STEPS.length}</div>
+        <h3 className="fux-coach-title">{cur.title}</h3>
+        <p className="fux-coach-desc">{cur.desc}</p>
+        <div className="fux-coach-foot">
+          <button className="btn-ghost fux-coach-skip" onClick={skip}>
+            {cur.isFinal ? "Maybe later" : "Skip tour"}
+          </button>
+          {cur.isFinal ? (
+            <button className="btn-primary" onClick={startNewProject}>
+              <Icon name="add" size={14} />Create my project
+            </button>
+          ) : (
+            <button className="btn-primary" onClick={advance}>
+              Next<Icon name="arrow_forward" size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
 // HOME
 // =====================================================
-function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu, onAskCodyPrompt, onStartCreateProjectFlow, onStartAddFilesFlow, onStartRomEstimateFlow, freshMode, user }) {
+function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu, onAskCodyPrompt, onStartCreateProjectFlow, onStartAddFilesFlow, onStartRomEstimateFlow, freshMode, user, onFuxFullyComplete }) {
   const [greetPrompt, setGreetPrompt] = useS("");
   // FUX onboarding sequence — shown once per fresh-mode session.
   const [fuxDone, setFuxDone] = useS(false);
+  // After FUX completes, a guided coachmark tour highlights key UI elements
+  // (side nav, theme switcher, Home sections, Ask Cody, Create-project CTA).
+  // The tour is delayed slightly so the post-FUX fade-in finishes first,
+  // then the user advances at their own pace.
+  const [coachmarksActive, setCoachmarksActive] = useS(false);
+  const [coachmarksDone, setCoachmarksDone] = useS(false);
+  useE(() => {
+    if (freshMode && fuxDone && !coachmarksDone && !coachmarksActive) {
+      const t = setTimeout(() => setCoachmarksActive(true), 900);
+      return () => clearTimeout(t);
+    }
+  }, [freshMode, fuxDone, coachmarksDone, coachmarksActive]);
   const submitGreetPrompt = () => {
     const t = greetPrompt.trim();
     if (!t) return;
@@ -251,7 +366,13 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
   if (freshMode && !fuxDone) {
     return (
       <div className="col-detail">
-        <FUXOnboarding user={user} onComplete={() => setFuxDone(true)} />
+        <FUXOnboarding
+          user={user}
+          onComplete={() => {
+            setFuxDone(true);
+            onFuxFullyComplete && onFuxFullyComplete();
+          }}
+        />
       </div>
     );
   }
@@ -264,7 +385,6 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
     <div className={"col-detail " + (justFinishedFux ? "fux-post-fade" : "")}>
       <Taskbar
         crumbs={[{ label: "Home", bold: true }]}
-        actions={<button className="btn-primary" onClick={onNewProject}><Icon name="add" size={16} />New project</button>}
         onAskAI={onAskAI} />
 
       <div className="canvas">
@@ -484,6 +604,12 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
         </div>
         </>)}
       </div>
+      {coachmarksActive && !coachmarksDone && (
+        <FUXCoachmarks
+          onComplete={() => { setCoachmarksActive(false); setCoachmarksDone(true); }}
+          onNewProject={onNewProject}
+        />
+      )}
     </div>);
 
 }
@@ -560,7 +686,6 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
     <div className="col-detail">
       <Taskbar
         crumbs={[{ label: "Projects", bold: true }]}
-        actions={<button className="btn-primary" onClick={onNewProject}><Icon name="add" size={16} />New project</button>}
         onAskAI={onAskAI} />
 
       <div className="canvas">
