@@ -213,21 +213,20 @@ function FUXOnboarding({ user, onComplete }) {
 // =====================================================
 function FUXCoachmarks({ onComplete, onNewProject }) {
   const STEPS = [
-    { id: "nav",    selector: ".col-nav",                        placement: "right",  title: "Side navigation",     desc: "Your workspace lives here. Jump between Home, Projects, Skills, Reports, and Files at any time." },
-    { id: "theme",  selector: ".col-nav .theme-cycle",           placement: "right",  title: "Theme switcher",       desc: "Click to cycle between Light, Hybrid, and Dark — pick whichever reads best for your screen." },
-    { id: "home",   selector: ".greet",                          placement: "below",  title: "Your Home screen",     desc: "Personalized just for you. As you work, this is where your most important info — recent projects, pinned items, and skill runs — surfaces first." },
-    { id: "recent", selector: null,                              placement: "center", title: "Recent projects",     desc: "Quick access to the projects you've opened most recently. As soon as you create one, it'll appear here." },
-    { id: "pinned", selector: null,                              placement: "center", title: "Pinned items",         desc: "Star any project, skill result, or drawing to pin it to Home for one-click access." },
-    { id: "runs",   selector: null,                              placement: "center", title: "Recent skill runs",    desc: "A live log of every Cody skill run across your projects — with status, results, and links straight to the report." },
+    { id: "skills", selector: ".col-nav [data-nav-id=\"skills\"]", placement: "right", title: "Skills are the core of BuildCrew", desc: "Skills are the AI-powered tools that do the heavy lifting on every project: ROM estimates, bid analysis, RFI clarifications, and more. Open them from the Skills tab here, or run them straight from any project's Home screen.", skillsAnim: true },
+    { id: "theme",  selector: ".col-nav .theme-cycle",           placement: "right",  title: "Theme switcher",       desc: "Click to cycle through Light, Hybrid, and Dark. Pick whichever reads best for your screen." },
+    { id: "home",   selector: ".col-detail .canvas",             placement: "center", title: "Your Home screen",     desc: "Personalized just for you. As you start working, your Recent projects, Pinned items, and Recent skill runs will surface here so the info that matters most is always one click away.", wireframe: true },
     { id: "cody",   selector: ".ai-rail-collapsed, .ai-panel",   placement: "left",   title: "Ask Cody",             desc: "Your AI assistant. Drag-drop files, ask follow-up questions, or kick off a guided skill run from here." },
     { id: "create", selector: ".greet-content .ai-pill",         placement: "below",  title: "Create your first project", desc: "Ready to get started? Drop in your plans and Cody will index them. Or skip for now and come back any time.", isFinal: true },
   ];
   const [step, setStep] = useS(0);
-  const [pos, setPos] = useS({ top: 0, left: 0, placement: "center" });
+  const [targetRect, setTargetRect] = useS(null);
   const cur = STEPS[step];
 
-  // Position the tooltip card relative to the target element on each step.
-  // Apply a temporary highlight class to the target while it's active.
+  // Measure the current step's target element and keep its rect in state.
+  // Re-measures on resize/scroll so the spotlight tracks layout changes,
+  // and once on the next animation frame to catch late-settled transitions
+  // (e.g. the nav rail sliding back in after the FUX onboarding finishes).
   useE(() => {
     if (!cur) return;
     let target = null;
@@ -239,20 +238,19 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
         if (el && el.offsetParent !== null) { target = el; break; }
       }
     }
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      let top, left;
-      if (cur.placement === "right")      { top = rect.top + rect.height / 2;  left = rect.right + 20; }
-      else if (cur.placement === "left")  { top = rect.top + rect.height / 2;  left = rect.left - 20; }
-      else if (cur.placement === "below") { top = rect.bottom + 16;            left = rect.left + rect.width / 2; }
-      else if (cur.placement === "above") { top = rect.top - 16;               left = rect.left + rect.width / 2; }
-      else                                { top = window.innerHeight / 2;      left = window.innerWidth / 2; }
-      setPos({ top, left, placement: cur.placement });
-      target.classList.add("is-coachmark-target");
-    } else {
-      setPos({ top: window.innerHeight / 2, left: window.innerWidth / 2, placement: "center" });
-    }
-    return () => { if (target) target.classList.remove("is-coachmark-target"); };
+    const measure = () => {
+      if (target) setTargetRect(target.getBoundingClientRect());
+      else setTargetRect(null);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
@@ -268,16 +266,111 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
 
   if (!cur) return null;
 
-  const tooltipStyle = pos.placement === "center"
-    ? { top: "50%", left: "50%" }
-    : { top: pos.top, left: pos.left };
+  // Spotlight box — a transparent rect over the target, surrounded by a
+  // giant box-shadow that paints the rest of the viewport dim. Matches the
+  // element's bounding rect exactly so the spotlight never extends past
+  // the visible edges of the target (esp. critical for narrow side panels
+  // like the nav rail and the collapsed Ask Cody rail).
+  const hasTarget = !!targetRect;
+  const spotlightStyle = hasTarget ? {
+    top: targetRect.top,
+    left: targetRect.left,
+    width: targetRect.width,
+    height: targetRect.height,
+  } : null;
 
-  return (
+  // Tooltip placement — fully fixed positioning with inline transforms so
+  // the placement class only styles the arrow (no transform conflicts with
+  // the placement math). Falls back to centered when no target is resolved.
+  const GAP = 18;
+  let tooltipStyle;
+  let activePlacement;
+  if (!hasTarget || cur.placement === "center") {
+    activePlacement = "center";
+    tooltipStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+  } else if (cur.placement === "right") {
+    activePlacement = "right";
+    tooltipStyle = { top: targetRect.top + targetRect.height / 2, left: targetRect.right + GAP, transform: "translateY(-50%)" };
+  } else if (cur.placement === "left") {
+    activePlacement = "left";
+    tooltipStyle = { top: targetRect.top + targetRect.height / 2, left: targetRect.left - GAP, transform: "translate(-100%, -50%)" };
+  } else if (cur.placement === "below") {
+    activePlacement = "below";
+    tooltipStyle = { top: targetRect.bottom + GAP, left: targetRect.left + targetRect.width / 2, transform: "translateX(-50%)" };
+  } else if (cur.placement === "above") {
+    activePlacement = "above";
+    tooltipStyle = { top: targetRect.top - GAP, left: targetRect.left + targetRect.width / 2, transform: "translate(-50%, -100%)" };
+  } else {
+    activePlacement = "center";
+    tooltipStyle = { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+  }
+
+  // Render through a portal into <body> so the overlay isn't nested inside
+  // any ancestor with a `transform` set. Without this, `.col-detail`'s
+  // post-FUX fade animation leaves a translateY(0) transform on the
+  // element, which makes it the containing block for `position: fixed`
+  // children — that's why the spotlight was landing next to elements
+  // instead of on them (offset by .col-detail's top-left).
+  const overlay = (
     <div className="fux-coachmarks" role="dialog" aria-modal="true" aria-label={cur.title}>
-      <div className={"fux-coach-tip fux-coach-" + pos.placement} style={tooltipStyle}>
+      {hasTarget ? (
+        <div className="fux-coach-spotlight" style={spotlightStyle} />
+      ) : (
+        <div className="fux-coach-backdrop" />
+      )}
+      <div className={"fux-coach-tip fux-coach-" + activePlacement} style={tooltipStyle}>
         <div className="fux-coach-progress">Step {step + 1} of {STEPS.length}</div>
         <h3 className="fux-coach-title">{cur.title}</h3>
         <p className="fux-coach-desc">{cur.desc}</p>
+        {cur.skillsAnim && (
+          <div className="fux-coach-skills" aria-hidden="true">
+            <div className="fux-coach-skill-pill" style={{ animationDelay: "0s" }}>
+              <Icon name="calculate" size={12} />
+              <span>ROM Estimate</span>
+            </div>
+            <div className="fux-coach-skill-pill" style={{ animationDelay: "0.45s" }}>
+              <Icon name="compare_arrows" size={12} />
+              <span>Bid Analysis</span>
+            </div>
+            <div className="fux-coach-skill-pill" style={{ animationDelay: "0.9s" }}>
+              <Icon name="rule" size={12} />
+              <span>Clarifications</span>
+            </div>
+            <div className="fux-coach-skill-pill" style={{ animationDelay: "1.35s" }}>
+              <Icon name="auto_awesome" size={12} />
+              <span>Daily Report</span>
+            </div>
+          </div>
+        )}
+        {cur.wireframe && (
+          <div className="fux-coach-wire" aria-hidden="true">
+            <div className="fux-coach-wire-section">
+              <div className="fux-coach-wire-label">Recent projects</div>
+              <div className="fux-coach-wire-row">
+                <div className="fux-coach-wire-card lg" />
+                <div className="fux-coach-wire-card lg" />
+                <div className="fux-coach-wire-card lg" />
+              </div>
+            </div>
+            <div className="fux-coach-wire-section">
+              <div className="fux-coach-wire-label">Pinned</div>
+              <div className="fux-coach-wire-row">
+                <div className="fux-coach-wire-card sm" />
+                <div className="fux-coach-wire-card sm" />
+                <div className="fux-coach-wire-card sm" />
+                <div className="fux-coach-wire-card sm" />
+              </div>
+            </div>
+            <div className="fux-coach-wire-section">
+              <div className="fux-coach-wire-label">Recent skill runs</div>
+              <div className="fux-coach-wire-table">
+                <div className="fux-coach-wire-bar" />
+                <div className="fux-coach-wire-bar" />
+                <div className="fux-coach-wire-bar" />
+              </div>
+            </div>
+          </div>
+        )}
         <div className="fux-coach-foot">
           <button className="btn-ghost fux-coach-skip" onClick={skip}>
             {cur.isFinal ? "Maybe later" : "Skip tour"}
@@ -295,6 +388,7 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
       </div>
     </div>
   );
+  return ReactDOM.createPortal(overlay, document.body);
 }
 
 // =====================================================
@@ -341,7 +435,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
       const [projectId, skillId] = pinId.slice(6).split("/");
       const proj = projects.find((x) => x.id === projectId);
       const meta = {
-        estimation: { icon: "calculate", eyebrow: "Skill result · Estimation", value: (proj && proj.estimate) || "—", delta: "+2.3% vs v2", theme: "orange" },
+        estimation: { icon: "calculate", eyebrow: "Skill result · Estimation", value: (proj && proj.estimate) || "N/A", delta: "+2.3% vs v2", theme: "orange" },
         rfc: { icon: "rule", eyebrow: "Skill result · Clarifications", value: "23 issues", delta: "3 critical", theme: "orange" },
         bid: { icon: "compare_arrows", eyebrow: "Skill result · Bid Level Analysis", value: "$384.7k", delta: "−$74k vs ROM", theme: "tiffany" },
       }[skillId];
@@ -390,13 +484,13 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
       <div className="canvas">
         <div className="greet">
           <div className="greet-content">
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "rgba(39,38,53,0.55)", marginBottom: 8 }}>
+            <div className="greet-eyebrow" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, marginBottom: 8 }}>
               {isFresh ? "Welcome aboard" : "Tuesday morning · April 28"}
             </div>
             <h1>{isFresh ? "Welcome to BuildCrew, Victor." : "Welcome back, Victor."}</h1>
             {isFresh && (
-              <p style={{ marginTop: 12, fontSize: 14, lineHeight: 1.55, color: "rgba(39,38,53,0.70)", maxWidth: 540 }}>
-                You're all set up. The fastest way to see what Cody can do is to start your first project — drop in your plans and specs and Cody will take it from there.
+              <p className="greet-intro" style={{ marginTop: 12, fontSize: 14, lineHeight: 1.55, maxWidth: 540 }}>
+                You're all set up. The fastest way to see what Cody can do is to start your first project. Drop in your plans and specs, and Cody will take it from there.
               </p>
             )}
 
@@ -406,7 +500,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
                 <CodyMark size={16} className="greet-prompt-spark" />
                 <input
                   type="text"
-                  placeholder="Ask Cody anything — or pick a quick action below"
+                  placeholder="Ask Cody anything, or pick a quick action below"
                   value={greetPrompt}
                   onChange={(e) => setGreetPrompt(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
@@ -536,7 +630,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
                       <span className="pin-toggle" onClick={(e) => {e.stopPropagation();onPin(c.pinId);}}><Icon name="push_pin" /></span>
                       <Icon className="bg" name="architecture" />
                       <span className="pin-kind" style={{ color: "#0074E8" }}>Drawing · {c.drawing.trade}</span>
-                      <span className="pin-title">{c.drawing.id} — {c.drawing.title}</span>
+                      <span className="pin-title">{c.drawing.id}: {c.drawing.title}</span>
                       <span className="pin-meta">
                         <Icon name="folder_open" size={13} style={{ opacity: 0.55, color: "#0074E8" }} />
                         <span>{c.proj.name}</span>
@@ -595,7 +689,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
                     {r.ai && r.ai.total && <b>{r.ai.total}</b>}
                     {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
                     {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
-                    {!r.ai && "—"}
+                    {!r.ai && "N/A"}
                   </td>
                 </tr>
               )}
@@ -630,7 +724,7 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
   };
 
   const estimateValue = (p) => {
-    if (!p.estimate || p.estimate === "—") return -1;
+    if (!p.estimate || p.estimate === "N/A") return -1;
     const m = p.estimate.replace(/[^0-9.]/g, "");
     const n = parseFloat(m);
     if (!Number.isFinite(n)) return -1;

@@ -34,7 +34,7 @@ function NewProjectModal({ open, onClose, onCreate }) {
     // simulate AI generation typing
     const sample = files.length > 0
       ? `Multistory ${kind.toLowerCase()} project at ${address || "the indicated site"}. Cody parsed ${files.length} document${files.length === 1 ? "" : "s"} and detected references to a ${["pool","gym","clinic","warehouse","tower"][Math.floor(Math.random() * 5)]}-scale program with mechanical, electrical, and plumbing scope across multiple CSI divisions. Confirm program details with the owner before running estimation.`
-      : `${kind} project. Upload plans and specs and Cody will refine this scope automatically — for now, treat this as a placeholder rooted in the project name.`;
+      : `${kind} project. Upload plans and specs and Cody will refine this scope automatically. For now, treat this as a placeholder rooted in the project name.`;
 
     let i = 0;
     setScope("");
@@ -142,7 +142,7 @@ function NewProjectModal({ open, onClose, onCreate }) {
                 <Icon name="help_outline" size={14} />
                 What is this?
                 <div className="scope-help-pop">
-                  A short blurb describing what this project is. Cody uses it as background context when running skills — useful if uploaded documents are sparse or ambiguous.
+                  A short blurb describing what this project is. Cody uses it as background context when running skills, which is useful if uploaded documents are sparse or ambiguous.
                 </div>
               </span>
             </div>
@@ -185,14 +185,14 @@ function NewProjectModal({ open, onClose, onCreate }) {
                   <p>{scope}</p>
                   <div className="scope-ai-foot">
                     <CodyMark size={12} />
-                    <span>Drafted by Cody — switch to "Write it myself" to edit.</span>
+                    <span>Drafted by Cody. Switch to "Write it myself" to edit.</span>
                     <button type="button" className="btn-ghost" onClick={handleGenerate}><Icon name="refresh" size={12} />Re-draft</button>
                   </div>
                 </div>
               )}
             </div>
             <div className="scope-hint">
-              Cody falls back on this when uploaded documents are sparse — it improves estimation, RFC, and bid-leveling accuracy.
+              Cody falls back on this when uploaded documents are sparse. It improves estimation, RFC, and bid-leveling accuracy.
             </div>
           </div>
         </div>
@@ -244,10 +244,10 @@ function DailyReportModal({ open, onClose, projects }) {
       { icon: "calculate", title: "Estimation refresh", text: () => `Cody re-ran the ROM and confidence held steady at ${88 + ((proj.id.length * 7) % 9)}%.` },
       { icon: "rule", title: "RFC sweep", text: () => `${1 + ((proj.id.length) % 4)} new clarifications surfaced on ${proj.name}.` },
       { icon: "compare_arrows", title: "Bid leveling refresh", text: () => `Recommended sub on Division ${["09","22","23","26"][proj.id.length % 4]} unchanged.` },
-      { icon: "upload_file", title: "Document indexed", text: () => `Sam uploaded ${1 + (proj.id.length % 3)} new sheets — Cody finished extraction by 2:14 AM.` },
+      { icon: "upload_file", title: "Document indexed", text: () => `Sam uploaded ${1 + (proj.id.length % 3)} new sheets. Cody finished extraction by 2:14 AM.` },
       { icon: "warning", title: "Cost flag raised", text: () => `Division 09 carpet trending +${5 + (proj.id.length % 18)}% above benchmark on ${proj.name}.` },
       { icon: "auto_awesome", title: "Schedule update", text: () => `Pulled critical path forward by ${1 + (proj.id.length % 4)} days after RFC closure.` },
-      { icon: "fact_check", title: "Spec addendum reviewed", text: () => `Cody flagged a discrepancy in 09 65 00 finishes — review queued for you.` },
+      { icon: "fact_check", title: "Spec addendum reviewed", text: () => `Cody flagged a discrepancy in 09 65 00 finishes. Review queued for you.` },
       { icon: "trending_up", title: "ROM moved", text: () => `Total estimate moved by ${(((proj.id.length * 13) % 50) / 10).toFixed(1)}% on the latest revision.` },
     ];
     const out = {};
@@ -409,7 +409,7 @@ function PushGlobalModal({ open, onClose, onConfirm, edits }) {
           <div className="push-impact">
             <Icon name="auto_awesome" size={14} className="cody-mark" />
             <div>
-              <b>What Cody will learn:</b> these changes feed back into the platform-wide knowledge base. Future skill runs on this project — and similar projects — will reflect your overrides.
+              <b>What Cody will learn:</b> these changes feed back into the platform-wide knowledge base. Future skill runs on this project, and similar projects, will reflect your overrides.
             </div>
           </div>
         </div>
@@ -480,7 +480,7 @@ function DeleteFileModal({ open, file, onClose, onConfirm }) {
             </div>
             <ul className="del-impact-list">
               <li>Past skill runs that referenced this file will keep their results, but their source citations will show as <b>"file removed."</b></li>
-              <li>Cody's project knowledge base will be updated — future skill runs won't draw on this file's contents.</li>
+              <li>Cody's project knowledge base will be updated, so future skill runs won't draw on this file's contents.</li>
               <li>Any flagged line items, RFIs, or bid leveling notes anchored to this file will be marked <b>orphaned</b> and surfaced for review.</li>
               <li>The file will still appear in the project's revision history audit log.</li>
             </ul>
@@ -540,7 +540,7 @@ function AddConnectionModal({ open, onClose, connections, onToggleConnection }) 
     { id: "procore",          name: "Procore",           category: "Construction", domain: "procore.com",          desc: "Project management, drawings, and submittals.",      icon: "domain",          brand: "#F7941E" },
     { id: "onscreen-takeoff", name: "OnScreen Takeoff",  category: "Construction", domain: "oncenter.com",         desc: "Digital takeoffs from drawings and PDFs.",            icon: "square_foot",     brand: "#0096D6" },
     { id: "planswift",        name: "PlanSwift",         category: "Construction", domain: "planswift.com",        desc: "Quick takeoff and estimating from PDF plans.",        icon: "straighten",      brand: "#E84600" },
-    { id: "autodesk-construction", name: "Autodesk Construction Cloud", category: "Construction", domain: "autodesk.com", desc: "BIM 360, Build, and Docs — drawings and RFIs.", icon: "view_in_ar", brand: "#0696D7" },
+    { id: "autodesk-construction", name: "Autodesk Construction Cloud", category: "Construction", domain: "autodesk.com", desc: "BIM 360, Build, and Docs: drawings and RFIs.", icon: "view_in_ar", brand: "#0696D7" },
     { id: "plangrid",         name: "PlanGrid",          category: "Construction", domain: "plangrid.com",         desc: "Field-first drawing access and markup sync.",         icon: "map",             brand: "#FFB400" },
     { id: "stack",            name: "STACK",             category: "Construction", domain: "stackct.com",          desc: "Cloud takeoff and estimating for preconstruction.",   icon: "calculate",       brand: "#5047F3" },
     { id: "trimble-connect",  name: "Trimble Connect",   category: "Construction", domain: "connect.trimble.com",  desc: "Model coordination and collaboration platform.",      icon: "hub",             brand: "#005EB8" },
@@ -839,7 +839,7 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
                                         value={assignments[f.id] || t.id}
                                         onChange={(e) => moveFile(f.id, e.target.value)}>
                                   {baseTrades.map(tt => (
-                                    <option key={tt.id} value={tt.id}>Div {tt.division} — {tt.name}</option>
+                                    <option key={tt.id} value={tt.id}>Div {tt.division}: {tt.name}</option>
                                   ))}
                                 </select>
                               </div>

@@ -148,6 +148,45 @@ const Sparkle = ({ size = 11, white, spin, style }) => (
 
 // Share dropdown — a button + popover with the share/export options
 // available for the current screen. Closes on outside click or Escape.
+// Overflow menu — a 3-dot icon button that opens a list of secondary actions.
+// Used in Taskbars to keep the action row uncluttered: anything that isn't a
+// primary action (Share, Pin, etc.) goes under the kebab so the row stays
+// focused on the user's main intents.
+function OverflowMenu({ options, title = "More actions" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  if (!options || options.length === 0) return null;
+  return (
+    <div className="share-dd overflow-dd" ref={ref}>
+      <button className="btn icon-only" onClick={() => setOpen(v => !v)} title={title} aria-label={title}>
+        <Icon name="more_vert" size={18} />
+      </button>
+      {open && (
+        <div className="ctx-menu share-menu overflow-menu">
+          {options.map((o, i) => (
+            <button key={i} className="ctx-menu-item"
+                    onClick={() => { o.onClick && o.onClick(); setOpen(false); }}>
+              {o.icon && <Icon name={o.icon} size={14} />}
+              <span>{o.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ShareDropdown({ options }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -185,7 +224,7 @@ function ShareDropdown({ options }) {
 }
 
 const formatMoney = (n) => {
-  if (n == null) return "—";
+  if (n == null) return "N/A";
   if (Math.abs(n) >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
   if (Math.abs(n) >= 1e3) return "$" + (n / 1e3).toFixed(0) + "k";
   return "$" + n.toLocaleString();
@@ -364,6 +403,7 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
       <div className="nav-section">Workspace</div>
       {items.map(it => (
         <div key={it.id}
+             data-nav-id={it.id}
              className={"nav-item " + (screen === it.id ? "active" : "")}
              title={collapsed ? it.label : undefined}
              onClick={() => setScreen(it.id)}
@@ -676,10 +716,10 @@ function ReportsList({ ctx, setCtx }) {
     { id: "drafts", label: "Drafts", count: 2 }
   ];
   const reports = [
-    { id: "rep1", title: "Recreational Wellness — ROM v3", date: "Today", project: "Rec & Wellness Center" },
+    { id: "rep1", title: "Recreational Wellness: ROM v3", date: "Today", project: "Rec & Wellness Center" },
     { id: "rep2", title: "Rivergrove Bid Summary", date: "Yesterday", project: "Rivergrove Phase II" },
-    { id: "rep3", title: "Mercy Clinic — Owner brief", date: "2d ago", project: "Mercy Outpatient" },
-    { id: "rep4", title: "RFI Tracker — Westlake", date: "3d ago", project: "Westlake Elementary" }
+    { id: "rep3", title: "Mercy Clinic: Owner brief", date: "2d ago", project: "Mercy Outpatient" },
+    { id: "rep4", title: "RFI Tracker: Westlake", date: "3d ago", project: "Westlake Elementary" }
   ];
   return (
     <div className="col-list">
@@ -1020,7 +1060,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
     setFlow({ id: "create-project", step: "drop" });
     setTimeout(() => {
       pushAI({
-        text: "Great — let's set up a new project. Drag and drop your project files (plans, specs, owner narratives) anywhere into this panel and I'll get started.",
+        text: "Great. Let's set up a new project. Drag and drop your project files (plans, specs, owner narratives) anywhere into this panel and I'll get started.",
         dropzone: { instruction: "Drop your project files here", kind: "create" }
       });
     }, 200);
@@ -1030,7 +1070,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
     resetChat();
     setFlow({ id: "add-files", step: "pick-project", pickerPage: 0 });
     setTimeout(() => {
-      projectPickerStep("Sure — which project would you like to add files to?", 0);
+      projectPickerStep("Sure, which project would you like to add files to?", 0);
     }, 200);
   };
 
@@ -1073,7 +1113,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
       setFlow({ ...flow, step: "drop", projectId: proj.id });
       setTimeout(() => {
         pushAI({
-          text: `Perfect — I'll add files to ${proj.name}. Drag and drop them anywhere into this panel.`,
+          text: `Perfect. I'll add files to ${proj.name}. Drag and drop them anywhere into this panel.`,
           dropzone: { instruction: "Drop your files here", kind: "add-files", projectId: proj.id, projectName: proj.name }
         });
       }, 600);
@@ -1081,7 +1121,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
       setFlow({ ...flow, step: "rom-new-files", projectId: proj.id });
       setTimeout(() => {
         pushAI({
-          text: `Got it — running ROM on ${proj.name}. Do you have any new files you'd like to add before I run the estimate?`,
+          text: `Got it. Running ROM on ${proj.name}. Do you have any new files you'd like to add before I run the estimate?`,
           dropzone: { instruction: "Drop new files here", kind: "rom-files", projectId: proj.id, projectName: proj.name, optional: true }
         });
       }, 600);
@@ -1090,7 +1130,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
   const onPickerMore = (currentPage) => {
     const nextPage = currentPage + 1;
     setFlow(f => f ? { ...f, pickerPage: nextPage } : f);
-    setTimeout(() => projectPickerStep("Here are some more — pick one or type the name.", nextPage), 200);
+    setTimeout(() => projectPickerStep("Here are some more. Pick one or type the name.", nextPage), 200);
   };
   const onPickerTypeProject = (name) => {
     if (!name.trim() || !flow) return;
@@ -1122,7 +1162,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
     setFlow({ ...flow, step: "running-rom" });
     setTimeout(() => {
       pushAI({
-        text: `Kicking off the ROM Estimate skill on ${projName}. I'll let you know when it finishes — you can keep working in the meantime.`,
+        text: `Kicking off the ROM Estimate skill on ${projName}. I'll let you know when it finishes, so you can keep working in the meantime.`,
         successLink: { projectId: flow.projectId, projectName: projName, label: "Open " + projName, kind: "rom-running" }
       });
       // Fire the actual skill run animation
@@ -1173,7 +1213,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
         const newProjectName = "Crestview Aquatic Center"; // demo placeholder
         if (activeFlow.id === "create-project") {
           pushAI({
-            text: `Indexed ${files.length} ${files.length === 1 ? "file" : "files"} and set up your new project. I detected it's a ${files.length > 2 ? "civic recreation" : "commercial"} build — feel free to adjust the project name and details on Project Home.`,
+            text: `Indexed ${files.length} ${files.length === 1 ? "file" : "files"} and set up your new project. I detected it's a ${files.length > 2 ? "civic recreation" : "commercial"} build. Feel free to adjust the project name and details on Project Home.`,
             successLink: { projectId: "rec-wellness", projectName: newProjectName, label: "Open " + newProjectName, kind: "project-created" }
           });
           setFlow(null);
@@ -1189,14 +1229,14 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
         const proj = (projects || []).find(p => p.id === activeFlow.projectId);
         const name = proj ? proj.name : "your project";
         pushAI({
-          text: `Done — I added ${files.length} ${files.length === 1 ? "file" : "files"} to ${name} and indexed ${files.length === 1 ? "it" : "them"} so I can reference ${files.length === 1 ? "it" : "them"} in any future skill run.`,
+          text: `Done. I added ${files.length} ${files.length === 1 ? "file" : "files"} to ${name} and indexed ${files.length === 1 ? "it" : "them"} so I can reference ${files.length === 1 ? "it" : "them"} in any future skill run.`,
           successLink: { projectId: activeFlow.projectId, projectName: name, label: "Open " + name, kind: "files-added" }
         });
         setFlow(null);
       } else if (activeFlow && activeFlow.id === "rom-estimate" && activeFlow.step === "rom-new-files") {
         const projName = activeFlow.projectName || (projects || []).find(p => p.id === activeFlow.projectId)?.name || "your project";
         pushAI({
-          text: `Indexed ${files.length} new ${files.length === 1 ? "file" : "files"}. Kicking off the ROM Estimate on ${projName} now — I'll surface results when it's done.`,
+          text: `Indexed ${files.length} new ${files.length === 1 ? "file" : "files"}. Kicking off the ROM Estimate on ${projName} now. I'll surface results when it's done.`,
           successLink: { projectId: activeFlow.projectId, projectName: projName, label: "Open " + projName, kind: "rom-running" }
         });
         if (activeFlow.projectId && onStartSkillRun) onStartSkillRun(activeFlow.projectId, "estimation");
@@ -1204,7 +1244,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
       } else {
         // Default behavior — no active flow
         pushAI({
-          text: `Got it — I've indexed ${files.length} ${files.length === 1 ? "file" : "files"} (${fileList}). Want me to extract takeoffs, summarize the content, or run a skill against ${files.length === 1 ? "it" : "them"}?`,
+          text: `Got it. I've indexed ${files.length} ${files.length === 1 ? "file" : "files"} (${fileList}). Want me to extract takeoffs, summarize the content, or run a skill against ${files.length === 1 ? "it" : "them"}?`,
           suggest: ["Extract takeoffs", "Summarize the content", "Run a skill on these"],
         });
       }
@@ -1214,7 +1254,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
   // Collapsed mode — narrow strip with the mascot
   if (!open) {
     return (
-      <div className="ai-rail-collapsed" onClick={onOpen} title="Open Cody — your AI assistant">
+      <div className="ai-rail-collapsed" onClick={onOpen} title="Open Cody, your AI assistant">
         <div className="ai-rail-mascot">
           <img src="design-system/cody.png" alt="Cody" />
           <span className="ai-rail-pulse" />
@@ -1475,7 +1515,7 @@ function makeAIReply(t, context) {
   if (lower.includes("estimate") || lower.includes("changed")) {
     return {
       role: "ai",
-      text: "Keen eye! The estimate moved from $4.71M to $4.82M — a 2.3% increase. The biggest driver is Division 09 carpet (Shaw Haze), where transportation costs roughly doubled following the recent county code update.",
+      text: "Keen eye! The estimate moved from $4.71M to $4.82M, a 2.3% increase. The biggest driver is Division 09 carpet (Shaw Haze), where transportation costs roughly doubled following the recent county code update.",
       suggest: ["Show affected line items", "Cite source documents", "Export to PDF"],
     };
   }
@@ -1502,10 +1542,10 @@ function makeAIReply(t, context) {
   }
   return {
     role: "ai",
-    text: "On it. Cody's pulled the relevant sheets and spec sections for you — say the word and I can prep a follow-up note for your team.",
+    text: "On it. Cody's pulled the relevant sheets and spec sections for you. Say the word and I can prep a follow-up note for your team.",
     suggest: ["Show the sheets", "Draft the note", "What else can you do?"],
   };
 }
 
 // expose globals
-Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, ShareDropdown, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });
+Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, ShareDropdown, OverflowMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });

@@ -20,10 +20,10 @@ window.BC_DATA = {
       stage: "Schematic design",
       phase: "bid", archived: false,
       revisions: [
-        { id: "rev1", name: "Revision 1 — Initial upload", date: "Apr 18, 2026", note: "Owner program + site plan" },
-        { id: "rev2", name: "Revision 2 — Drawings added", date: "Apr 22, 2026", note: "Architectural set issued" },
-        { id: "rev3", name: "Revision 3 — RFC responses", date: "Apr 28, 2026", note: "Lobby ceiling height resolved" },
-        { id: "rev4", name: "Revision 4 — Mechanical addendum", date: "May 5, 2026", note: "M-201 / M-202 / M-203 indexed" }
+        { id: "rev1", name: "Revision 1: Initial upload", date: "Apr 18, 2026", note: "Owner program + site plan" },
+        { id: "rev2", name: "Revision 2: Drawings added", date: "Apr 22, 2026", note: "Architectural set issued" },
+        { id: "rev3", name: "Revision 3: RFC responses", date: "Apr 28, 2026", note: "Lobby ceiling height resolved" },
+        { id: "rev4", name: "Revision 4: Mechanical addendum", date: "May 5, 2026", note: "M-201 / M-202 / M-203 indexed" }
       ],
       scope: "Two-story 84,000 SF municipal recreation and wellness facility in Portland, OR. Program includes a 25-meter 8-lane competition pool, fitness studios, multipurpose gymnasium, locker rooms, and a public lobby/cafe. Site sits on a brownfield with documented soils issues. Targeting LEED Silver and a Q4 2026 substantial completion. Owner is the City Parks Bureau; CMGC delivery."
     },
@@ -44,9 +44,9 @@ window.BC_DATA = {
       stage: "Bidding",
       phase: "won", archived: false,
       revisions: [
-        { id: "rev1", name: "Revision 1 — Initial upload", date: "Mar 12, 2026", note: "Phase II program" },
-        { id: "rev2", name: "Revision 2 — Drawing set updated", date: "Apr 1, 2026", note: "100% DD set" },
-        { id: "rev3", name: "Revision 3 — Bid set finalized", date: "Apr 20, 2026", note: "Issued for bid" }
+        { id: "rev1", name: "Revision 1: Initial upload", date: "Mar 12, 2026", note: "Phase II program" },
+        { id: "rev2", name: "Revision 2: Drawing set updated", date: "Apr 1, 2026", note: "100% DD set" },
+        { id: "rev3", name: "Revision 3: Bid set finalized", date: "Apr 20, 2026", note: "Issued for bid" }
       ],
       scope: "48-unit affordable multifamily project, Phase II of the Rivergrove development. 4-story Type V wood-frame over Type I podium, with structured parking. Mix of 1BR, 2BR, and 3BR units; ground-floor community space. Targeting Earth Advantage Platinum."
     },
@@ -58,7 +58,7 @@ window.BC_DATA = {
       status: "draft",
       statusLabel: "Draft",
       lastEdit: "3d ago",
-      estimate: "—",
+      estimate: "N/A",
       pinned: false,
       files: 12,
       reports: 0,
@@ -67,7 +67,7 @@ window.BC_DATA = {
       stage: "Pre-design",
       phase: "draft", archived: false,
       revisions: [
-        { id: "rev1", name: "Revision 1 — Initial draft", date: "May 4, 2026", note: "Owner kickoff packet" }
+        { id: "rev1", name: "Revision 1: Initial draft", date: "May 4, 2026", note: "Owner kickoff packet" }
       ]
     },
     {
@@ -87,9 +87,9 @@ window.BC_DATA = {
       stage: "Design development",
       phase: "lost", archived: false,
       revisions: [
-        { id: "rev1", name: "Revision 1 — Initial upload", date: "Apr 1, 2026", note: "Tenant fit-out program" },
-        { id: "rev2", name: "Revision 2 — Schematic update", date: "Apr 15, 2026", note: "Layout revisions" },
-        { id: "rev3", name: "Revision 3 — Mechanical drawings added", date: "May 2, 2026", note: "Full HVAC set" }
+        { id: "rev1", name: "Revision 1: Initial upload", date: "Apr 1, 2026", note: "Tenant fit-out program" },
+        { id: "rev2", name: "Revision 2: Schematic update", date: "Apr 15, 2026", note: "Layout revisions" },
+        { id: "rev3", name: "Revision 3: Mechanical drawings added", date: "May 2, 2026", note: "Full HVAC set" }
       ]
     },
     {
@@ -109,8 +109,8 @@ window.BC_DATA = {
       stage: "Bidding",
       phase: "won", archived: false,
       revisions: [
-        { id: "rev1", name: "Revision 1 — Initial upload", date: "Feb 20, 2026", note: "Owner program + site survey" },
-        { id: "rev2", name: "Revision 2 — Drawing set updated", date: "Mar 15, 2026", note: "100% CD set issued" }
+        { id: "rev1", name: "Revision 1: Initial upload", date: "Feb 20, 2026", note: "Owner program + site survey" },
+        { id: "rev2", name: "Revision 2: Drawing set updated", date: "Mar 15, 2026", note: "100% CD set issued" }
       ]
     },
     {
@@ -121,7 +121,7 @@ window.BC_DATA = {
       status: "draft",
       statusLabel: "Draft",
       lastEdit: "1w ago",
-      estimate: "—",
+      estimate: "N/A",
       pinned: false,
       files: 6,
       reports: 0,
@@ -130,7 +130,7 @@ window.BC_DATA = {
       stage: "Pre-design",
       phase: "draft", archived: true,
       revisions: [
-        { id: "rev1", name: "Revision 1 — Initial draft", date: "Apr 30, 2026", note: "Lobby concept brief" }
+        { id: "rev1", name: "Revision 1: Initial draft", date: "Apr 30, 2026", note: "Lobby concept brief" }
       ]
     }
   ],
@@ -165,22 +165,22 @@ window.BC_DATA = {
 
   // Files for the active project
   files: [
-    { id: "f1", name: "A-101 — Level 1 floor plan.pdf", size: "4.2 MB", uploaded: "3h ago · Victor Mezhvinsky", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f2", name: "A-102 — Level 2 floor plan.pdf", size: "3.9 MB", uploaded: "3h ago · Victor Mezhvinsky", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f3", name: "A-201 — Elevations.pdf", size: "5.8 MB", uploaded: "3h ago · Victor Mezhvinsky", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f4", name: "A-301 — Building sections.pdf", size: "4.1 MB", uploaded: "Yesterday · Sam Lee", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f5", name: "S-100 — Structural framing.dwg", size: "2.4 MB", uploaded: "Yesterday · Sam Lee", category: "Drawings", ftype: "dwg", confidence: "high", indexed: true },
+    { id: "f1", name: "A-101 Level 1 floor plan.pdf", size: "4.2 MB", uploaded: "3h ago · Victor Mezhvinsky", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f2", name: "A-102 Level 2 floor plan.pdf", size: "3.9 MB", uploaded: "3h ago · Victor Mezhvinsky", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f3", name: "A-201 Elevations.pdf", size: "5.8 MB", uploaded: "3h ago · Victor Mezhvinsky", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f4", name: "A-301 Building sections.pdf", size: "4.1 MB", uploaded: "Yesterday · Sam Lee", category: "Drawings", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f5", name: "S-100 Structural framing.dwg", size: "2.4 MB", uploaded: "Yesterday · Sam Lee", category: "Drawings", ftype: "dwg", confidence: "high", indexed: true },
 
-    { id: "f6", name: "Project manual — Div 09 Finishes.pdf", size: "1.8 MB", uploaded: "2d ago · Victor Mezhvinsky", category: "Specs", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f7", name: "Spec book — Div 08 Openings.pdf", size: "2.2 MB", uploaded: "2d ago · Victor Mezhvinsky", category: "Specs", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f6", name: "Project manual - Div 09 Finishes.pdf", size: "1.8 MB", uploaded: "2d ago · Victor Mezhvinsky", category: "Specs", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f7", name: "Spec book - Div 08 Openings.pdf", size: "2.2 MB", uploaded: "2d ago · Victor Mezhvinsky", category: "Specs", ftype: "pdf", confidence: "high", indexed: true },
     { id: "f8", name: "Mechanical specifications.pdf", size: "3.4 MB", uploaded: "2d ago · Victor Mezhvinsky", category: "Specs", ftype: "pdf", confidence: "med", indexed: true },
 
-    { id: "f9", name: "Bid form — Northwest Drywall Co.pdf", size: "182 KB", uploaded: "4d ago · Sam Lee", category: "Bid Forms", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f10", name: "Bid form — Apex Mechanical.xlsx", size: "94 KB", uploaded: "4d ago · Sam Lee", category: "Bid Forms", ftype: "xlsx", confidence: "med", indexed: true },
-    { id: "f11", name: "Bid form — Stratus Electric.pdf", size: "210 KB", uploaded: "4d ago · Sam Lee", category: "Bid Forms", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f9", name: "Bid form - Northwest Drywall Co.pdf", size: "182 KB", uploaded: "4d ago · Sam Lee", category: "Bid Forms", ftype: "pdf", confidence: "high", indexed: true },
+    { id: "f10", name: "Bid form - Apex Mechanical.xlsx", size: "94 KB", uploaded: "4d ago · Sam Lee", category: "Bid Forms", ftype: "xlsx", confidence: "med", indexed: true },
+    { id: "f11", name: "Bid form - Stratus Electric.pdf", size: "210 KB", uploaded: "4d ago · Sam Lee", category: "Bid Forms", ftype: "pdf", confidence: "high", indexed: true },
 
     { id: "f12", name: "Geotech report.pdf", size: "8.2 MB", uploaded: "1w ago · Victor Mezhvinsky", category: "Supporting Docs", ftype: "pdf", confidence: "high", indexed: true },
-    { id: "f13", name: "Site photo — east facade.jpg", size: "2.1 MB", uploaded: "1w ago · Sam Lee", category: "Supporting Docs", ftype: "image", confidence: "high", indexed: true },
+    { id: "f13", name: "Site photo - east facade.jpg", size: "2.1 MB", uploaded: "1w ago · Sam Lee", category: "Supporting Docs", ftype: "image", confidence: "high", indexed: true },
     { id: "f14", name: "Owner program narrative.docx", size: "412 KB", uploaded: "2w ago · Victor Mezhvinsky", category: "Supporting Docs", ftype: "doc", confidence: "high", indexed: true },
   ],
 
@@ -190,75 +190,75 @@ window.BC_DATA = {
     "rec-wellness": [
       // rev1 — Owner program + site plan
       { id: "rw-r1-1", name: "Owner program narrative.docx", size: "412 KB", sizeBytes: 421888, ftype: "docx", uploaded: "Apr 18, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
-      { id: "rw-r1-2", name: "Site survey — Riverside Ave.pdf", size: "6.4 MB", sizeBytes: 6710886, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
+      { id: "rw-r1-2", name: "Site survey - Riverside Ave.pdf", size: "6.4 MB", sizeBytes: 6710886, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
       { id: "rw-r1-3", name: "Geotech report.pdf", size: "8.2 MB", sizeBytes: 8598323, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
       { id: "rw-r1-4", name: "Brownfield env assessment.pdf", size: "2.1 MB", sizeBytes: 2202010, ftype: "pdf", uploaded: "Apr 18, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
       // rev2 — Architectural set
-      { id: "rw-r2-1", name: "A-101 — Level 1 floor plan.pdf", size: "4.2 MB", sizeBytes: 4404019, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "rw-r2-2", name: "A-102 — Level 2 floor plan.pdf", size: "3.9 MB", sizeBytes: 4089446, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "rw-r2-3", name: "A-201 — Elevations.pdf", size: "5.8 MB", sizeBytes: 6081740, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "rw-r2-4", name: "A-301 — Reflected ceiling plan.pdf", size: "3.4 MB", sizeBytes: 3565158, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
-      { id: "rw-r2-5", name: "S-100 — Structural framing.dwg", size: "2.4 MB", sizeBytes: 2516582, ftype: "dwg", uploaded: "Apr 22, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
-      { id: "rw-r2-6", name: "Project manual — Div 09 Finishes.pdf", size: "1.8 MB", sizeBytes: 1887436, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rw-r2-1", name: "A-101 Level 1 floor plan.pdf", size: "4.2 MB", sizeBytes: 4404019, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rw-r2-2", name: "A-102 Level 2 floor plan.pdf", size: "3.9 MB", sizeBytes: 4089446, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rw-r2-3", name: "A-201 Elevations.pdf", size: "5.8 MB", sizeBytes: 6081740, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rw-r2-4", name: "A-301 Reflected ceiling plan.pdf", size: "3.4 MB", sizeBytes: 3565158, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rw-r2-5", name: "S-100 Structural framing.dwg", size: "2.4 MB", sizeBytes: 2516582, ftype: "dwg", uploaded: "Apr 22, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rw-r2-6", name: "Project manual - Div 09 Finishes.pdf", size: "1.8 MB", sizeBytes: 1887436, ftype: "pdf", uploaded: "Apr 22, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
       // rev3 — RFC responses
       { id: "rw-r3-1", name: "RFC-002 ceiling height response.pdf", size: "624 KB", sizeBytes: 638976, ftype: "pdf", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rw-r3-2", name: "A-301 R1 — Reflected ceiling (rev).pdf", size: "3.6 MB", sizeBytes: 3774873, ftype: "pdf", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rw-r3-3", name: "Site photo — east facade.jpg", size: "2.1 MB", sizeBytes: 2202010, ftype: "jpg", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rw-r3-2", name: "A-301 R1 Reflected ceiling (rev).pdf", size: "3.6 MB", sizeBytes: 3774873, ftype: "pdf", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rw-r3-3", name: "Site photo - east facade.jpg", size: "2.1 MB", sizeBytes: 2202010, ftype: "jpg", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
       // rev4 — Mechanical addendum
-      { id: "rw-r4-1", name: "M-201 — HVAC level 1.pdf", size: "4.6 MB", sizeBytes: 4823449, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev4" },
-      { id: "rw-r4-2", name: "M-202 — HVAC level 2.pdf", size: "4.3 MB", sizeBytes: 4508876, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev4" },
-      { id: "rw-r4-3", name: "M-203 — Pool HVAC.pdf", size: "5.1 MB", sizeBytes: 5347737, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev4" },
+      { id: "rw-r4-1", name: "M-201 HVAC level 1.pdf", size: "4.6 MB", sizeBytes: 4823449, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev4" },
+      { id: "rw-r4-2", name: "M-202 HVAC level 2.pdf", size: "4.3 MB", sizeBytes: 4508876, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev4" },
+      { id: "rw-r4-3", name: "M-203 Pool HVAC.pdf", size: "5.1 MB", sizeBytes: 5347737, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev4" },
       { id: "rw-r4-4", name: "Mechanical specifications.pdf", size: "3.4 MB", sizeBytes: 3565158, ftype: "pdf", uploaded: "May 5, 2026", uploadedBy: "Sam Lee", revisionId: "rev4" },
     ],
     "rivergrove": [
       // rev1 — Phase II program
       { id: "rg-r1-1", name: "Phase II program narrative.docx", size: "388 KB", sizeBytes: 397312, ftype: "docx", uploaded: "Mar 12, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
       { id: "rg-r1-2", name: "Owner pro forma.xlsx", size: "186 KB", sizeBytes: 190464, ftype: "xlsx", uploaded: "Mar 12, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
-      { id: "rg-r1-3", name: "Site plan — Powell Blvd.pdf", size: "4.8 MB", sizeBytes: 5033165, ftype: "pdf", uploaded: "Mar 12, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      { id: "rg-r1-3", name: "Site plan - Powell Blvd.pdf", size: "4.8 MB", sizeBytes: 5033165, ftype: "pdf", uploaded: "Mar 12, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
       // rev2 — 100% DD set
-      { id: "rg-r2-1", name: "A-100 — Site plan.pdf", size: "5.2 MB", sizeBytes: 5452595, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "rg-r2-2", name: "A-101 — Podium plan.pdf", size: "4.4 MB", sizeBytes: 4613734, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "rg-r2-3", name: "A-201 — Building elevations.pdf", size: "5.5 MB", sizeBytes: 5767168, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "rg-r2-4", name: "S-200 — Type V framing.pdf", size: "3.1 MB", sizeBytes: 3250585, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
-      { id: "rg-r2-5", name: "Project manual — DD set.pdf", size: "12.4 MB", sizeBytes: 13002342, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rg-r2-1", name: "A-100 Site plan.pdf", size: "5.2 MB", sizeBytes: 5452595, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rg-r2-2", name: "A-101 Podium plan.pdf", size: "4.4 MB", sizeBytes: 4613734, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rg-r2-3", name: "A-201 Building elevations.pdf", size: "5.5 MB", sizeBytes: 5767168, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "rg-r2-4", name: "S-200 Type V framing.pdf", size: "3.1 MB", sizeBytes: 3250585, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "rg-r2-5", name: "Project manual - DD set.pdf", size: "12.4 MB", sizeBytes: 13002342, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
       // rev3 — Bid set
-      { id: "rg-r3-1", name: "Bid form — Northwest Drywall Co.pdf", size: "182 KB", sizeBytes: 186368, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rg-r3-2", name: "Bid form — Pinnacle Interiors.pdf", size: "204 KB", sizeBytes: 208896, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rg-r3-3", name: "Bid form — Apex Finishes.xlsx", size: "94 KB", sizeBytes: 96256, ftype: "xlsx", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rg-r3-4", name: "Bid form — Cascade Wall Systems.pdf", size: "172 KB", sizeBytes: 176128, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rg-r3-5", name: "Bid form — ThermalTech Solutions.pdf", size: "198 KB", sizeBytes: 202752, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
-      { id: "rg-r3-6", name: "Bid form — Stark Electric Inc.pdf", size: "212 KB", sizeBytes: 217088, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-1", name: "Bid form - Northwest Drywall Co.pdf", size: "182 KB", sizeBytes: 186368, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-2", name: "Bid form - Pinnacle Interiors.pdf", size: "204 KB", sizeBytes: 208896, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-3", name: "Bid form - Apex Finishes.xlsx", size: "94 KB", sizeBytes: 96256, ftype: "xlsx", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-4", name: "Bid form - Cascade Wall Systems.pdf", size: "172 KB", sizeBytes: 176128, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-5", name: "Bid form - ThermalTech Solutions.pdf", size: "198 KB", sizeBytes: 202752, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
+      { id: "rg-r3-6", name: "Bid form - Stark Electric Inc.pdf", size: "212 KB", sizeBytes: 217088, ftype: "pdf", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
     ],
     "westlake": [
       { id: "wl-r1-1", name: "Owner kickoff packet.pdf", size: "1.4 MB", sizeBytes: 1468006, ftype: "pdf", uploaded: "May 4, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
       { id: "wl-r1-2", name: "Existing conditions survey.pdf", size: "3.2 MB", sizeBytes: 3355443, ftype: "pdf", uploaded: "May 4, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
-      { id: "wl-r1-3", name: "Site photo — playground.jpg", size: "1.8 MB", sizeBytes: 1887436, ftype: "jpg", uploaded: "May 4, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      { id: "wl-r1-3", name: "Site photo - playground.jpg", size: "1.8 MB", sizeBytes: 1887436, ftype: "jpg", uploaded: "May 4, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
     ],
     "mercy-clinic": [
       // rev1
       { id: "mc-r1-1", name: "Tenant fit-out program.docx", size: "264 KB", sizeBytes: 270336, ftype: "docx", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
       { id: "mc-r1-2", name: "Lease floor plan.pdf", size: "1.6 MB", sizeBytes: 1677721, ftype: "pdf", uploaded: "Apr 1, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
       // rev2
-      { id: "mc-r2-1", name: "A-101 — Schematic layout (rev).pdf", size: "2.8 MB", sizeBytes: 2936012, ftype: "pdf", uploaded: "Apr 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "mc-r2-2", name: "A-201 — Schematic elevations.pdf", size: "2.4 MB", sizeBytes: 2516582, ftype: "pdf", uploaded: "Apr 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "mc-r2-1", name: "A-101 Schematic layout (rev).pdf", size: "2.8 MB", sizeBytes: 2936012, ftype: "pdf", uploaded: "Apr 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "mc-r2-2", name: "A-201 Schematic elevations.pdf", size: "2.4 MB", sizeBytes: 2516582, ftype: "pdf", uploaded: "Apr 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
       { id: "mc-r2-3", name: "Casework reference photos.jpg", size: "3.1 MB", sizeBytes: 3250585, ftype: "jpg", uploaded: "Apr 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
       // rev3
-      { id: "mc-r3-1", name: "M-201 — HVAC level 1.pdf", size: "4.2 MB", sizeBytes: 4404019, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev3" },
-      { id: "mc-r3-2", name: "M-202 — HVAC level 2.pdf", size: "4.0 MB", sizeBytes: 4194304, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev3" },
+      { id: "mc-r3-1", name: "M-201 HVAC level 1.pdf", size: "4.2 MB", sizeBytes: 4404019, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev3" },
+      { id: "mc-r3-2", name: "M-202 HVAC level 2.pdf", size: "4.0 MB", sizeBytes: 4194304, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev3" },
       { id: "mc-r3-3", name: "Mechanical specifications.pdf", size: "2.9 MB", sizeBytes: 3040870, ftype: "pdf", uploaded: "May 2, 2026", uploadedBy: "Sam Lee", revisionId: "rev3" },
     ],
     "bayside": [
       // rev1
-      { id: "bs-r1-1", name: "Owner program — warehouse.docx", size: "348 KB", sizeBytes: 356352, ftype: "docx", uploaded: "Feb 20, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
-      { id: "bs-r1-2", name: "Site survey — Marine Dr.pdf", size: "5.8 MB", sizeBytes: 6081740, ftype: "pdf", uploaded: "Feb 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
+      { id: "bs-r1-1", name: "Owner program - warehouse.docx", size: "348 KB", sizeBytes: 356352, ftype: "docx", uploaded: "Feb 20, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
+      { id: "bs-r1-2", name: "Site survey - Marine Dr.pdf", size: "5.8 MB", sizeBytes: 6081740, ftype: "pdf", uploaded: "Feb 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
       { id: "bs-r1-3", name: "Geotech report.pdf", size: "7.4 MB", sizeBytes: 7759462, ftype: "pdf", uploaded: "Feb 20, 2026", uploadedBy: "Sam Lee", revisionId: "rev1" },
       // rev2 — 100% CD
-      { id: "bs-r2-1", name: "A-101 — Warehouse floor plan.pdf", size: "6.2 MB", sizeBytes: 6501171, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "bs-r2-2", name: "A-201 — Elevations.pdf", size: "5.9 MB", sizeBytes: 6186598, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
-      { id: "bs-r2-3", name: "S-100 — Foundation plan.pdf", size: "4.8 MB", sizeBytes: 5033165, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
-      { id: "bs-r2-4", name: "S-200 — Steel framing.dwg", size: "3.6 MB", sizeBytes: 3774873, ftype: "dwg", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
-      { id: "bs-r2-5", name: "E-101 — Power plan.pdf", size: "3.9 MB", sizeBytes: 4089446, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
-      { id: "bs-r2-6", name: "Project manual — full set.pdf", size: "14.2 MB", sizeBytes: 14889779, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "bs-r2-1", name: "A-101 Warehouse floor plan.pdf", size: "6.2 MB", sizeBytes: 6501171, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "bs-r2-2", name: "A-201 Elevations.pdf", size: "5.9 MB", sizeBytes: 6186598, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
+      { id: "bs-r2-3", name: "S-100 Foundation plan.pdf", size: "4.8 MB", sizeBytes: 5033165, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "bs-r2-4", name: "S-200 Steel framing.dwg", size: "3.6 MB", sizeBytes: 3774873, ftype: "dwg", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "bs-r2-5", name: "E-101 Power plan.pdf", size: "3.9 MB", sizeBytes: 4089446, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Sam Lee", revisionId: "rev2" },
+      { id: "bs-r2-6", name: "Project manual - full set.pdf", size: "14.2 MB", sizeBytes: 14889779, ftype: "pdf", uploaded: "Mar 15, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev2" },
     ],
     "emerson-tower": [
       { id: "et-r1-1", name: "Lobby concept brief.docx", size: "224 KB", sizeBytes: 229376, ftype: "docx", uploaded: "Apr 30, 2026", uploadedBy: "Victor Mezhvinsky", revisionId: "rev1" },
@@ -270,15 +270,54 @@ window.BC_DATA = {
   runs: [
     // startedAt is an ISO timestamp used to sort the Recent Skill Runs tables.
     // Most recent first when rendered.
-    { id: "r4", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Mercy Outpatient Clinic",            projectId: "mercy-clinic",  status: "working", when: "now",        startedAt: "2026-05-26T16:00:00", duration: "running",  progress: 0.42 },
-    { id: "r1", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "12 min ago", startedAt: "2026-05-26T15:48:00", duration: "11m 32s", ai: { lines: 1284, total: "$4.82M", confidence: 0.91 } },
-    { id: "r2", skill: "Clarifications & Potential RFIs",         project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "1h ago",     startedAt: "2026-05-26T15:00:00", duration: "5m 18s",  ai: { issues: 23, critical: 3, high: 7, med: 9, low: 4 } },
-    { id: "r3", skill: "Bid Level Analysis",                      project: "Rivergrove Residences Phase II",   projectId: "rivergrove",    status: "done",    when: "yesterday",  startedAt: "2026-05-25T16:21:00", duration: "9m 04s",  ai: { subs: 6, divisions: 22, savings: "$184k" } }
+    { id: "r4",  skill: "Rough Order of Magnitude (ROM) Estimate", project: "Mercy Outpatient Clinic",            projectId: "mercy-clinic",  status: "working", when: "now",        startedAt: "2026-05-26T16:00:00", duration: "running",  progress: 0.42 },
+    { id: "r1",  skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "12 min ago", startedAt: "2026-05-26T15:48:00", duration: "11m 32s", ai: { lines: 1284, total: "$4.82M", confidence: 0.91, version: "v3" } },
+    { id: "r2",  skill: "Clarifications & Potential RFIs",         project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "1h ago",     startedAt: "2026-05-26T15:00:00", duration: "5m 18s",  ai: { issues: 23, critical: 3, high: 7, med: 9, low: 4 } },
+    { id: "r3",  skill: "Bid Level Analysis",                      project: "Rivergrove Residences Phase II",   projectId: "rivergrove",    status: "done",    when: "yesterday",  startedAt: "2026-05-25T16:21:00", duration: "9m 04s",  ai: { subs: 6, divisions: 22, savings: "$184k" } },
+    // Historical runs for Recreational and Wellness Center, used by the
+    // Skills History tab on the ROM results screen.
+    { id: "r5",  skill: "Bid Level Analysis",                      project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "2h ago",     startedAt: "2026-05-05T14:30:00", duration: "8m 42s",  ai: { subs: 3, divisions: 1, division: "Division 26 · Electrical", savings: "$26.5k" } },
+    { id: "r6",  skill: "Bid Level Analysis",                      project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "3d ago",     startedAt: "2026-05-02T11:15:00", duration: "7m 16s",  ai: { subs: 4, divisions: 1, division: "Division 22 · Plumbing", savings: "$42.2k" } },
+    { id: "r7",  skill: "Bid Level Analysis",                      project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "1w ago",     startedAt: "2026-04-28T16:08:00", duration: "9m 04s",  ai: { subs: 4, divisions: 1, division: "Division 09 · Finishes", savings: "$66.4k" } },
+    { id: "r8",  skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "Apr 21",     startedAt: "2026-04-21T10:42:00", duration: "12m 08s", ai: { lines: 1268, total: "$4.71M", confidence: 0.89, version: "v2" } },
+    { id: "r9",  skill: "Clarifications & Potential RFIs",         project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "Apr 18",     startedAt: "2026-04-18T09:30:00", duration: "4m 47s",  ai: { issues: 19, critical: 2, high: 6, med: 8, low: 3 } },
+    { id: "r10", skill: "Rough Order of Magnitude (ROM) Estimate", project: "Recreational and Wellness Center", projectId: "rec-wellness",  status: "done",    when: "Mar 12",     startedAt: "2026-03-12T13:05:00", duration: "13m 22s", ai: { lines: 1192, total: "$4.49M", confidence: 0.84, version: "v1" } }
   ],
 
   // Estimation report — line items
   estimation: {
     project: "Recreational and Wellness Center",
+    version: "v3",
+    finishedAt: "May 26, 2026 · 12 min ago",
+    // Which underlying document set this run was based on. Lets the user
+    // see at a glance whether the estimate reflects the latest drawings.
+    revision: {
+      drawings: "Drawing Set Rev 4",
+      drawingsDate: "May 6, 2026",
+      specs: "Spec Book Rev 2",
+      specsDate: "May 6, 2026",
+      fileCount: 24,
+    },
+    // Prior ROM run for side-by-side comparison. Used by the Compare panel
+    // to show KPI deltas and the biggest division movers between runs.
+    previousRun: {
+      version: "v2",
+      finishedAt: "Apr 21, 2026",
+      grandTotal: 4712820,
+      laborTotal: 1932400,
+      materialTotal: 2780420,
+      confidence: 0.89,
+      costPerSF: 56.10,
+      // Top-impact divisions, pre-sorted by absolute dollar change so the
+      // panel can show the biggest movers first.
+      topChanges: [
+        { code: "13", name: "Special Construction",   prev: 502200, curr: 528600, reason: "Pool tank lump sum revised up after benchmark refresh." },
+        { code: "09", name: "Finishes",                prev: 598400, curr: 624830, reason: "Broadloom carpet unit cost increased 22% from supplier update." },
+        { code: "23", name: "HVAC",                    prev: 472100, curr: 488200, reason: "Air handler equipment lead time premium applied." },
+        { code: "26", name: "Electrical",              prev: 308200, curr: 295730, reason: "Reduced fixture count after lighting plan update." },
+        { code: "08", name: "Openings",                prev: 396800, curr: 412700, reason: "Storefront glazing area increased on west elevation." },
+      ],
+    },
     grandTotal: 4823640,
     laborTotal: 1976692,
     materialTotal: 2846948,
@@ -305,7 +344,7 @@ window.BC_DATA = {
       { code: "07", name: "Thermal & Moisture Protection", desc: "Roofing, insulation", amount: 286100, pct: 5.9 },
       { code: "08", name: "Openings", desc: "Doors, windows, glazing", amount: 412700, pct: 8.6 },
       { code: "09", name: "Finishes", desc: "Drywall, flooring, ceiling", amount: 624830, pct: 13.0, flagged: true, items: [
-        { name: "Broadloom carpet, 32oz nylon (Shaw Haze)", qty: 14200, unit: "SF", unitCost: 4.85, total: 68870, refs: ["A-101", "A-102"], flagged: true, note: "+22% — county code transport update" },
+        { name: "Broadloom carpet, 32oz nylon (Shaw Haze)", qty: 14200, unit: "SF", unitCost: 4.85, total: 68870, refs: ["A-101", "A-102"], flagged: true, note: "+22% from county code transport update" },
         { name: "Gypsum wall board, 5/8\" type X", qty: 38400, unit: "SF", unitCost: 1.12, total: 43008, refs: ["A-101"] },
         { name: "Acoustic ceiling tile, 24×24", qty: 11800, unit: "SF", unitCost: 3.20, total: 37760, refs: ["A-301"] },
         { name: "Resilient flooring, sheet vinyl", qty: 8200, unit: "SF", unitCost: 7.10, total: 58220, refs: ["A-101", "A-102"] },
@@ -341,17 +380,17 @@ window.BC_DATA = {
     project: "Recreational and Wellness Center",
     issues: [
       { id: "RFI-001", title: "Missing fire-rating callouts on stair B doors", desc: "Sheets A-501 and A-502 reference \"see schedule\" but the door schedule on A-602 has no rating column for D-12, D-13, D-14.", category: "Missing Information", refs: ["A-501", "A-602"], priority: "critical" },
-      { id: "RFI-002", title: "Conflicting ceiling height — Lobby 101", desc: "A-101 plan shows 12'-0\" AFF; reflected ceiling A-301 shows 11'-0\" with soffit detail.", category: "Document Conflict", refs: ["A-101", "A-301"], priority: "critical" },
+      { id: "RFI-002", title: "Conflicting ceiling height in Lobby 101", desc: "A-101 plan shows 12'-0\" AFF; reflected ceiling A-301 shows 11'-0\" with soffit detail.", category: "Document Conflict", refs: ["A-101", "A-301"], priority: "critical" },
       { id: "RFI-003", title: "Pool deck slip resistance not specified", desc: "Spec section 09 65 00 references \"non-slip finish\" with no DCOF/COF target.", category: "Missing Information", refs: ["09 65 00"], priority: "critical" },
-      { id: "RFI-004", title: "Glazing performance — south curtainwall", desc: "Energy code requires SHGC ≤ 0.40; spec calls out \"insulated glazing\" without SHGC value.", category: "Missing Information", refs: ["08 44 13"], priority: "med" },
+      { id: "RFI-004", title: "Glazing performance for south curtainwall", desc: "Energy code requires SHGC ≤ 0.40; spec calls out \"insulated glazing\" without SHGC value.", category: "Missing Information", refs: ["08 44 13"], priority: "med" },
       { id: "RFI-005", title: "Plumbing fixture count below code", desc: "Code requires 8 WCs for women; drawings show 6 WCs in W101 + W202.", category: "Document Conflict", refs: ["P-101"], priority: "critical" },
       { id: "RFI-006", title: "Roof drain locations not coordinated", desc: "Structural shows beam at 24'-6\"; plumbing shows roof drain at same location.", category: "Document Conflict", refs: ["S-200", "P-301"], priority: "med" },
       { id: "RFI-007", title: "Resilient base spec mismatch", desc: "Finish schedule says \"Roppe pinnacle\"; spec 09 65 13 lists \"Johnsonite Millwork\".", category: "Document Conflict", refs: ["A-602", "09 65 13"], priority: "med" },
-      { id: "RFI-008", title: "Casework missing dimensions — Reception 102", desc: "Elevation A-302 / 1 has no plan callouts for cabinet depth.", category: "Missing Information", refs: ["A-302"], priority: "med" },
+      { id: "RFI-008", title: "Casework missing dimensions in Reception 102", desc: "Elevation A-302 / 1 has no plan callouts for cabinet depth.", category: "Missing Information", refs: ["A-302"], priority: "med" },
       { id: "RFI-009", title: "GFCI requirements unclear in pool area", desc: "E-201 panel schedule does not call out GFCI breakers for branch circuits within 10' of pool edge.", category: "Missing Information", refs: ["E-201"], priority: "med" },
       { id: "RFI-010", title: "Wall type W-3A used but not in legend", desc: "Wall type W-3A appears on A-103 but is not in the partition legend on A-001.", category: "Document Conflict", refs: ["A-103", "A-001"], priority: "low" },
       { id: "RFI-011", title: "Door D-08 swing direction inconsistent", desc: "Plan A-101 shows left-hand reverse; schedule A-602 shows right-hand.", category: "Document Conflict", refs: ["A-101", "A-602"], priority: "low" },
-      { id: "RFI-012", title: "ADA approach clearance — Pool men's restroom", desc: "Maneuvering clearance shown is 60\" — meets minimum; flagging only to confirm interpretation. Designer confirmed no clarification needed.", category: "No clarification needed", refs: ["A-602"], priority: "na" },
+      { id: "RFI-012", title: "ADA approach clearance in Pool men's restroom", desc: "Maneuvering clearance shown is 60\", which meets minimum; flagging only to confirm interpretation. Designer confirmed no clarification needed.", category: "No clarification needed", refs: ["A-602"], priority: "na" },
       { id: "RFI-013", title: "GC overtime burden assumption", desc: "Cody assumed standard prevailing-wage burden including no overtime. Carry as a qualification on the bid.", category: "Qualification", refs: ["01 22 00"], priority: "low" }
     ]
   },
@@ -371,20 +410,20 @@ window.BC_DATA = {
         { id: "div-13", division: "13", name: "Special Construction (Pool)" },
       ],
       files: [
-        { id: "rw-bid-1",  name: "Northwest Drywall Co — bid.pdf",      size: "182 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
-        { id: "rw-bid-2",  name: "Pinnacle Interiors — finishes bid.pdf", size: "204 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
-        { id: "rw-bid-3",  name: "Apex Finishes Group — bid.xlsx",       size: "94 KB",  uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
-        { id: "rw-bid-4",  name: "Cascade Wall Systems — bid.pdf",       size: "172 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
-        { id: "rw-bid-5",  name: "ThermalTech Solutions — plumbing.pdf", size: "198 KB", uploaded: "May 2, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
-        { id: "rw-bid-6",  name: "Ewing Plumbing — bid response.pdf",    size: "186 KB", uploaded: "May 2, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
-        { id: "rw-bid-7",  name: "Summit Mechanical — plumbing.pdf",     size: "210 KB", uploaded: "May 2, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
-        { id: "rw-bid-8",  name: "Apex Mechanical — HVAC bid.xlsx",      size: "120 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-23" },
-        { id: "rw-bid-9",  name: "Northwest HVAC Co — bid.pdf",          size: "224 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-23" },
-        { id: "rw-bid-10", name: "Stark Electric Inc — bid.pdf",         size: "212 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
-        { id: "rw-bid-11", name: "Cascade Power & Light — bid.pdf",      size: "188 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
-        { id: "rw-bid-12", name: "Greenline Electric — bid.pdf",         size: "176 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
-        { id: "rw-bid-13", name: "Pacific Aquatics — pool tank bid.pdf", size: "412 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-13" },
-        { id: "rw-bid-14", name: "Aquatic Edge — pool systems.pdf",      size: "388 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-13" },
+        { id: "rw-bid-1",  name: "Northwest Drywall Co - bid.pdf",      size: "182 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-2",  name: "Pinnacle Interiors - finishes bid.pdf", size: "204 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-3",  name: "Apex Finishes Group - bid.xlsx",       size: "94 KB",  uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-4",  name: "Cascade Wall Systems - bid.pdf",       size: "172 KB", uploaded: "Apr 28, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "rw-bid-5",  name: "ThermalTech Solutions - plumbing.pdf", size: "198 KB", uploaded: "May 2, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
+        { id: "rw-bid-6",  name: "Ewing Plumbing - bid response.pdf",    size: "186 KB", uploaded: "May 2, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
+        { id: "rw-bid-7",  name: "Summit Mechanical - plumbing.pdf",     size: "210 KB", uploaded: "May 2, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
+        { id: "rw-bid-8",  name: "Apex Mechanical - HVAC bid.xlsx",      size: "120 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-23" },
+        { id: "rw-bid-9",  name: "Northwest HVAC Co - bid.pdf",          size: "224 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-23" },
+        { id: "rw-bid-10", name: "Stark Electric Inc - bid.pdf",         size: "212 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
+        { id: "rw-bid-11", name: "Cascade Power & Light - bid.pdf",      size: "188 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
+        { id: "rw-bid-12", name: "Greenline Electric - bid.pdf",         size: "176 KB", uploaded: "May 4, 2026",  uploadedBy: "Sam Lee",    tradeId: "div-26" },
+        { id: "rw-bid-13", name: "Pacific Aquatics - pool tank bid.pdf", size: "412 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-13" },
+        { id: "rw-bid-14", name: "Aquatic Edge - pool systems.pdf",      size: "388 KB", uploaded: "May 5, 2026",  uploadedBy: "Victor Mezhvinsky", tradeId: "div-13" },
       ]
     },
     "rivergrove": {
@@ -394,12 +433,12 @@ window.BC_DATA = {
         { id: "div-26", division: "26", name: "Electrical" },
       ],
       files: [
-        { id: "rg-bid-1", name: "Northwest Drywall Co — bid.pdf",       size: "182 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
-        { id: "rg-bid-2", name: "Pinnacle Interiors — bid.pdf",         size: "204 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
-        { id: "rg-bid-3", name: "Apex Finishes Group — bid.xlsx",       size: "94 KB",  uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
-        { id: "rg-bid-4", name: "Cascade Wall Systems — bid.pdf",       size: "172 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
-        { id: "rg-bid-5", name: "ThermalTech Solutions — plumbing.pdf", size: "198 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-22" },
-        { id: "rg-bid-6", name: "Stark Electric Inc — bid.pdf",         size: "212 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-26" },
+        { id: "rg-bid-1", name: "Northwest Drywall Co - bid.pdf",       size: "182 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-2", name: "Pinnacle Interiors - bid.pdf",         size: "204 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-3", name: "Apex Finishes Group - bid.xlsx",       size: "94 KB",  uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-4", name: "Cascade Wall Systems - bid.pdf",       size: "172 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-09" },
+        { id: "rg-bid-5", name: "ThermalTech Solutions - plumbing.pdf", size: "198 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-22" },
+        { id: "rg-bid-6", name: "Stark Electric Inc - bid.pdf",         size: "212 KB", uploaded: "Apr 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-26" },
       ]
     },
     "mercy-clinic": {
@@ -409,9 +448,9 @@ window.BC_DATA = {
         { id: "div-23", division: "23", name: "HVAC" },
       ],
       files: [
-        { id: "mc-bid-1", name: "Northwest Drywall Co — fit-out bid.pdf", size: "164 KB", uploaded: "May 2, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
-        { id: "mc-bid-2", name: "Apex Mechanical — HVAC bid.xlsx",        size: "110 KB", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-23" },
-        { id: "mc-bid-3", name: "Summit Plumbing — bid.pdf",              size: "176 KB", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
+        { id: "mc-bid-1", name: "Northwest Drywall Co - fit-out bid.pdf", size: "164 KB", uploaded: "May 2, 2026", uploadedBy: "Sam Lee",    tradeId: "div-09" },
+        { id: "mc-bid-2", name: "Apex Mechanical - HVAC bid.xlsx",        size: "110 KB", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-23" },
+        { id: "mc-bid-3", name: "Summit Plumbing - bid.pdf",              size: "176 KB", uploaded: "May 2, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-22" },
       ]
     },
     "bayside": {
@@ -421,9 +460,9 @@ window.BC_DATA = {
         { id: "div-26", division: "26", name: "Electrical" },
       ],
       files: [
-        { id: "bs-bid-1", name: "Riverview Concrete — bid.pdf",    size: "228 KB", uploaded: "Mar 20, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-03" },
-        { id: "bs-bid-2", name: "Cascade Steel Erectors — bid.pdf", size: "244 KB", uploaded: "Mar 20, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-05" },
-        { id: "bs-bid-3", name: "Stark Electric Inc — warehouse.pdf", size: "212 KB", uploaded: "Mar 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-26" },
+        { id: "bs-bid-1", name: "Riverview Concrete - bid.pdf",    size: "228 KB", uploaded: "Mar 20, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-03" },
+        { id: "bs-bid-2", name: "Cascade Steel Erectors - bid.pdf", size: "244 KB", uploaded: "Mar 20, 2026", uploadedBy: "Victor Mezhvinsky", tradeId: "div-05" },
+        { id: "bs-bid-3", name: "Stark Electric Inc - warehouse.pdf", size: "212 KB", uploaded: "Mar 20, 2026", uploadedBy: "Sam Lee", tradeId: "div-26" },
       ]
     },
     "westlake": { trades: [], files: [] },
@@ -457,9 +496,9 @@ window.BC_DATA = {
   // rows override the global laborRates; otherwise the project inherits global.
   laborRatesByProject: {
     "rec-wellness": [
-      { trade: "Project Manager",     rate: 148, fringe: 0.42, region: "PDX metro", overridden: true },
-      { trade: "Superintendent",      rate: 122, fringe: 0.42, region: "PDX metro", overridden: true },
-      { trade: "Carpenter, Journey",  rate: 74,  fringe: 0.58, region: "PDX metro", overridden: true },
+      { trade: "Project Manager",     rate: 148, fringe: 0.42, region: "PDX metro", overridden: true, editedBy: "Victor Mezhvinsky", editedAt: "May 8, 2026" },
+      { trade: "Superintendent",      rate: 122, fringe: 0.42, region: "PDX metro", overridden: true, editedBy: "Victor Mezhvinsky", editedAt: "May 8, 2026" },
+      { trade: "Carpenter, Journey",  rate: 74,  fringe: 0.58, region: "PDX metro", overridden: true, editedBy: "Victor Mezhvinsky", editedAt: "May 9, 2026" },
     ],
   },
 
@@ -502,12 +541,12 @@ window.BC_DATA = {
         ],
         lineItems: [
           { name: "Mobilization & site setup", values: [11200, 13800, 12400, 14600] },
-          { name: "Domestic water — copper rough-in", values: [62400, 68200, 71400, 78900] },
-          { name: "Sanitary drainage — DWV", values: [54200, 56800, 59100, 64400] },
-          { name: "Storm drainage — interior roof drains", values: [38600, 41200, 43800, 47200] },
-          { name: "Fixtures — WC, lavatory, urinals", values: [98400, 99800, 104200, 108600], note: "Spec match across all bidders" },
+          { name: "Domestic water: copper rough-in", values: [62400, 68200, 71400, 78900] },
+          { name: "Sanitary drainage: DWV", values: [54200, 56800, 59100, 64400] },
+          { name: "Storm drainage: interior roof drains", values: [38600, 41200, 43800, 47200] },
+          { name: "Fixtures: WC, lavatory, urinals", values: [98400, 99800, 104200, 108600], note: "Spec match across all bidders" },
           { name: "Water heaters & circulation", values: [42500, 45200, 47800, 51000] },
-          { name: "Pool make-up & filtration tie-in", values: [62500, 54800, 53300, 47300], note: "Scope varies — see qualification log" }
+          { name: "Pool make-up & filtration tie-in", values: [62500, 54800, 53300, 47300], note: "Scope varies; see qualification log" }
         ],
         spread: 11.4,
         exclusions: 0,
@@ -527,9 +566,9 @@ window.BC_DATA = {
           { name: "Service entrance + main switchgear", values: [128400, 118600, 132800] },
           { name: "Branch circuit rough-in", values: [142500, 138200, 148900] },
           { name: "Panelboards & distribution", values: [88600, 84800, 91200] },
-          { name: "Lighting fixtures — interior", values: [98400, 94100, 102300] },
-          { name: "Lighting fixtures — pool & exterior", values: [54200, 52500, 53000] },
-          { name: "GFCI & life-safety devices", values: [0, 0, 0], excluded: [true, true, true], note: "All bidders exclude — qualified scope" }
+          { name: "Lighting fixtures: interior", values: [98400, 94100, 102300] },
+          { name: "Lighting fixtures: pool & exterior", values: [54200, 52500, 53000] },
+          { name: "GFCI & life-safety devices", values: [0, 0, 0], excluded: [true, true, true], note: "All bidders exclude as qualified scope" }
         ],
         spread: 8.5,
         exclusions: 3,
@@ -543,11 +582,11 @@ window.BC_DATA = {
     { id: "A-101", title: "Level 1 floor plan",       scale: "1/8\" = 1'-0\"",  markups: 47, status: "done",    thumb: "level1", color: "#E84600", trade: "Architectural", views: 184, planOrder: 12 },
     { id: "A-102", title: "Level 2 floor plan",       scale: "1/8\" = 1'-0\"",  markups: 38, status: "done",    thumb: "level2", color: "#48C1B5", trade: "Architectural", views: 142, planOrder: 13 },
     { id: "A-201", title: "Building elevations",     scale: "1/8\" = 1'-0\"",  markups: 24, status: "done",    thumb: "elev",   color: "#B600E9", trade: "Architectural", views: 96,  planOrder: 18 },
-    { id: "A-301", title: "Reflected ceiling — Lobby", scale: "1/4\" = 1'-0\"", markups: 12, status: "flagged", thumb: "rcp",    color: "#FFBD15", trade: "Architectural", views: 211, planOrder: 24 },
+    { id: "A-301", title: "Reflected ceiling: Lobby", scale: "1/4\" = 1'-0\"", markups: 12, status: "flagged", thumb: "rcp",    color: "#FFBD15", trade: "Architectural", views: 211, planOrder: 24 },
     { id: "S-101", title: "Foundation plan",          scale: "1/8\" = 1'-0\"",  markups: 18, status: "done",    thumb: "level1", color: "#48C1B5", trade: "Structural",    views: 88,  planOrder: 31 },
     { id: "M-201", title: "HVAC level 1",             scale: "1/8\" = 1'-0\"",  markups: 22, status: "done",    thumb: "rcp",    color: "#FFBD15", trade: "Mechanical",    views: 64,  planOrder: 42 },
     { id: "E-101", title: "Power plan, level 1",      scale: "1/8\" = 1'-0\"",  markups: 31, status: "done",    thumb: "level2", color: "#B600E9", trade: "Electrical",    views: 128, planOrder: 51 },
-    { id: "P-101", title: "Plumbing — pool deck",     scale: "1/4\" = 1'-0\"",  markups: 9,  status: "flagged", thumb: "elev",   color: "#E84600", trade: "Plumbing",      views: 73,  planOrder: 58 }
+    { id: "P-101", title: "Plumbing: pool deck",     scale: "1/4\" = 1'-0\"",  markups: 9,  status: "flagged", thumb: "elev",   color: "#E84600", trade: "Plumbing",      views: 73,  planOrder: 58 }
   ],
   // Cost item ↔ drawing references
   costItemDrawings: {
@@ -566,7 +605,7 @@ window.BC_DATA = {
   // ----------------------------------------------------------
   drawingTakeoffs: {
     "A-101": {
-      sheetTitle: "A-101 — Level 1 floor plan",
+      sheetTitle: "A-101: Level 1 floor plan",
       groups: [
         { code: "03", name: "Concrete", items: [
           { id: "t-A101-1", material: "Cast-in-place concrete, 4000 PSI", desc: "Slab on grade, lobby + pool deck", qty: 940, unit: "CY", hotspot: { x: 14, y: 14, w: 172, h: 80 } },
@@ -583,7 +622,7 @@ window.BC_DATA = {
       ]
     },
     "A-102": {
-      sheetTitle: "A-102 — Level 2 floor plan",
+      sheetTitle: "A-102: Level 2 floor plan",
       groups: [
         { code: "06", name: "Wood, Plastics & Composites", items: [
           { id: "t-A102-1", material: "Wood blocking, fire-treated",   desc: "At all wall-mounted equipment",  qty: 1800, unit: "LF", hotspot: { x: 14, y: 14, w: 172, h: 60 } }
@@ -599,7 +638,7 @@ window.BC_DATA = {
       ]
     },
     "A-201": {
-      sheetTitle: "A-201 — Building elevations",
+      sheetTitle: "A-201: Building elevations",
       groups: [
         { code: "04", name: "Masonry", items: [
           { id: "t-A201-1", material: "Brick veneer, modular",                desc: "South + east elevations",        qty: 8400, unit: "SF", hotspot: { x: 20, y: 50, w: 80, h: 70 } }
@@ -614,7 +653,7 @@ window.BC_DATA = {
       ]
     },
     "A-301": {
-      sheetTitle: "A-301 — Reflected ceiling — Lobby",
+      sheetTitle: "A-301: Reflected ceiling, Lobby",
       groups: [
         { code: "09", name: "Finishes", items: [
           { id: "t-A301-1", material: "Acoustic ceiling tile, 24×24",  desc: "Lobby + adjacent corridors",       qty: 3400, unit: "SF", hotspot: { x: 14, y: 14, w: 172, h: 122 } },
@@ -626,7 +665,7 @@ window.BC_DATA = {
       ]
     },
     "S-101": {
-      sheetTitle: "S-101 — Foundation plan",
+      sheetTitle: "S-101: Foundation plan",
       groups: [
         { code: "03", name: "Concrete", items: [
           { id: "t-S101-1", material: "Spread footings, 4000 PSI",      desc: "F1.0 through F4.0",             qty: 240, unit: "CY", hotspot: { x: 14, y: 14, w: 172, h: 122 } },
@@ -636,7 +675,7 @@ window.BC_DATA = {
       ]
     },
     "M-201": {
-      sheetTitle: "M-201 — HVAC level 1",
+      sheetTitle: "M-201: HVAC level 1",
       groups: [
         { code: "23", name: "HVAC", items: [
           { id: "t-M201-1", material: "Rooftop air handling unit, 25-ton", desc: "AHU-1, AHU-2",                  qty: 2, unit: "EA", hotspot: { x: 80, y: 64, w: 22, h: 22 } },
@@ -646,7 +685,7 @@ window.BC_DATA = {
       ]
     },
     "E-101": {
-      sheetTitle: "E-101 — Power plan, level 1",
+      sheetTitle: "E-101: Power plan, level 1",
       groups: [
         { code: "26", name: "Electrical", items: [
           { id: "t-E101-1", material: "Distribution panel, 480/277V, 400A", desc: "Main switchgear MSB-1",       qty: 1,   unit: "EA", hotspot: { x: 14, y: 60, w: 8, h: 16 } },
@@ -657,7 +696,7 @@ window.BC_DATA = {
       ]
     },
     "P-101": {
-      sheetTitle: "P-101 — Plumbing, pool deck",
+      sheetTitle: "P-101: Plumbing, pool deck",
       groups: [
         { code: "13", name: "Special Construction", items: [
           { id: "t-P101-1", material: "Pool filtration & circulation system", desc: "Pump, filter, heater package", qty: 1, unit: "LS", hotspot: { x: 60, y: 100, w: 80, h: 36 } }
@@ -674,7 +713,7 @@ window.BC_DATA = {
   laborRates: [
     { trade: "Project Manager",       rate: 142, fringe: 0.42, region: "PDX metro" },
     { trade: "Superintendent",        rate: 118, fringe: 0.42, region: "PDX metro" },
-    { trade: "Foreman — Carpenter",   rate: 86,  fringe: 0.55, region: "PDX metro" },
+    { trade: "Foreman: Carpenter",   rate: 86,  fringe: 0.55, region: "PDX metro" },
     { trade: "Carpenter, Journey",    rate: 72,  fringe: 0.58, region: "PDX metro" },
     { trade: "Drywall, Journey",      rate: 64,  fringe: 0.54, region: "PDX metro" },
     { trade: "Painter, Journey",      rate: 58,  fringe: 0.50, region: "PDX metro" },

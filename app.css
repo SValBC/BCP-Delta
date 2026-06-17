@@ -1215,6 +1215,265 @@ button { font-family: inherit; }
 .page-sub { color: rgba(39,38,53,0.60); font-size: 14px; margin: 0; max-width: 580px; }
 
 /* ============================================================
+   ROM RESULTS — revision chip, action buttons, compare panel
+   ============================================================
+   Adds chrome to the ROM Estimate result screen: a "Based on Drawing
+   Set Rev N" chip below the subtitle, Accept/Delete/Compare action
+   buttons in the taskbar, and a comparison panel that shows KPI deltas
+   and the biggest division movers vs the previous run. */
+.rom-revision {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 5px 10px;
+  background: rgba(15, 18, 32, 0.04);
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 100px;
+  font-size: 12px;
+  color: var(--bc-muted);
+  font-family: var(--font-ui);
+}
+.rom-revision b { color: var(--raisin-800); font-weight: 600; }
+.rom-revision .mi { color: rgba(39, 38, 53, 0.50); font-size: 13px !important; }
+.rom-revision-sep { opacity: 0.45; padding: 0 2px; }
+[data-theme="dark"] .rom-revision {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.65);
+}
+[data-theme="dark"] .rom-revision b { color: #fff; }
+[data-theme="dark"] .rom-revision .mi { color: rgba(255,255,255,0.50); }
+
+/* Action button variants. Compare and Delete are ghost-styled; Accept is
+   the primary action. Accepted is a locked, non-interactive confirmation. */
+.rom-action-compare {}
+.rom-action-delete {
+  color: #B53636;
+}
+.rom-action-delete:hover {
+  background: rgba(181, 54, 54, 0.08);
+  border-color: rgba(181, 54, 54, 0.30);
+}
+.rom-action-accept {
+  background: var(--orange-500);
+  color: #fff;
+  border-color: var(--orange-500);
+}
+.rom-action-accept:hover {
+  background: #C73C00;
+  border-color: #C73C00;
+}
+.rom-action-accept .mi { color: #fff !important; }
+.rom-action-accepted {
+  background: rgba(10, 144, 80, 0.10);
+  color: #0a9050;
+  border-color: rgba(10, 144, 80, 0.30);
+  cursor: default;
+}
+.rom-action-accepted .mi { color: #0a9050 !important; }
+
+/* Comparison panel — appears above the summary when "Compare with v2"
+   is toggled. KPI deltas on top, division movers below. */
+.rom-compare {
+  margin-top: 20px;
+  background: linear-gradient(180deg, rgba(80, 71, 243, 0.04), rgba(239, 108, 0, 0.03));
+  border: 1px solid rgba(80, 71, 243, 0.18);
+  border-radius: 12px;
+  padding: 18px 20px 16px;
+  animation: romCompareIn 220ms ease-out both;
+}
+@keyframes romCompareIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rom-compare-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.rom-compare-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--raisin-800);
+}
+.rom-compare-title .mi { color: #5047F3; }
+.rom-compare-title b { color: var(--orange-500); font-weight: 700; }
+.rom-compare-sub {
+  font-size: 12px;
+  color: var(--bc-muted);
+  margin-top: 2px;
+}
+.rom-compare-close {
+  background: transparent;
+  border: none;
+  color: var(--bc-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 140ms, color 140ms;
+}
+.rom-compare-close:hover { background: rgba(15,18,32,0.06); color: var(--raisin-800); }
+
+.rom-compare-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.rom-compare-kpi {
+  background: #fff;
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.rom-compare-kpi-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bc-muted);
+  margin-bottom: 6px;
+}
+.rom-compare-kpi-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--raisin-800);
+  line-height: 1.1;
+}
+.rom-compare-kpi-prev {
+  font-size: 11px;
+  color: var(--bc-muted);
+  margin-top: 4px;
+}
+.rom-compare-kpi-delta {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.rom-compare-changes {
+  background: #fff;
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.rom-compare-changes-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--raisin-800);
+  margin-bottom: 10px;
+}
+.rom-compare-change-row {
+  padding: 8px 0;
+  border-top: 1px solid rgba(15, 18, 32, 0.06);
+}
+.rom-compare-change-row:first-of-type { border-top: none; padding-top: 0; }
+.rom-compare-change-div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.rom-compare-change-code {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bc-muted);
+}
+.rom-compare-change-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--raisin-800);
+}
+.rom-compare-change-amounts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--raisin-800);
+  flex-wrap: wrap;
+}
+.rom-compare-change-amounts .mi { color: var(--bc-muted); }
+.rom-compare-change-prev { color: var(--bc-muted); text-decoration: line-through; }
+.rom-compare-change-curr { font-weight: 600; }
+.rom-compare-change-delta { margin-left: 6px; }
+.rom-compare-change-reason {
+  font-size: 12px;
+  color: var(--bc-muted);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* Dark theme adjustments for the compare panel and inner cards. */
+[data-theme="dark"] .rom-compare {
+  background: linear-gradient(180deg, rgba(80, 71, 243, 0.08), rgba(239, 108, 0, 0.05));
+  border-color: rgba(125, 118, 255, 0.22);
+}
+[data-theme="dark"] .rom-compare-title { color: #fff; }
+[data-theme="dark"] .rom-compare-title .mi { color: #7D76FF; }
+[data-theme="dark"] .rom-compare-kpi,
+[data-theme="dark"] .rom-compare-changes {
+  background: #23222e;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .rom-compare-kpi-val,
+[data-theme="dark"] .rom-compare-change-name,
+[data-theme="dark"] .rom-compare-change-amounts,
+[data-theme="dark"] .rom-compare-changes-title { color: #fff; }
+[data-theme="dark"] .rom-compare-kpi-label,
+[data-theme="dark"] .rom-compare-kpi-prev,
+[data-theme="dark"] .rom-compare-sub,
+[data-theme="dark"] .rom-compare-change-code,
+[data-theme="dark"] .rom-compare-change-reason { color: rgba(255,255,255,0.60); }
+[data-theme="dark"] .rom-compare-change-prev { color: rgba(255,255,255,0.45); }
+[data-theme="dark"] .rom-compare-change-row { border-top-color: rgba(255,255,255,0.06); }
+
+/* Deleted-run state — centered notice replacing the report content. */
+.rom-deleted {
+  margin: 40px auto;
+  max-width: 460px;
+  text-align: center;
+  padding: 32px 28px;
+  background: #fff;
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 12px;
+}
+.rom-deleted .mi { color: rgba(181, 54, 54, 0.70); }
+.rom-deleted-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--raisin-800);
+  margin: 10px 0 6px;
+}
+.rom-deleted p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--bc-muted);
+  margin: 0 0 18px;
+}
+.rom-deleted .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-theme="dark"] .rom-deleted {
+  background: #23222e;
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .rom-deleted-title { color: #fff; }
+[data-theme="dark"] .rom-deleted p { color: rgba(255,255,255,0.60); }
+
+/* ============================================================
    CARDS / TABLES / BADGES (light surfaces)
    ============================================================ */
 .card {
@@ -1746,6 +2005,15 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   right: 0;
   z-index: 50;
 }
+/* Icon-only button variant — used by OverflowMenu's kebab trigger. Square
+   aspect, centered glyph, no label spacing. */
+.btn.icon-only {
+  width: 32px;
+  padding-left: 0;
+  padding-right: 0;
+  justify-content: center;
+}
+.btn.icon-only .mi { margin: 0; }
 .ctx-menu-shortcut { font-size: 11px; color: var(--bc-muted); margin-left: 8px; }
 .ctx-menu-divider { height: 1px; background: rgba(39,38,53,0.08); margin: 4px 8px; }
 [data-theme="dark"] .ctx-menu { background: var(--raisin-900); border-color: rgba(255,255,255,0.10); box-shadow: 0 12px 28px rgba(0,0,0,0.50); }
@@ -2089,8 +2357,15 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .greet h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; margin: 0; letter-spacing: -0.01em; color: var(--raisin-800); }
 .greet .marketing { font-family: var(--font-marketing); color: var(--orange-500); font-size: 28px; line-height: 1; margin-top: 4px; }
 .greet p { color: rgba(39,38,53,0.70); font-size: 14px; margin: 8px 0 0; max-width: 480px; }
-[data-theme="dark"] .greet { background: #fff; color: var(--raisin-800); border-color: rgba(39,38,53,0.08); }
-[data-theme="dark"] .greet p { color: rgba(39,38,53,0.70); }
+.greet-eyebrow { color: rgba(39,38,53,0.55); }
+.greet-intro { color: rgba(39,38,53,0.70); }
+/* Dark theme — surface and text colors match the rest of the dark UI
+   (cards use #23222e; body text 92% white; muted text ~65% white). */
+[data-theme="dark"] .greet { background: #13131C; color: rgba(255,255,255,0.92); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .greet h1 { color: #fff; }
+[data-theme="dark"] .greet p { color: rgba(255,255,255,0.70); }
+[data-theme="dark"] .greet-eyebrow { color: rgba(255,255,255,0.55); }
+[data-theme="dark"] .greet-intro { color: rgba(255,255,255,0.72); }
 .greet { justify-content: flex-start; }
 .greet .robot {
   display: block;
@@ -5716,47 +5991,68 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
    FUX COACHMARKS — guided tour overlay
    ============================================================
    Shown once after a fresh user completes the FUX onboarding and lands
-   on Home. A floating tooltip card walks the user through key UI
-   elements; the current target gets an animated orange ring. */
+   on Home. A spotlight (transparent rect surrounded by a huge box-shadow)
+   keeps the target area lit while dimming the rest of the UI. A floating
+   tooltip card explains each step and advances on Next. */
 .fux-coachmarks {
   position: fixed;
   inset: 0;
   z-index: 9000;
   pointer-events: none;            /* let highlighted target stay interactive */
-  animation: fuxCoachFadeIn 240ms ease-out both;
+  animation: fuxCoachFadeIn 280ms ease-out both;
 }
 @keyframes fuxCoachFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
+/* Full-viewport dim — shown on steps that don't anchor to a specific
+   element (e.g. the "Recent projects" intro shown in fresh mode). */
+.fux-coach-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 14, 26, 0.58);
+  pointer-events: none;
+}
+
+/* The spotlight is a transparent box positioned over the target. The
+   gigantic spread radius on box-shadow paints the entire viewport dim
+   while leaving the box's interior fully visible — this gives a true
+   "light cone" effect with no orange ring needed. The transitions let
+   the spotlight glide smoothly between targets when the user advances. */
+.fux-coach-spotlight {
+  position: fixed;
+  border-radius: 14px;
+  pointer-events: none;
+  background: transparent;
+  box-shadow: 0 0 0 9999px rgba(12, 14, 26, 0.58);
+  transition: top    320ms cubic-bezier(0.4, 0, 0.2, 1),
+              left   320ms cubic-bezier(0.4, 0, 0.2, 1),
+              width  320ms cubic-bezier(0.4, 0, 0.2, 1),
+              height 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tooltip card uses position: fixed with inline transforms set by JS, so
+   no class-level transform fights the placement math. Top/left also
+   transition for a smooth slide between steps. */
 .fux-coach-tip {
-  position: absolute;
+  position: fixed;
   pointer-events: auto;
   width: 320px;
   background: #FFFFFF;
   border: 1px solid rgba(15, 18, 32, 0.08);
   border-radius: 16px;
-  box-shadow: 0 20px 48px rgba(15, 18, 32, 0.18),
-              0 4px 12px rgba(15, 18, 32, 0.10);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32),
+              0 6px 14px rgba(0, 0, 0, 0.18);
   padding: 18px 18px 14px;
-  animation: fuxCoachPop 280ms cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
-}
-@keyframes fuxCoachPop {
-  from { opacity: 0; transform: var(--coach-transform-from, translate(0, 8px) scale(0.96)); }
-  to   { opacity: 1; transform: var(--coach-transform-to, translate(0, 0) scale(1)); }
+  transition: top  320ms cubic-bezier(0.4, 0, 0.2, 1),
+              left 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Placement variants — each anchors via its own transform so the
-   inline top/left we set in JS becomes the tooltip's logical edge. */
-.fux-coach-right  { transform: translateY(-50%); --coach-transform-from: translate(-6px, -50%) scale(0.96); --coach-transform-to: translate(0, -50%) scale(1); }
-.fux-coach-left   { transform: translate(-100%, -50%); --coach-transform-from: translate(calc(-100% + 6px), -50%) scale(0.96); --coach-transform-to: translate(-100%, -50%) scale(1); }
-.fux-coach-below  { transform: translateX(-50%); --coach-transform-from: translate(-50%, -6px) scale(0.96); --coach-transform-to: translate(-50%, 0) scale(1); }
-.fux-coach-above  { transform: translate(-50%, -100%); --coach-transform-from: translate(-50%, calc(-100% + 6px)) scale(0.96); --coach-transform-to: translate(-50%, -100%) scale(1); }
-.fux-coach-center { transform: translate(-50%, -50%); --coach-transform-from: translate(-50%, -46%) scale(0.96); --coach-transform-to: translate(-50%, -50%) scale(1); }
-
-/* Pointer arrow rendered with two stacked pseudo-elements (border + fill)
-   so the tooltip's 1px border continues smoothly around the tip. */
+/* Arrow pseudo-elements — two stacked diamonds so the tooltip's 1px
+   border continues smoothly into the tip. Positioning differs per
+   placement class but the JS-supplied transform on the tooltip itself
+   handles the actual placement math. */
 .fux-coach-tip::before,
 .fux-coach-tip::after {
   content: "";
@@ -5770,13 +6066,13 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
 .fux-coach-tip::after { border: none; }
 
 .fux-coach-right::before,
-.fux-coach-right::after  { left: -8px; top: 50%; margin-top: -7px; border-top: 0; border-right: 0; }
+.fux-coach-right::after  { left: -8px;  top: 50%;   margin-top: -7px;  border-top: 0;    border-right: 0; }
 .fux-coach-left::before,
-.fux-coach-left::after   { right: -8px; top: 50%; margin-top: -7px; border-bottom: 0; border-left: 0; }
+.fux-coach-left::after   { right: -8px; top: 50%;   margin-top: -7px;  border-bottom: 0; border-left: 0; }
 .fux-coach-below::before,
-.fux-coach-below::after  { top: -8px; left: 50%; margin-left: -7px; border-bottom: 0; border-right: 0; }
+.fux-coach-below::after  { top: -8px;   left: 50%;  margin-left: -7px; border-bottom: 0; border-right: 0; }
 .fux-coach-above::before,
-.fux-coach-above::after  { bottom: -8px; left: 50%; margin-left: -7px; border-top: 0; border-left: 0; }
+.fux-coach-above::after  { bottom: -8px; left: 50%; margin-left: -7px; border-top: 0;    border-left: 0; }
 .fux-coach-center::before,
 .fux-coach-center::after { display: none; }
 
@@ -5828,19 +6124,96 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   color: rgba(39, 38, 53, 0.85);
 }
 
-/* Highlight ring around the active target — pulses softly so the eye
-   tracks to it without making the whole UI feel busy. */
-.is-coachmark-target {
-  position: relative;
-  z-index: 50;
-  outline: 3px solid var(--orange-500, #EF6C00);
-  outline-offset: 6px;
-  border-radius: 12px;
-  animation: fuxCoachPulse 1800ms ease-in-out infinite;
+/* Animated Skills graphic — shown in the Skills-tab coachmark step. A row
+   of four skill pills with a staggered orange glow that ripples through
+   them, signalling these are active tools the user can run. */
+.fux-coach-skills {
+  margin: 4px 0 14px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(239,108,0,0.05), rgba(80,71,243,0.06));
+  border: 1px solid rgba(15,18,32,0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-@keyframes fuxCoachPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 108, 0, 0.30); }
-  50%      { box-shadow: 0 0 0 8px rgba(239, 108, 0, 0.00); }
+.fux-coach-skill-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 8px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15,18,32,0.10);
+  border-radius: 100px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: rgba(39,38,53,0.85);
+  white-space: nowrap;
+  animation: fuxCoachSkillPulse 2.4s ease-in-out infinite;
+}
+.fux-coach-skill-pill .mi {
+  color: var(--orange-500, #EF6C00);
+  font-size: 12px !important;
+}
+@keyframes fuxCoachSkillPulse {
+  0%, 60%, 100% {
+    box-shadow: 0 0 0 0 rgba(239,108,0,0);
+    border-color: rgba(15,18,32,0.10);
+    transform: scale(1);
+  }
+  15% {
+    box-shadow: 0 0 0 4px rgba(239,108,0,0.18), 0 2px 10px rgba(239,108,0,0.22);
+    border-color: rgba(239,108,0,0.55);
+    transform: scale(1.05);
+  }
+  35% {
+    box-shadow: 0 0 0 0 rgba(239,108,0,0);
+    border-color: rgba(15,18,32,0.10);
+    transform: scale(1);
+  }
+}
+
+/* Tiny wireframe preview shown inside the Home-screen coachmark step,
+   giving the user a hint of what the populated Home layout will look like
+   once they have projects/pins/runs to surface. */
+.fux-coach-wire {
+  margin: 4px 0 14px;
+  padding: 10px;
+  background: rgba(15, 18, 32, 0.035);
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fux-coach-wire-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(39, 38, 53, 0.55);
+  margin-bottom: 5px;
+}
+.fux-coach-wire-row {
+  display: flex;
+  gap: 4px;
+}
+.fux-coach-wire-card {
+  background: rgba(15, 18, 32, 0.12);
+  border-radius: 3px;
+  flex: 1;
+}
+.fux-coach-wire-card.lg { height: 22px; }
+.fux-coach-wire-card.sm { height: 14px; }
+.fux-coach-wire-table {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fux-coach-wire-bar {
+  height: 5px;
+  background: rgba(15, 18, 32, 0.12);
+  border-radius: 2px;
 }
 
 /* ============================================================

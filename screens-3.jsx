@@ -128,6 +128,12 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
   const [accepted, setAccepted] = uS3(new Set()); // accepted IDs
   const [expandedDiv, setExpandedDiv] = uS3(null); // div code currently open
   const [reportTab, setReportTab] = uS3("overview"); // overview | detailed | files
+  // Result acceptance state — once accepted, the result is locked and the
+  // status badge flips to "Accepted". Deleted state hides the result entirely.
+  const [runStatus, setRunStatus] = uS3("pending"); // pending | accepted | deleted
+  // Comparison panel — when true, shows a diff card above the summary with
+  // KPI deltas and top division movers between this run and the previous one.
+  const [showCompare, setShowCompare] = uS3(false);
   const [selectedDivision, setSelectedDivision] = uS3(null); // CSI code or null
   const [accordionOpen, setAccordionOpen] = uS3(new Set(["summary"]));
   // Out-of-scope tile tooltip — { code } or null. Appears after a 2s hover or on click.
@@ -248,7 +254,9 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
               { label: "Email", icon: "email", onClick: () => {} },
               { label: "Download as PDF", icon: "picture_as_pdf", onClick: () => {} },
             ]} />
-            <button className="btn"><Icon name="add_chart" size={16} />Build report</button>
+            <OverflowMenu options={[
+              { label: "Build report", icon: "add_chart", onClick: () => {} },
+            ]} />
           </>
         }
         onAskAI={onAskAI}
@@ -270,6 +278,16 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                 />
               </h2>
               {onRerun && <button className="btn rerun-inline" onClick={onRerun}><Icon name="refresh" size={14} />Re-run skill</button>}
+              {runStatus === "pending" && (
+                <button className="btn rom-action-accept" onClick={() => setRunStatus("accepted")}>
+                  <Icon name="check" size={16} />Accept results
+                </button>
+              )}
+              {runStatus === "accepted" && (
+                <button className="btn rom-action-accepted" disabled>
+                  <Icon name="check_circle" size={16} />Accepted
+                </button>
+              )}
             </div>
             <p className="page-sub" style={{ marginTop: 4 }}>
               <EditableText
@@ -280,8 +298,21 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                 onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Report meta")}
               />
             </p>
+            {data.revision && (
+              <div className="rom-revision">
+                <Icon name="description" size={13} />
+                <span>Based on <b>{data.revision.drawings}</b> + <b>{data.revision.specs}</b></span>
+                <span className="rom-revision-sep">·</span>
+                <span>{data.revision.fileCount} files indexed {data.revision.drawingsDate}</span>
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            {runStatus === "accepted" && (
+              <span className="badge b-done" style={{ background: "rgba(0,150,80,0.10)", color: "#0a9050" }}>
+                <Icon name="check_circle" size={12} style={{ opacity: 0.85 }} />Accepted
+              </span>
+            )}
             <span className="badge b-done"><Icon name="verified" size={12} style={{ opacity: 0.7 }} />91% confidence</span>
             <span className="badge b-warn">2 flags</span>
           </div>
@@ -303,7 +334,6 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
 
         {/* OVERVIEW TAB */}
         {reportTab === "overview" && <>
-
 
         {/* SUMMARY */}
         <div className="summary-row" style={{ marginTop: 20 }}>
@@ -376,7 +406,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
               <EditableText
                 editMode={editMode}
                 editKey={"est:" + project.id + ":flagTitle"}
-                original={"Division 13 — Special Construction sits 18% above benchmark"}
+                original={"Division 13 Special Construction sits 18% above benchmark"}
                 value={globalEdits && globalEdits["est:" + project.id + ":flagTitle"] && globalEdits["est:" + project.id + ":flagTitle"].value}
                 onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Cody flag title")}
               />
@@ -411,6 +441,120 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
             </div>
           </CodyMessage>
         </div>
+
+        {/* Cody compare prompt — surfaces the run-over-run diff. Pill toggles
+            the full comparison panel directly below this message, keeping
+            the trigger and result visually paired. */}
+        {data.previousRun && (() => {
+          const prev = data.previousRun;
+          const fmtMoney = (n) => "$" + (n / 1000000).toFixed(2) + "M";
+          const fmtDelta = (curr, prevVal) => {
+            const diff = curr - prevVal;
+            const pct = prevVal === 0 ? 0 : (diff / prevVal) * 100;
+            const sign = diff >= 0 ? "+" : "−";
+            return { diff, pct, sign, isUp: diff >= 0 };
+          };
+          const totalDelta = fmtDelta(data.grandTotal, prev.grandTotal);
+          const movers = prev.topChanges.slice(0, 3).map(c => c.name).join(", ");
+          const totalDirection = totalDelta.isUp ? "up" : "down";
+          return (
+            <div style={{ marginTop: 16 }}>
+              <CodyMessage
+                eyebrow="Cody compared this run"
+                title={`${data.version} differs from ${prev.version} in ${prev.topChanges.length} divisions`}
+                pillLabel={showCompare ? "Hide comparison" : "Show full comparison"}
+                onPill={() => setShowCompare(v => !v)}
+              >
+                <p>
+                  Total estimate is <b>{totalDelta.sign}{fmtMoney(Math.abs(totalDelta.diff))}</b> ({totalDelta.sign}{Math.abs(totalDelta.pct).toFixed(1)}%) {totalDirection} compared to <b>{prev.version}</b>, which ran on <b>{prev.finishedAt}</b>.
+                </p>
+                <p>
+                  The biggest movers are <b>{movers}</b>. Open the full comparison below to see KPI deltas and per-division reasons.
+                </p>
+              </CodyMessage>
+
+              {showCompare && (() => {
+                const laborDelta = fmtDelta(data.laborTotal, prev.laborTotal);
+                const matDelta = fmtDelta(data.materialTotal, prev.materialTotal);
+                const psfDelta = fmtDelta(parseFloat(costPerSF), prev.costPerSF);
+                const deltaStyle = (d) => ({ color: d.isUp ? "var(--orange-500)" : "var(--tiffany-400)", fontWeight: 600 });
+                return (
+                  <div className="rom-compare" style={{ marginTop: 12 }}>
+                    <div className="rom-compare-head">
+                      <div>
+                        <div className="rom-compare-title">
+                          <Icon name="compare" size={16} />
+                          Comparing <b>{data.version}</b> with <b>{prev.version}</b>
+                        </div>
+                        <div className="rom-compare-sub">Previous run finished {prev.finishedAt}</div>
+                      </div>
+                      <button className="btn-ghost rom-compare-close" onClick={() => setShowCompare(false)}>
+                        <Icon name="close" size={14} />
+                      </button>
+                    </div>
+                    <div className="rom-compare-kpis">
+                      <div className="rom-compare-kpi">
+                        <div className="rom-compare-kpi-label">Total estimate</div>
+                        <div className="rom-compare-kpi-val">{fmtMoney(data.grandTotal)}</div>
+                        <div className="rom-compare-kpi-prev">was {fmtMoney(prev.grandTotal)}</div>
+                        <div className="rom-compare-kpi-delta" style={deltaStyle(totalDelta)}>
+                          {totalDelta.sign}{fmtMoney(Math.abs(totalDelta.diff))} ({totalDelta.sign}{Math.abs(totalDelta.pct).toFixed(1)}%)
+                        </div>
+                      </div>
+                      <div className="rom-compare-kpi">
+                        <div className="rom-compare-kpi-label">Labor</div>
+                        <div className="rom-compare-kpi-val">{fmtMoney(data.laborTotal)}</div>
+                        <div className="rom-compare-kpi-prev">was {fmtMoney(prev.laborTotal)}</div>
+                        <div className="rom-compare-kpi-delta" style={deltaStyle(laborDelta)}>
+                          {laborDelta.sign}{fmtMoney(Math.abs(laborDelta.diff))} ({laborDelta.sign}{Math.abs(laborDelta.pct).toFixed(1)}%)
+                        </div>
+                      </div>
+                      <div className="rom-compare-kpi">
+                        <div className="rom-compare-kpi-label">Materials</div>
+                        <div className="rom-compare-kpi-val">{fmtMoney(data.materialTotal)}</div>
+                        <div className="rom-compare-kpi-prev">was {fmtMoney(prev.materialTotal)}</div>
+                        <div className="rom-compare-kpi-delta" style={deltaStyle(matDelta)}>
+                          {matDelta.sign}{fmtMoney(Math.abs(matDelta.diff))} ({matDelta.sign}{Math.abs(matDelta.pct).toFixed(1)}%)
+                        </div>
+                      </div>
+                      <div className="rom-compare-kpi">
+                        <div className="rom-compare-kpi-label">Cost per SF</div>
+                        <div className="rom-compare-kpi-val">${costPerSF}</div>
+                        <div className="rom-compare-kpi-prev">was ${prev.costPerSF.toFixed(2)}</div>
+                        <div className="rom-compare-kpi-delta" style={deltaStyle(psfDelta)}>
+                          {psfDelta.sign}${Math.abs(psfDelta.diff).toFixed(2)} ({psfDelta.sign}{Math.abs(psfDelta.pct).toFixed(1)}%)
+                        </div>
+                      </div>
+                    </div>
+                    <div className="rom-compare-changes">
+                      <div className="rom-compare-changes-title">Top changes by division</div>
+                      {prev.topChanges.map(ch => {
+                        const d = fmtDelta(ch.curr, ch.prev);
+                        return (
+                          <div key={ch.code} className="rom-compare-change-row">
+                            <div className="rom-compare-change-div">
+                              <span className="rom-compare-change-code">Div {ch.code}</span>
+                              <span className="rom-compare-change-name">{ch.name}</span>
+                            </div>
+                            <div className="rom-compare-change-amounts">
+                              <span className="rom-compare-change-prev">${(ch.prev / 1000).toFixed(1)}k</span>
+                              <Icon name="arrow_forward" size={12} />
+                              <span className="rom-compare-change-curr">${(ch.curr / 1000).toFixed(1)}k</span>
+                              <span className="rom-compare-change-delta" style={deltaStyle(d)}>
+                                {d.sign}{Math.abs(d.pct).toFixed(1)}%
+                              </span>
+                            </div>
+                            {ch.reason && <div className="rom-compare-change-reason">{ch.reason}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        })()}
 
         {/* FLAGGED LINE ITEMS — editable, surfaced above the divisions table */}
         <div className="card no-pad flagged-section" style={{ marginTop: 16 }}>
@@ -475,7 +619,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                                 <Icon name="article" size={11} />{r}
                               </span>
                             ))
-                          : <span style={{ fontSize: 10.5, color: "var(--bc-muted)", fontStyle: "italic" }}>—</span>
+                          : <span style={{ fontSize: 10.5, color: "var(--bc-muted)", fontStyle: "italic" }}>N/A</span>
                         }
                       </div>
                     </td>
@@ -596,8 +740,8 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                   <div className="da-writeup-sub">{activeDivision.scope || activeDivision.desc}</div>
                 </div>
                 <div className="da-writeup-stats">
-                  <div><div className="da-stat-label">Amount</div><div className="da-stat-value">{activeDivision.inScope ? fullMoney(activeDivision.amount) : "—"}</div></div>
-                  <div><div className="da-stat-label">Share</div><div className="da-stat-value">{activeDivision.inScope ? activeDivision.pct.toFixed(1) + "%" : "—"}</div></div>
+                  <div><div className="da-stat-label">Amount</div><div className="da-stat-value">{activeDivision.inScope ? fullMoney(activeDivision.amount) : "N/A"}</div></div>
+                  <div><div className="da-stat-label">Share</div><div className="da-stat-value">{activeDivision.inScope ? activeDivision.pct.toFixed(1) + "%" : "N/A"}</div></div>
                 </div>
               </div>
 
@@ -608,7 +752,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                     <div>
                       <div style={{ fontWeight: 700, color: "var(--bc-strong)", marginBottom: 4 }}>Not in scope for this estimate</div>
                       <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "var(--bc-muted)" }}>
-                        Cody reviewed the indexed drawing set and specifications and didn't find scope items that fall under Division {activeDivision.code} — {activeDivision.name}. {activeDivision.scope} If this is unexpected, add the relevant documents and re-run the estimate.
+                        Cody reviewed the indexed drawing set and specifications and didn't find scope items that fall under Division {activeDivision.code}: {activeDivision.name}. {activeDivision.scope} If this is unexpected, add the relevant documents and re-run the estimate.
                       </p>
                     </div>
                   </div>
@@ -622,13 +766,13 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                   { id: "summary", icon: "summarize", label: "Executive summary", body: (
                     <>
                       <p>Division {activeDivision.code} represents <b>{activeDivision.pct.toFixed(1)}%</b> of the total project ROM, at <b>{fullMoney(activeDivision.amount)}</b>. Cody assembled this number by extracting quantities directly from the indexed sheets and applying current PDX metro labor rates plus material indices from the v2.4 reference set.</p>
-                      <p>{activeDivision.flagged ? "This division is currently flagged — see the Risks & Flags section for what Cody surfaced." : "No outstanding flags on this division at the current revision."} Confidence on the underlying takeoff sits at <b>{Math.round(data.confidence * 100)}%</b>.</p>
+                      <p>{activeDivision.flagged ? "This division is currently flagged. See the Risks & Flags section for what Cody surfaced." : "No outstanding flags on this division at the current revision."} Confidence on the underlying takeoff sits at <b>{Math.round(data.confidence * 100)}%</b>.</p>
                     </>
                   )},
                   { id: "methodology", icon: "tune", label: "Pricing methodology", body: (
                     <>
                       <p>Quantities for this division were extracted from the architectural set ({filesAnalyzed.length} indexed documents) and reconciled with the specification book. Unit costs come from Cody's PDX-metro rate database (v2.4), refreshed weekly from regional bid tabs.</p>
-                      <p>Labor productivity assumes a standard 5-day work week with prevailing wage where applicable. Material indices reflect the most recent 30-day trailing average — Cody flags any line where the index has moved more than 10% in that window.</p>
+                      <p>Labor productivity assumes a standard 5-day work week with prevailing wage where applicable. Material indices reflect the most recent 30-day trailing average. Cody flags any line where the index has moved more than 10% in that window.</p>
                     </>
                   )},
                   { id: "takeoff", icon: "fact_check", label: "Quantity takeoff · " + items.length + " item" + (items.length === 1 ? "" : "s"), body: (
@@ -653,7 +797,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                                         <Icon name="article" size={11} />{r}
                                       </span>
                                     ))
-                                  : <span style={{ fontSize: 10.5, color: "var(--bc-muted)", fontStyle: "italic" }}>—</span>
+                                  : <span style={{ fontSize: 10.5, color: "var(--bc-muted)", fontStyle: "italic" }}>N/A</span>
                                 }
                               </div>
                             </div>
@@ -693,9 +837,9 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                     <>
                       <p>Cody benchmarked this division against <b>14 similar projects in the PNW</b> over the last 36 months. The closest comps:</p>
                       <ul style={{ margin: "8px 0 0 20px", padding: 0, fontSize: 13, color: "var(--bc-strong)", lineHeight: 1.6 }}>
-                        <li>Beaverton Aquatic Center (2024) — Division {activeDivision.code} at {fullMoney(activeDivision.amount * 0.86)}, {(activeDivision.pct - 0.4).toFixed(1)}% of total</li>
-                        <li>Tualatin Civic Pool (2023) — Division {activeDivision.code} at {fullMoney(activeDivision.amount * 1.04)}, {(activeDivision.pct + 0.2).toFixed(1)}% of total</li>
-                        <li>Hillsboro Rec & Wellness (2022) — Division {activeDivision.code} at {fullMoney(activeDivision.amount * 0.95)}, {(activeDivision.pct - 0.1).toFixed(1)}% of total</li>
+                        <li>Beaverton Aquatic Center (2024): Division {activeDivision.code} at {fullMoney(activeDivision.amount * 0.86)}, {(activeDivision.pct - 0.4).toFixed(1)}% of total</li>
+                        <li>Tualatin Civic Pool (2023): Division {activeDivision.code} at {fullMoney(activeDivision.amount * 1.04)}, {(activeDivision.pct + 0.2).toFixed(1)}% of total</li>
+                        <li>Hillsboro Rec & Wellness (2022): Division {activeDivision.code} at {fullMoney(activeDivision.amount * 0.95)}, {(activeDivision.pct - 0.1).toFixed(1)}% of total</li>
                       </ul>
                       <p style={{ marginTop: 12 }}>Cody's estimate for this project sits <b>within range</b> of the comp set, with {(activeDivision.pct - 0.1).toFixed(1)}% being typical for this building type.</p>
                     </>
@@ -704,7 +848,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                     activeDivision.flagged
                       ? (
                         <>
-                          <p><b>Cody flagged this division.</b> {activeDivision.code === "13" ? "The pool tank lump sum of $384k is tracking 18% above regional benchmarks for 25m × 8-lane competition pools. The closest comp is Beaverton Aquatic at $326k (2024). Recommend breaking the lump sum into trade lines for a tighter view." : activeDivision.code === "09" ? "Division 09 sits at 13.0% of the total — within typical range but Cody flagged the Shaw Haze carpet line item due to a recent county code update that effectively doubled transport cost, contributing a 22% line-level increase." : "Cody noted material-index volatility on this division. Recommend pinning the unit cost source before issuing for bid."}</p>
+                          <p><b>Cody flagged this division.</b> {activeDivision.code === "13" ? "The pool tank lump sum of $384k is tracking 18% above regional benchmarks for 25m × 8-lane competition pools. The closest comp is Beaverton Aquatic at $326k (2024). Recommend breaking the lump sum into trade lines for a tighter view." : activeDivision.code === "09" ? "Division 09 sits at 13.0% of the total, within typical range, but Cody flagged the Shaw Haze carpet line item due to a recent county code update that effectively doubled transport cost, contributing a 22% line-level increase." : "Cody noted material-index volatility on this division. Recommend pinning the unit cost source before issuing for bid."}</p>
                           <p>Until the flag is resolved, Cody will keep the estimate's confidence index from rising above 91%.</p>
                         </>
                       )
@@ -760,7 +904,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                   <div>
                     <div style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>How this number was built</div>
                     <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "var(--bc-strong)" }}>
-                      Each CSI MasterFormat division is shown below. Click any tile for Cody's in-depth writeup — methodology, quantity takeoff, comparable projects, risks, and cited documents.
+                      Each CSI MasterFormat division is shown below. Click any tile for Cody's in-depth writeup: methodology, quantity takeoff, comparable projects, risks, and cited documents.
                     </p>
                     <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 11.5, color: "var(--bc-muted)", flexWrap: "wrap" }}>
                       <span><b style={{ color: "var(--bc-strong)" }}>Sum of divisions</b> · {fullMoney(data.divisions.reduce((a, d) => a + d.amount, 0))}</span>
@@ -802,7 +946,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
                       </div>
                       {showing && (
                         <div className="da-tile-tooltip" role="tooltip" onClick={(e) => e.stopPropagation()}>
-                          Cody didn't find scope items that fall under <b>Division {c.code} — {c.name}</b>. If this is unexpected, please add the relevant documents and re-run the estimate.
+                          Cody didn't find scope items that fall under <b>Division {c.code}: {c.name}</b>. If this is unexpected, please add the relevant documents and re-run the estimate.
                         </div>
                       )}
                     </div>
@@ -1072,7 +1216,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
                                   <Icon name="article" size={11} />{r}
                                 </span>
                               ))
-                            : <span style={{ fontSize: 10.5, color: "var(--bc-muted)", fontStyle: "italic" }}>—</span>
+                            : <span style={{ fontSize: 10.5, color: "var(--bc-muted)", fontStyle: "italic" }}>N/A</span>
                           }
                         </div>
                         <button className={"icon-btn rfc-resolve-btn " + (i.resolved ? "is-resolved" : "")}
@@ -1360,7 +1504,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
             </div>
             <div className="value">{trade.spread.toFixed(1)}%</div>
             <div className="delta" style={{ color: "var(--bc-muted)" }}>
-              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":spreadDelta"} original={trade.spread < 12 ? "Tight — competitive" : "Wide — review scope"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadDelta"] && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Spread")} />
+              <EditableText editMode={editMode} editKey={"bid:" + project.id + ":" + trade.id + ":spreadDelta"} original={trade.spread < 12 ? "Tight, competitive" : "Wide, review scope"} value={globalEdits && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadDelta"] && globalEdits["bid:" + project.id + ":" + trade.id + ":spreadDelta"].value} onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "KPI note · Spread")} />
             </div>
           </div>
           <div className="kpi">
@@ -1376,7 +1520,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
         <div className="card no-pad">
           <div className="card-h">
             <Icon name="compare_arrows" style={{ color: "var(--orange-500)" }} />
-            <h3>{trade.division} — {trade.name} · side-by-side</h3>
+            <h3>{trade.division}: {trade.name} · side-by-side</h3>
             <div className="right"><button className="btn-ghost"><Icon name="filter_list" size={14} />Show only differences</button></div>
           </div>
           <table className="bid-table">
@@ -1580,10 +1724,10 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
                   if (isWinner) {
                     narrative = (
                       <>
-                        <b>{sub.name}</b> is Cody's recommendation for {t.name}. The leveled total of <b>{fullMoney(total)}</b> is <b>{fullMoney(tAvg - total)}</b> below the trade average and <b>{((tAvg - total) / tAvg * 100).toFixed(1)}%</b> tighter than the next-best bid. {t.recommendedNote}. {exclusionsForSub === 0 ? "Scope is fully inclusive — no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}
+                        <b>{sub.name}</b> is Cody's recommendation for {t.name}. The leveled total of <b>{fullMoney(total)}</b> is <b>{fullMoney(tAvg - total)}</b> below the trade average and <b>{((tAvg - total) / tAvg * 100).toFixed(1)}%</b> tighter than the next-best bid. {t.recommendedNote}. {exclusionsForSub === 0 ? "Scope is fully inclusive, with no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}
                       </>
                     );
-                    narrativeText = `${sub.name} is Cody's recommendation for ${t.name}. The leveled total of ${fullMoney(total)} is ${fullMoney(tAvg - total)} below the trade average and ${((tAvg - total) / tAvg * 100).toFixed(1)}% tighter than the next-best bid. ${t.recommendedNote}. ${exclusionsForSub === 0 ? "Scope is fully inclusive — no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}`;
+                    narrativeText = `${sub.name} is Cody's recommendation for ${t.name}. The leveled total of ${fullMoney(total)} is ${fullMoney(tAvg - total)} below the trade average and ${((tAvg - total) / tAvg * 100).toFixed(1)}% tighter than the next-best bid. ${t.recommendedNote}. ${exclusionsForSub === 0 ? "Scope is fully inclusive, with no carve-outs to negotiate." : `Note ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} below before awarding.`}`;
                   } else if (rank === 1) {
                     narrative = (
                       <>
@@ -1594,17 +1738,17 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
                   } else if (total >= tAvg * 1.10) {
                     narrative = (
                       <>
-                        <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, <b>{((total - tAvg) / tAvg * 100).toFixed(1)}%</b> above the trade average — flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.
+                        <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, <b>{((total - tAvg) / tAvg * 100).toFixed(1)}%</b> above the trade average and flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.
                       </>
                     );
-                    narrativeText = `${sub.name} bid ${fullMoney(total)}, ${((total - tAvg) / tAvg * 100).toFixed(1)}% above the trade average — flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.`;
+                    narrativeText = `${sub.name} bid ${fullMoney(total)}, ${((total - tAvg) / tAvg * 100).toFixed(1)}% above the trade average and flagged as a price outlier. Cody recommends pulling their assumptions log before disqualifying; if their scope is broader than the leveled set, the delta may be justified.`;
                   } else {
                     narrative = (
                       <>
-                        <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, within typical range of the leveled scope (+<b>{fullMoney(variance)}</b> vs the recommended bid). {exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} — review before negotiating.` : "Scope is consistent with the leveled set."}
+                        <b>{sub.name}</b> bid <b>{fullMoney(total)}</b>, within typical range of the leveled scope (+<b>{fullMoney(variance)}</b> vs the recommended bid). {exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"}; review before negotiating.` : "Scope is consistent with the leveled set."}
                       </>
                     );
-                    narrativeText = `${sub.name} bid ${fullMoney(total)}, within typical range of the leveled scope (+${fullMoney(variance)} vs the recommended bid). ${exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"} — review before negotiating.` : "Scope is consistent with the leveled set."}`;
+                    narrativeText = `${sub.name} bid ${fullMoney(total)}, within typical range of the leveled scope (+${fullMoney(variance)} vs the recommended bid). ${exclusionsForSub > 0 ? `Carries ${exclusionsForSub} exclusion${exclusionsForSub === 1 ? "" : "s"}; review before negotiating.` : "Scope is consistent with the leveled set."}`;
                   }
                   const narrativeKey = "bid:" + project.id + ":" + t.id + ":" + sub.id + ":narrative";
 

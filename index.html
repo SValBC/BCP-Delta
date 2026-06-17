@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BuildCrew.AI — Pre-construction</title>
+  <title>BuildCrew.AI: Pre-construction</title>
   <link rel="stylesheet" href="app.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -367,7 +367,7 @@
           rfc: "Clarifications & Potential RFIs",
           bid: "Bid Level Analysis"
         };
-        const tabLabels = { overview:"", files:" — Files", skills:" — Skills", reports:" — Reports", schedule:" — Schedule" };
+        const tabLabels = { overview:"", files:": Files", skills:": Skills", reports:": Reports", schedule:": Schedule" };
         const label = skillLabels[tab] || (proj.name + (tabLabels[tab] || ""));
         // Skill-result tabs (estimation / rfc / bid) carry the skill's own icon;
         // everything else uses the project's folder icon.
@@ -421,10 +421,10 @@
           icon: "folder_open",
           status: "draft", statusLabel: "Draft",
           lastEdit: "Just now", progress: 0,
-          address: address || "—", stage: "Pre-design", scope: scope || "", estimate: "—",
+          address: address || "N/A", stage: "Pre-design", scope: scope || "", estimate: "N/A",
           files: filesCount || fileNames.length || 0,
           isNew: true,
-          revisions: [{ id: "rev1", name: "Revision 1 — Initial upload", date: today, note: "Initial project files" }],
+          revisions: [{ id: "rev1", name: "Revision 1: Initial upload", date: today, note: "Initial project files" }],
         };
         setProjects(prev => [newProject, ...prev]);
         // Seed the new project's file tree (used by Files tab + workspace Files)
@@ -433,7 +433,7 @@
           return {
             id: id + "-f-" + i,
             name: n,
-            size: "—",
+            size: "N/A",
             sizeBytes: 0,
             ftype: ext,
             uploaded: today,
@@ -467,7 +467,7 @@
           kind: "skill",
           screen: "skill-run",
           ctx: { projectId: proj.id, skillId, tab: skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : "bid" },
-          label: skill.title + " — " + proj.name,
+          label: skill.title + ": " + proj.name,
           subLabel: "Running…",
           icon: skill.icon || "auto_awesome",
           projectId: proj.id,
@@ -501,7 +501,7 @@
           kind: "drawing",
           screen: "drawing",
           ctx: { projectId: proj.id, drawingId },
-          label: drawing.id + " — " + drawing.title,
+          label: drawing.id + ": " + drawing.title,
           subLabel: drawing.trade,
           icon: "architecture",
           projectId: proj.id
@@ -512,7 +512,7 @@
         const proj = projects.find(p => p.id === activeTab.projectId);
         updateActiveTab({
           ctx: { ...activeTab.ctx, drawingId: drawing.id },
-          label: drawing.id + " — " + drawing.title,
+          label: drawing.id + ": " + drawing.title,
           subLabel: drawing.trade
         });
       };
@@ -650,7 +650,7 @@
           { key: "seed-est",      label: "ROM Estimate",        subLabel: "Recreational Wellness", icon: "calculate",       onClick: () => openProject("rec-wellness", { tab: "estimation" }) },
           { key: "seed-rfc",      label: "Clarifications & RFIs", subLabel: "Recreational Wellness", icon: "rule",          onClick: () => openProject("rec-wellness", { tab: "rfc" }) },
           { key: "seed-bid",      label: "Bid Level Analysis",  subLabel: "Rivergrove Residences", icon: "compare_arrows",  onClick: () => openProject("rivergrove", { tab: "bid" }) },
-          { key: "seed-drawing",  label: "A-101 — Level 1 plan", subLabel: "Recreational Wellness", icon: "architecture", onClick: () => openDrawing("A-101", "rec-wellness") },
+          { key: "seed-drawing",  label: "A-101 Level 1 plan", subLabel: "Recreational Wellness", icon: "architecture", onClick: () => openDrawing("A-101", "rec-wellness") },
         ];
       })();
 

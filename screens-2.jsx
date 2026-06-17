@@ -48,7 +48,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
     const dateStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     const newRev = {
       id: "rev-new-" + Date.now().toString(36),
-      name: "Revision " + nextNum + " — New revision",
+      name: "Revision " + nextNum + ": New revision",
       date: dateStr,
       note: "Created just now"
     };
@@ -165,7 +165,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 <button className="rev-trigger" onClick={(e) => { e.stopPropagation(); setRevOpen(o => !o); }}>
                   <Icon name="history" size={14} />
                   <span className="rev-trigger-stack">
-                    <b>{activeRevision ? activeRevision.name : "—"}</b>
+                    <b>{activeRevision ? activeRevision.name : "N/A"}</b>
                     {activeRevision && <span className="rev-trigger-date">{activeRevision.date}</span>}
                   </span>
                   <Icon name="expand_more" size={16} />
@@ -216,11 +216,16 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           <button className={"report-tab " + (homeTab === "labor" ? "active" : "")} onClick={() => setHomeTab("labor")}>
             <Icon name="engineering" size={14} />Labor Rates
           </button>
+          <button className={"report-tab " + (homeTab === "history" ? "active" : "")} onClick={() => setHomeTab("history")}>
+            <Icon name="history" size={14} />Skills History
+            <span className="report-tab-count">{((window.BC_DATA && window.BC_DATA.runs) || []).filter(r => r.projectId === project.id).length}</span>
+          </button>
         </div>
 
         {homeTab === "files" && <ProjectFilesTab project={project} onOpenDrawing={onOpenDrawing} />}
         {homeTab === "bids" && <BidTrackerTab project={project} onOpenTab={onOpenTab} onOpenTabInNewTab={onOpenTabInNewTab} onCtxMenu={onCtxMenu} />}
         {homeTab === "labor" && <ProjectLaborTab project={project} />}
+        {homeTab === "history" && <ProjectHistoryTab project={project} onOpenTab={onOpenTab} />}
 
         {homeTab === "overview" && <>
         {/* CODY'S BRIEF — AI-generated, top of screen, dismissible.
@@ -234,10 +239,10 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           onPill={onAskAI}
           items={[
           { kind: "platform", icon: "auto_awesome", title: "Estimation v3 created", body: <>I rebuilt the ROM after Sam uploaded <b>3 new mechanical sheets</b>. Total moved from $11.94M → <b>$12.21M</b> (+2.3%). Confidence rose to 91%.</>, when: "12 min ago" },
-          { kind: "alert", icon: "warning", title: "Division 09 carpet jumped 22%", body: <>A recent county code update doubled transport on <b>Shaw Haze</b>. I've already swapped the line item — flag if you want to revert.</>, when: "1h ago" },
+          { kind: "alert", icon: "warning", title: "Division 09 carpet jumped 22%", body: <>A recent county code update doubled transport on <b>Shaw Haze</b>. I've already swapped the line item. Flag if you want to revert.</>, when: "1h ago" },
           { kind: "alert", icon: "rule", title: "Drawing conflict on Lobby 101", body: <>Ceiling height differs between <b>A-101 (12'-0")</b> and <b>A-301 (11'-0")</b>. Logged as RFC-014, blocking the lighting takeoff.</>, when: "2h ago" },
           { kind: "platform", icon: "upload_file", title: "3 drawings indexed", body: <>Sam uploaded M-201, M-202, M-203. I extracted <b>47 new takeoff items</b> and refreshed the mechanical sheet group.</>, when: "3h ago" },
-          { kind: "alert", icon: "help_outline", title: "Pool deck slip resistance missing", body: <>09 65 00 needs a <b>DCOF target</b> before this section goes out. I drafted clarification language — review and send.</>, when: "Yesterday" }]
+          { kind: "alert", icon: "help_outline", title: "Pool deck slip resistance missing", body: <>09 65 00 needs a <b>DCOF target</b> before this section goes out. I drafted clarification language. Review and send.</>, when: "Yesterday" }]
           } />
         </div>
         )}
@@ -362,7 +367,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 <div className="kpi">
                   <Icon className="bg" name="payments" />
                   <div className="label">Latest ROM Estimate</div>
-                  <div className="value" style={{ color: "var(--bc-muted)" }}>—</div>
+                  <div className="value" style={{ color: "var(--bc-muted)" }}>N/A</div>
                 </div>
               )}
 
@@ -379,7 +384,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 <div className="kpi">
                   <Icon className="bg" name="rule" />
                   <div className="label">Open clarifications</div>
-                  <div className="value" style={{ color: "var(--bc-muted)" }}>—</div>
+                  <div className="value" style={{ color: "var(--bc-muted)" }}>N/A</div>
                 </div>
               )}
 
@@ -400,7 +405,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 <div className="kpi">
                   <Icon className="bg" name="inventory" />
                   <div className="label">Bids Submitted</div>
-                  <div className="value" style={{ color: "var(--bc-muted)" }}>—</div>
+                  <div className="value" style={{ color: "var(--bc-muted)" }}>N/A</div>
                 </div>
               )}
 
@@ -577,7 +582,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                         {r.ai && r.ai.total && <b>{r.ai.total}</b>}
                         {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
                         {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
-                        {!r.ai && "—"}
+                        {!r.ai && "N/A"}
                       </td>
                     </tr>
                   ))}
@@ -686,49 +691,49 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
   const target = project.files || 0;
   const placeholderCount = Math.max(0, target - seeded.length);
   const placeholderPool = [
-    { name: "A-103 — Roof plan.pdf", ftype: "pdf" },
-    { name: "A-104 — Mezzanine plan.pdf", ftype: "pdf" },
-    { name: "A-202 — Building elevations (west).pdf", ftype: "pdf" },
-    { name: "A-203 — Building elevations (east).pdf", ftype: "pdf" },
-    { name: "A-302 — Reflected ceiling plan.pdf", ftype: "pdf" },
-    { name: "A-401 — Wall sections.pdf", ftype: "pdf" },
-    { name: "A-402 — Stair sections.pdf", ftype: "pdf" },
-    { name: "A-501 — Exterior details.pdf", ftype: "pdf" },
-    { name: "A-502 — Interior details.pdf", ftype: "pdf" },
-    { name: "A-601 — Door schedule.pdf", ftype: "pdf" },
-    { name: "A-602 — Window schedule.pdf", ftype: "pdf" },
-    { name: "A-603 — Finish schedule.pdf", ftype: "pdf" },
-    { name: "A-701 — Toilet room details.pdf", ftype: "pdf" },
-    { name: "A-702 — Millwork details.pdf", ftype: "pdf" },
-    { name: "S-201 — Foundation details.pdf", ftype: "pdf" },
-    { name: "S-301 — Level 2 framing.pdf", ftype: "pdf" },
-    { name: "S-401 — Connection details.dwg", ftype: "dwg" },
-    { name: "S-501 — Lateral system details.pdf", ftype: "pdf" },
-    { name: "M-301 — HVAC details.pdf", ftype: "pdf" },
-    { name: "M-501 — Equipment schedule.pdf", ftype: "pdf" },
-    { name: "M-601 — HVAC controls schematic.pdf", ftype: "pdf" },
-    { name: "E-201 — Lighting plan.pdf", ftype: "pdf" },
-    { name: "E-301 — Panel schedule.pdf", ftype: "pdf" },
-    { name: "E-401 — One-line diagram.pdf", ftype: "pdf" },
-    { name: "E-501 — Riser diagram.pdf", ftype: "pdf" },
-    { name: "P-201 — Plumbing fixture schedule.pdf", ftype: "pdf" },
-    { name: "P-301 — Drainage diagram.pdf", ftype: "pdf" },
-    { name: "FP-101 — Fire protection plan.pdf", ftype: "pdf" },
-    { name: "FP-201 — Sprinkler details.pdf", ftype: "pdf" },
-    { name: "C-101 — Site plan.pdf", ftype: "pdf" },
-    { name: "C-201 — Grading plan.pdf", ftype: "pdf" },
-    { name: "C-301 — Utility plan.pdf", ftype: "pdf" },
-    { name: "L-101 — Landscape plan.pdf", ftype: "pdf" },
-    { name: "ID-101 — Interior elevations.pdf", ftype: "pdf" },
-    { name: "Spec — Div 03 Concrete.pdf", ftype: "pdf" },
-    { name: "Spec — Div 05 Metals.pdf", ftype: "pdf" },
-    { name: "Spec — Div 07 Thermal & Moisture.pdf", ftype: "pdf" },
-    { name: "Spec — Div 11 Equipment.pdf", ftype: "pdf" },
-    { name: "Spec — Div 22 Plumbing.pdf", ftype: "pdf" },
-    { name: "Spec — Div 23 HVAC.pdf", ftype: "pdf" },
-    { name: "Spec — Div 26 Electrical.pdf", ftype: "pdf" },
-    { name: "Spec — Div 31 Earthwork.pdf", ftype: "pdf" },
-    { name: "Spec — Div 32 Exterior improvements.pdf", ftype: "pdf" },
+    { name: "A-103 Roof plan.pdf", ftype: "pdf" },
+    { name: "A-104 Mezzanine plan.pdf", ftype: "pdf" },
+    { name: "A-202 Building elevations (west).pdf", ftype: "pdf" },
+    { name: "A-203 Building elevations (east).pdf", ftype: "pdf" },
+    { name: "A-302 Reflected ceiling plan.pdf", ftype: "pdf" },
+    { name: "A-401 Wall sections.pdf", ftype: "pdf" },
+    { name: "A-402 Stair sections.pdf", ftype: "pdf" },
+    { name: "A-501 Exterior details.pdf", ftype: "pdf" },
+    { name: "A-502 Interior details.pdf", ftype: "pdf" },
+    { name: "A-601 Door schedule.pdf", ftype: "pdf" },
+    { name: "A-602 Window schedule.pdf", ftype: "pdf" },
+    { name: "A-603 Finish schedule.pdf", ftype: "pdf" },
+    { name: "A-701 Toilet room details.pdf", ftype: "pdf" },
+    { name: "A-702 Millwork details.pdf", ftype: "pdf" },
+    { name: "S-201 Foundation details.pdf", ftype: "pdf" },
+    { name: "S-301 Level 2 framing.pdf", ftype: "pdf" },
+    { name: "S-401 Connection details.dwg", ftype: "dwg" },
+    { name: "S-501 Lateral system details.pdf", ftype: "pdf" },
+    { name: "M-301 HVAC details.pdf", ftype: "pdf" },
+    { name: "M-501 Equipment schedule.pdf", ftype: "pdf" },
+    { name: "M-601 HVAC controls schematic.pdf", ftype: "pdf" },
+    { name: "E-201 Lighting plan.pdf", ftype: "pdf" },
+    { name: "E-301 Panel schedule.pdf", ftype: "pdf" },
+    { name: "E-401 One-line diagram.pdf", ftype: "pdf" },
+    { name: "E-501 Riser diagram.pdf", ftype: "pdf" },
+    { name: "P-201 Plumbing fixture schedule.pdf", ftype: "pdf" },
+    { name: "P-301 Drainage diagram.pdf", ftype: "pdf" },
+    { name: "FP-101 Fire protection plan.pdf", ftype: "pdf" },
+    { name: "FP-201 Sprinkler details.pdf", ftype: "pdf" },
+    { name: "C-101 Site plan.pdf", ftype: "pdf" },
+    { name: "C-201 Grading plan.pdf", ftype: "pdf" },
+    { name: "C-301 Utility plan.pdf", ftype: "pdf" },
+    { name: "L-101 Landscape plan.pdf", ftype: "pdf" },
+    { name: "ID-101 Interior elevations.pdf", ftype: "pdf" },
+    { name: "Spec - Div 03 Concrete.pdf", ftype: "pdf" },
+    { name: "Spec - Div 05 Metals.pdf", ftype: "pdf" },
+    { name: "Spec - Div 07 Thermal & Moisture.pdf", ftype: "pdf" },
+    { name: "Spec - Div 11 Equipment.pdf", ftype: "pdf" },
+    { name: "Spec - Div 22 Plumbing.pdf", ftype: "pdf" },
+    { name: "Spec - Div 23 HVAC.pdf", ftype: "pdf" },
+    { name: "Spec - Div 26 Electrical.pdf", ftype: "pdf" },
+    { name: "Spec - Div 31 Earthwork.pdf", ftype: "pdf" },
+    { name: "Spec - Div 32 Exterior improvements.pdf", ftype: "pdf" },
     { name: "Pre-bid meeting minutes.pdf", ftype: "pdf" },
     { name: "Subcontractor list.xlsx", ftype: "xlsx" },
     { name: "Cost estimate worksheet.xlsx", ftype: "xlsx" },
@@ -739,8 +744,8 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
     { name: "Addendum 02.pdf", ftype: "pdf" },
     { name: "Code analysis.pdf", ftype: "pdf" },
     { name: "Environmental site assessment.pdf", ftype: "pdf" },
-    { name: "Site photo — context view.jpg", ftype: "jpg" },
-    { name: "Site photo — adjacent buildings.jpg", ftype: "jpg" },
+    { name: "Site photo - context view.jpg", ftype: "jpg" },
+    { name: "Site photo - adjacent buildings.jpg", ftype: "jpg" },
     { name: "LEED scorecard.xlsx", ftype: "xlsx" },
     { name: "Sustainability narrative.docx", ftype: "docx" },
     { name: "Cost benchmark report.pdf", ftype: "pdf" },
@@ -758,7 +763,7 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
       name: item.name,
       size: sizes[i % sizes.length],
       ftype: item.ftype,
-      uploaded: rev.date || "—",
+      uploaded: rev.date || "N/A",
       uploadedBy: uploaders[i % uploaders.length],
       revisionId: rev.id,
       _placeholder: true,
@@ -914,9 +919,18 @@ function ProjectLaborTab({ project }) {
   const globalRates = (window.BC_DATA && window.BC_DATA.laborRates) || [];
   const overrides = (window.BC_DATA && window.BC_DATA.laborRatesByProject && window.BC_DATA.laborRatesByProject[project.id]) || [];
   // Merge: project override row wins over the matching global trade row.
+  // Track which individual fields differ from global so we can highlight
+  // exactly the values the user edited (not the whole row).
   const rows = globalRates.map(g => {
     const o = overrides.find(x => x.trade === g.trade);
-    return o ? { ...g, ...o, overridden: true } : { ...g, overridden: false };
+    if (!o) return { ...g, overridden: false };
+    return {
+      ...g,
+      ...o,
+      overridden: true,
+      rateChanged: o.rate !== g.rate,
+      fringeChanged: o.fringe !== g.fringe,
+    };
   });
   const overrideCount = rows.filter(r => r.overridden).length;
 
@@ -976,19 +990,34 @@ function ProjectLaborTab({ project }) {
         <table className="bc-table">
           <thead><tr><th>Trade</th><th className="num">Base rate</th><th className="num">Fringe</th><th className="num">Loaded rate</th><th>Source</th></tr></thead>
           <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td><div className="item-title">{r.trade}</div></td>
-                <td className="num"><span className="cell-display editable">${r.rate.toFixed(2)}</span></td>
-                <td className="num"><span className="cell-display editable">{(r.fringe * 100).toFixed(0)}%</span></td>
-                <td className="num"><b>${(r.rate * (1 + r.fringe)).toFixed(2)}</b></td>
-                <td>
-                  {r.overridden
-                    ? <span className="badge b-info" style={{ background: "rgba(232,70,0,0.10)", color: "var(--orange-500)" }}>Project override</span>
-                    : <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>Global · {r.region}</span>}
-                </td>
-              </tr>
-            ))}
+            {rows.map((r, i) => {
+              // Loaded rate is derived from base × (1 + fringe), so it counts
+              // as changed if either input changed.
+              const loadedChanged = r.overridden && (r.rateChanged || r.fringeChanged);
+              const orange = { color: "var(--orange-500)", fontWeight: 600 };
+              return (
+                <tr key={i}>
+                  <td><div className="item-title">{r.trade}</div></td>
+                  <td className="num"><span className="cell-display editable" style={r.rateChanged ? orange : null}>${r.rate.toFixed(2)}</span></td>
+                  <td className="num"><span className="cell-display editable" style={r.fringeChanged ? orange : null}>{(r.fringe * 100).toFixed(0)}%</span></td>
+                  <td className="num"><b style={loadedChanged ? { color: "var(--orange-500)" } : null}>${(r.rate * (1 + r.fringe)).toFixed(2)}</b></td>
+                  <td>
+                    {r.overridden ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        <span className="badge b-info" style={{ background: "rgba(232,70,0,0.10)", color: "var(--orange-500)", alignSelf: "flex-start" }}>Project override</span>
+                        {r.editedBy && (
+                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--bc-muted)" }}>
+                            by {r.editedBy}{r.editedAt ? ` · ${r.editedAt}` : ""}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>Global · {r.region}</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -998,6 +1027,161 @@ function ProjectLaborTab({ project }) {
         <Icon name="info" size={16} style={{ color: "#0074E8" }} />
         Project rates default to your global PDX metro rates. Any edits here override the global value for this project only.
       </div>
+    </div>
+  );
+}
+
+// =====================================================
+// PROJECT HOME — SKILLS HISTORY TAB
+// Chronological list of every skill run on this project with a Bid-
+// Leveling-style dropdown to filter by skill type. Reuses the
+// .trade-dd / .trade-trigger / .trade-menu styles for the filter so it
+// visually matches the BidLevelingScreen selector.
+// =====================================================
+function ProjectHistoryTab({ project, onOpenTab }) {
+  const allRuns = ((window.BC_DATA && window.BC_DATA.runs) || []).filter(r => r.projectId === project.id);
+  const sortedRuns = [...allRuns].sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
+  const [filter, setFilter] = uS2("all");
+  const [open, setOpen] = uS2(false);
+  const filterRef = uR2(null);
+  uE2(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (filterRef.current && !filterRef.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const skillCounts = {};
+  for (const r of sortedRuns) skillCounts[r.skill] = (skillCounts[r.skill] || 0) + 1;
+  const skillOptions = Object.keys(skillCounts).sort();
+  const visibleRuns = filter === "all" ? sortedRuns : sortedRuns.filter(r => r.skill === filter);
+
+  const skillIcon = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
+    name === "Bid Level Analysis" ? "compare_arrows" :
+    name === "Clarifications & Potential RFIs" ? "rule" :
+    "auto_awesome";
+  const shortName = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "ROM Estimate" :
+    name === "Clarifications & Potential RFIs" ? "Clarifications & RFIs" :
+    name;
+  const skillToTab = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "estimation" :
+    name === "Bid Level Analysis" ? "bid" :
+    name === "Clarifications & Potential RFIs" ? "rfc" :
+    null;
+  const resultSummary = (r) => {
+    if (!r.ai) return "N/A";
+    if (r.ai.total) return <><b>{r.ai.total}</b>{r.ai.version ? <span style={{ color: "var(--bc-muted)" }}> · {r.ai.version}</span> : null}{r.ai.confidence ? <span style={{ color: "var(--bc-muted)" }}> · {Math.round(r.ai.confidence * 100)}% conf</span> : null}</>;
+    if (r.ai.issues != null) return <><b>{r.ai.issues} issues</b><span style={{ color: "var(--bc-muted)" }}> · {r.ai.critical} critical</span></>;
+    if (r.ai.savings) return <><b style={{ color: "var(--tiffany-400)" }}>{r.ai.savings} saved</b>{r.ai.division ? <span style={{ color: "var(--bc-muted)" }}> · {r.ai.division}</span> : null}</>;
+    return "N/A";
+  };
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 16, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>
+          {visibleRuns.length} of {sortedRuns.length} skill {sortedRuns.length === 1 ? "run" : "runs"}
+        </div>
+        <div className="trade-dd history-filter-dd" ref={filterRef} style={{ marginBottom: 0 }}>
+          <button className={"trade-trigger " + (open ? "open" : "")} onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}>
+            <span className="trade-trigger-stack">
+              <span className="trade-trigger-code">Filter</span>
+              <b className="trade-trigger-name">{filter === "all" ? "All skills" : shortName(filter)}</b>
+            </span>
+            <span className="trade-trigger-meta">{filter === "all" ? sortedRuns.length : (skillCounts[filter] || 0)} runs</span>
+            <Icon name="expand_more" size={16} />
+          </button>
+          {open && (
+            <div className="trade-menu">
+              <button
+                className={"trade-menu-item " + (filter === "all" ? "active" : "")}
+                onClick={() => { setFilter("all"); setOpen(false); }}>
+                <div className="trade-menu-info">
+                  <div className="trade-menu-code">All</div>
+                  <div className="trade-menu-name">All skills</div>
+                  <div className="trade-menu-meta">{sortedRuns.length} runs across {skillOptions.length} skill{skillOptions.length === 1 ? "" : "s"}</div>
+                </div>
+                {filter === "all" && <Icon name="check" size={14} />}
+              </button>
+              {skillOptions.map(s => (
+                <button key={s}
+                        className={"trade-menu-item " + (filter === s ? "active" : "")}
+                        onClick={() => { setFilter(s); setOpen(false); }}>
+                  <div className="trade-menu-info">
+                    <div className="trade-menu-code"><Icon name={skillIcon(s)} size={11} style={{ marginRight: 4, verticalAlign: "-1px" }} />Skill</div>
+                    <div className="trade-menu-name">{shortName(s)}</div>
+                    <div className="trade-menu-meta">{skillCounts[s]} run{skillCounts[s] === 1 ? "" : "s"}</div>
+                  </div>
+                  {filter === s && <Icon name="check" size={14} />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {visibleRuns.length === 0 ? (
+        <div className="card" style={{ padding: 32, textAlign: "center", color: "var(--bc-muted)" }}>
+          No skill runs match this filter yet.
+        </div>
+      ) : (
+        <div className="card no-pad">
+          <table className="bc-table">
+            <thead>
+              <tr>
+                <th>Skill</th>
+                <th>Run date</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Result</th>
+                <th className="center">Open</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRuns.map(r => {
+                const tabId = skillToTab(r.skill);
+                return (
+                  <tr key={r.id}>
+                    <td>
+                      <div className="item-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Icon name={skillIcon(r.skill)} size={16} style={{ color: "var(--orange-500)", opacity: 0.85 }} />
+                        {shortName(r.skill)}
+                      </div>
+                    </td>
+                    <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
+                    <td>
+                      {r.status === "done"
+                        ? <span className="badge b-done" style={{ fontSize: 9 }}><Icon name="check" size={10} />Done</span>
+                        : r.status === "working"
+                          ? <span className="badge b-warn" style={{ fontSize: 9 }}><Icon name="hourglass_top" size={10} />Running</span>
+                          : <span className="badge" style={{ fontSize: 9 }}>{r.status}</span>}
+                    </td>
+                    <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.duration}</span></td>
+                    <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12.5 }}>{resultSummary(r)}</span></td>
+                    <td className="center">
+                      <button
+                        className="btn-ghost"
+                        style={{ padding: "4px 8px", fontSize: 12 }}
+                        title="Open this run"
+                        disabled={!tabId}
+                        onClick={() => { if (tabId && onOpenTab) onOpenTab(tabId); }}>
+                        <Icon name="open_in_new" size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -1021,8 +1205,8 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
   const onDropZone = (e) => {
     e.preventDefault();setDrag(false);
     const samples = [
-    { name: "A-401 — Reflected ceiling plan.pdf", category: "Drawings", confidence: "high", ftype: "pdf" },
-    { name: "Bid form — Cascade Mechanical.pdf", category: "Bid Forms", confidence: "med", ftype: "pdf" }];
+    { name: "A-401 Reflected ceiling plan.pdf", category: "Drawings", confidence: "high", ftype: "pdf" },
+    { name: "Bid form - Cascade Mechanical.pdf", category: "Bid Forms", confidence: "med", ftype: "pdf" }];
 
     samples.forEach((s, i) => {
       setTimeout(() => {
@@ -1073,7 +1257,7 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
         onDrop={onDropZone}>
           <Icon name="cloud_upload" size={40} />
           <b>Drop PDFs, DWGs, or images here</b>
-          <span>Cody will categorize them automatically — you can change the category inline.</span>
+          <span>Cody will categorize them automatically. You can change the category inline.</span>
         </div>
 
         {/* Filters row */}

@@ -11,7 +11,7 @@ function ReportsScreen({ ctx, onAskAI }) {
   return (
     <div className="col-detail">
       <Taskbar
-        crumbs={[{ label: "Workspace" }, { label: "Reports", bold: true }, { label: "Recreational Wellness — ROM v3" }]}
+        crumbs={[{ label: "Workspace" }, { label: "Reports", bold: true }, { label: "Recreational Wellness: ROM v3" }]}
         actions={<><button className="btn"><Icon name="visibility" size={16}/>Preview</button><button className="btn-primary"><Icon name="picture_as_pdf" size={16}/>Export PDF</button></>}
         onAskAI={onAskAI}
       />
@@ -33,7 +33,7 @@ function ReportsScreen({ ctx, onAskAI }) {
         <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 24 }}>
           <div>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>Custom report builder</div>
-            <h2 className="page-h1">Recreational Wellness — ROM v3</h2>
+            <h2 className="page-h1">Recreational Wellness: ROM v3</h2>
             <p className="page-sub">Drag blocks from skill results to assemble a custom report. Cody will keep them in sync if the underlying data changes.</p>
 
             <div className="card no-pad" style={{ marginTop: 20 }}>
@@ -487,7 +487,7 @@ function SettingsScreen({ ctx, onAskAI, theme, onToggleTheme, connections, onAdd
             >
               <p>I'll cite sources, admit when I'm uncertain, and ask follow-ups. You can change my tone below.</p>
             </CodyMessage>
-            <div className="field"><label>Tone</label><select defaultValue="crew"><option value="crew">Crew (default — wry, helpful)</option><option>Strictly formal</option><option>Brief & to the point</option></select></div>
+            <div className="field"><label>Tone</label><select defaultValue="crew"><option value="crew">Crew (default, wry, helpful)</option><option>Strictly formal</option><option>Brief & to the point</option></select></div>
             <div className="field"><label>Auto-suggestions</label>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}><div className="toggle on" /><span style={{ fontSize: 13, color: "rgba(39,38,53,0.70)" }}>Show 3 suggested follow-ups after each response</span></div>
             </div>
