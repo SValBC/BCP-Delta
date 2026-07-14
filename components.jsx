@@ -187,6 +187,114 @@ function OverflowMenu({ options, title = "More actions" }) {
   );
 }
 
+// Project-specific notifications popover — shows a live feed of who's
+// editing this project, what's waiting for admin approval, and the
+// most recent Master changes. Opens from the bell icon in the Taskbar.
+function ProjectActivityPopover({ open, onClose, projectId, projectName, activity, approvals, members }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose && onClose(); };
+    const onKey = (e) => { if (e.key === "Escape") onClose && onClose(); };
+    setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  if (!open) return null;
+  const nameFor = (userId) => {
+    const m = (members || []).find(x => x.id === userId);
+    return m ? m.name : (userId || "Someone");
+  };
+  const initialsFor = (userId) => {
+    const m = (members || []).find(x => x.id === userId);
+    return m ? m.initials : "?";
+  };
+  const projectFeed = activity || [];
+  const editing = projectFeed.filter(a => a.kind === "editing");
+  const approved = projectFeed.filter(a => a.kind === "approved");
+  const projectPending = (approvals || []).filter(a => a.status === "pending" && a.projectId === projectId);
+
+  return (
+    <div className="activity-popover" ref={ref}>
+      <div className="activity-popover-h">
+        <div>
+          <div className="activity-popover-eyebrow">Project activity</div>
+          <div className="activity-popover-title">{projectName}</div>
+        </div>
+        <button className="icon-btn" onClick={onClose} aria-label="Close"><Icon name="close" size={16} /></button>
+      </div>
+
+      <div className="activity-popover-body">
+        <div className="activity-section">
+          <div className="activity-section-h">
+            <Icon name="edit_note" size={13} />Currently drafting
+            <span className="activity-section-count">{editing.length}</span>
+          </div>
+          {editing.length === 0 ? (
+            <div className="activity-empty">No one has an open edit event on this project.</div>
+          ) : (
+            editing.map((a, i) => (
+              <div key={"e" + i} className="activity-row">
+                <div className="activity-avatar">{initialsFor(a.user)}</div>
+                <div className="activity-row-body">
+                  <div className="activity-row-name">{nameFor(a.user)}</div>
+                  <div className="activity-row-note">{a.note}</div>
+                </div>
+                <span className="activity-row-time">{a.time}</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="activity-section">
+          <div className="activity-section-h">
+            <Icon name="pending_actions" size={13} />Waiting for approval
+            <span className="activity-section-count">{projectPending.length}</span>
+          </div>
+          {projectPending.length === 0 ? (
+            <div className="activity-empty">Nothing awaiting review on this project.</div>
+          ) : (
+            projectPending.map(a => (
+              <div key={a.id} className="activity-row">
+                <div className="activity-avatar">{initialsFor(a.requestedBy)}</div>
+                <div className="activity-row-body">
+                  <div className="activity-row-name">{nameFor(a.requestedBy)}</div>
+                  <div className="activity-row-note">{a.summary}</div>
+                </div>
+                <span className="activity-row-time">{a.requestedAt}</span>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="activity-section">
+          <div className="activity-section-h">
+            <Icon name="check_circle" size={13} />Recent Master changes
+            <span className="activity-section-count">{approved.length}</span>
+          </div>
+          {approved.length === 0 ? (
+            <div className="activity-empty">No approved changes yet.</div>
+          ) : (
+            approved.map((a, i) => (
+              <div key={"a" + i} className="activity-row">
+                <div className="activity-avatar activity-avatar-approved"><Icon name="check" size={13} /></div>
+                <div className="activity-row-body">
+                  <div className="activity-row-name">{nameFor(a.user)}</div>
+                  <div className="activity-row-note">{a.note}</div>
+                </div>
+                <span className="activity-row-time">{a.time}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ShareDropdown({ options }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -350,10 +458,10 @@ const DrawingThumb = ({ kind = "level1", color = "#E84600", markups = 12 }) => {
 function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, theme, recentlyVisited, recentProjects, onOpenProject, onOpenProjectInNewTab, onOpenSettings, pinnedItems, onOpenPinned, onAddConnection, onCtxMenu, connections, collapsed, onToggleCollapsed, freshMode, onToggleFreshMode }) {
   const items = [
     { id: "home", label: "Home", icon: "home" },
+    { id: "company", label: "Company", icon: "domain" },
     { id: "projects", label: "Projects", icon: "folder_open" },
     { id: "skills", label: "Skills", icon: "auto_awesome" },
     { id: "reports", label: "Reports", icon: "assessment" },
-    { id: "labor", label: "Labor rates", icon: "engineering" },
     { id: "files", label: "Files", icon: "folder_copy" },
   ];
 
@@ -488,7 +596,7 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
             <div className="avatar">{user.initials}</div>
             <div className="who">
               <div className="who-name">{user.name}</div>
-              <div className="who-role">Estimator</div>
+              <div className="who-role">{user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : "Member"}</div>
               <small>{user.company}</small>
             </div>
             <Icon name={userMenuOpen ? "expand_more" : "expand_less"} size={16} style={{ opacity: 0.5, marginLeft: "auto" }} />
@@ -905,7 +1013,7 @@ function CodyMessage({
 // =====================================================
 // TASKBAR — COLUMN 3 TOP
 // =====================================================
-function Taskbar({ crumbs, actions, onAskAI, switcher }) {
+function Taskbar({ crumbs, actions, onAskAI, switcher, projectId, hasPending, onPushToMaster, onOpenNotifications, notificationCount }) {
   return (
     <div className="taskbar">
       <div className="crumb">
@@ -920,7 +1028,377 @@ function Taskbar({ crumbs, actions, onAskAI, switcher }) {
       </div>
       <div className="right">
         {actions}
+        {projectId && hasPending && onPushToMaster && (
+          <button className="btn-primary taskbar-push-btn" onClick={onPushToMaster} title="Submit your pending changes for approval">
+            <Icon name="publish" size={14} />Push to Master
+          </button>
+        )}
+        {projectId && onOpenNotifications && (
+          <button className="icon-btn taskbar-notify-btn" onClick={onOpenNotifications} title="Project activity">
+            <Icon name="notifications" size={18} />
+            {notificationCount > 0 && <span className="taskbar-notify-dot">{notificationCount}</span>}
+          </button>
+        )}
       </div>
+    </div>
+  );
+}
+
+// =====================================================
+// CLIPBOARD — context-aware tray rendered as a sibling tab to Cody in
+// the right rail. Surfaces shortcuts and live sections that change with
+// the current screen. Today it's wired up for Project Home; other
+// screens get a generic placeholder until their content is designed.
+// =====================================================
+function Clipboard({ context, onOpenProject, onOpenProjectTabInNewTab, onConfigureBid, onConfigureRom }) {
+  const screen = context && context.screen;
+  const ctx = (context && context.ctx) || {};
+  const project = context && context.project;
+  const isProjectHome = screen === "project" && project;
+
+  // In-flight skill runs the user kicked off from the Clipboard. Each
+  // simulates its own progress timeline, then transitions through a brief
+  // "flashing" success state before settling into the regular done state.
+  // Stored locally (not in BC_DATA) so they don't persist across navigation.
+  const [localRuns, setLocalRuns] = useState([]);
+  // Cleanup timers when the component unmounts (e.g. user closes the
+  // panel mid-run) so we don't update state after unmount.
+  const timersRef = useRef([]);
+  useEffect(() => () => { timersRef.current.forEach(clearTimeout); }, []);
+
+  if (!isProjectHome) {
+    return (
+      <div className="clipboard-body">
+        <div className="clipboard-empty">
+          <Icon name="content_paste" size={28} />
+          <div className="clipboard-empty-title">Nothing pinned to this screen yet</div>
+          <p>Open a project to see its recent skill runs and drop files here for indexing.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Recent skill runs scoped to this project. Local in-flight runs render
+  // first (newest activity), then historical from BC_DATA. Capped at 5.
+  const allRuns = (window.BC_DATA && window.BC_DATA.runs) || [];
+  const historicalRuns = allRuns
+    .filter(r => r.projectId === project.id)
+    .slice()
+    .sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
+  const localProjectRuns = localRuns.filter(r => r.projectId === project.id);
+  const projectRuns = [...localProjectRuns, ...historicalRuns].slice(0, 5);
+  const hiddenCount = (localProjectRuns.length + historicalRuns.length) - projectRuns.length;
+  const skillIcon = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
+    name === "Bid Level Analysis" ? "compare_arrows" :
+    name === "Clarifications & Potential RFIs" ? "rule" :
+    name === "Trade Scoping" ? "groups" :
+    "auto_awesome";
+  const shortSkill = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "ROM Estimate" :
+    name === "Clarifications & Potential RFIs" ? "Clarifications & RFIs" :
+    name;
+  const skillToTab = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "estimation" :
+    name === "Bid Level Analysis" ? "bid" :
+    name === "Clarifications & Potential RFIs" ? "rfc" :
+    name === "Trade Scoping" ? "trades" :
+    null;
+  const openRun = (r) => {
+    if (r.status !== "done") return;
+    const tab = skillToTab(r.skill);
+    if (tab && onOpenProjectTabInNewTab) onOpenProjectTabInNewTab(project.id, tab);
+  };
+
+  // Skill tile catalog — the screen-aware tile grid at the top of the
+  // Clipboard. Each skill carries its own accent color so the row reads
+  // as a palette of distinct options at a glance. shortName is what
+  // shows on the tile (kept tight so it fits in the two-column grid).
+  const allSkills = (window.BC_DATA && window.BC_DATA.skills) || [];
+  const skillAccent = (id) =>
+    id === "estimation" ? "orange" :
+    id === "bid-leveling" ? "tiffany" :
+    id === "rfc" ? "indigo" :
+    id === "trade-scoping" ? "raisin" :
+    "raisin";
+  const shortName = (name) =>
+    name === "Rough Order of Magnitude (ROM) Estimate" ? "ROM Estimate" :
+    name === "Clarifications & Potential RFIs" ? "Clarifications & RFIs" :
+    name === "Bid Level Analysis" ? "Bid Analysis" :
+    name;
+  const skillIdToTab = (id) =>
+    id === "estimation" ? "estimation" :
+    id === "bid-leveling" ? "bid" :
+    id === "rfc" ? "rfc" :
+    id === "trade-scoping" ? "trades" :
+    null;
+
+  // Fake AI result shaped like BC_DATA.runs entries so the row meta logic
+  // below ("12 min ago · $4.82M") works identically for local + global runs.
+  const fakeResultForSkill = (skillId) => {
+    if (skillId === "estimation") return { lines: 1284 + Math.floor(Math.random()*40), total: "$4.84M", confidence: 0.92, version: "v4" };
+    if (skillId === "bid-leveling") return { subs: 3, divisions: 1, division: "Division 23 · HVAC", winner: "Apex Mechanical", bid: "$214.5k", savings: "$18.9k" };
+    if (skillId === "rfc") return { issues: 14, critical: 2, high: 4, med: 6, low: 2 };
+    if (skillId === "trade-scoping") return { trades: 13, highConfidence: 10, invited: 0, confidence: 0.89 };
+    return { confidence: 0.85 };
+  };
+
+  // Spawn the simulated skill run row + progress ticker. Pulled out so
+  // we can call it from a tile click directly OR from a config modal's
+  // confirm callback after the user picks their run parameters.
+  const runSkillSimulation = (s) => {
+    const id = "local-" + Date.now() + "-" + Math.floor(Math.random()*1000);
+    const newRun = {
+      id,
+      skill: s.name,
+      skillId: s.id,
+      projectId: project.id,
+      status: "working",
+      when: "Just now",
+      progress: 0.05,
+      duration: "running",
+      startedAt: new Date().toISOString(),
+      __local: true,
+    };
+    setLocalRuns(prev => [newRun, ...prev]);
+
+    const tick = (current) => {
+      const next = Math.min(0.99, current + 0.08 + Math.random() * 0.10);
+      setLocalRuns(prev => prev.map(r => r.id === id ? { ...r, progress: next } : r));
+      if (next < 0.99) {
+        const t = setTimeout(() => tick(next), 650 + Math.random() * 350);
+        timersRef.current.push(t);
+      } else {
+        setLocalRuns(prev => prev.map(r => r.id === id ? {
+          ...r,
+          status: "done",
+          progress: 1,
+          duration: "8m 14s",
+          ai: fakeResultForSkill(s.id),
+          __flashing: true,
+        } : r));
+        const flashOff = setTimeout(() => {
+          setLocalRuns(prev => prev.map(r => r.id === id ? { ...r, __flashing: false } : r));
+        }, 1200);
+        timersRef.current.push(flashOff);
+      }
+    };
+    const startTimer = setTimeout(() => tick(0.05), 250);
+    timersRef.current.push(startTimer);
+  };
+
+  // Tile click router — for skills that need pre-run configuration (ROM,
+  // Bid Level Analysis), open the matching modal and only kick off the
+  // simulation after the user confirms. Other skills run immediately.
+  const startSkill = (s) => {
+    if (s.id === "bid-leveling" && onConfigureBid) {
+      onConfigureBid(project.id, () => runSkillSimulation(s));
+      return;
+    }
+    if (s.id === "estimation" && onConfigureRom) {
+      onConfigureRom(project.id, () => runSkillSimulation(s));
+      return;
+    }
+    runSkillSimulation(s);
+  };
+
+  const viewAllSkillRuns = () => {
+    // Cross-tree imperative nav: ProjectHomeScreen registers a listener
+    // for this event on mount and updates its internal homeTab.
+    window.dispatchEvent(new CustomEvent("bc-set-home-tab", { detail: "history" }));
+  };
+
+  // Per-run secondary line (date + key stat). Matches the screenshot's
+  // "20:49 · 12 sources" pattern.
+  const runMeta = (r) => {
+    if (r.status === "working") return `${r.when} · ${Math.round((r.progress || 0) * 100)}%`;
+    if (!r.ai) return r.when;
+    if (r.ai.total) return `${r.when} · ${r.ai.total}${r.ai.version ? ` · ${r.ai.version}` : ""}`;
+    if (r.ai.issues != null) return `${r.when} · ${r.ai.issues} issues`;
+    if (r.ai.trades != null) return `${r.when} · ${r.ai.trades} trades${r.ai.highConfidence != null ? ` · ${r.ai.highConfidence} high-conf` : ""}`;
+    if (r.ai.savings) return `${r.when} · −${r.ai.savings}`;
+    return r.when;
+  };
+
+  // Header context — surface the active project and (if the user is on a
+  // skill result tab) the skill name, so the Clipboard reads as scoped
+  // to whatever's in the main canvas.
+  const skillNameForTab = (tabId) =>
+    tabId === "estimation" ? "ROM Estimate" :
+    tabId === "bid"        ? "Bid Level Analysis" :
+    tabId === "rfc"        ? "Clarifications & RFIs" :
+    tabId === "trades"     ? "Trade Scoping" :
+    null;
+  const activeSkillName = skillNameForTab(ctx.tab);
+
+  return (
+    <div className="clipboard-body">
+      <div className="clipboard-header">
+        <Icon name="folder_open" size={14} />
+        <div className="clipboard-header-text">
+          <div className="clipboard-header-name" title={project.name}>{project.name}</div>
+          {activeSkillName && <div className="clipboard-header-skill">{activeSkillName}</div>}
+        </div>
+      </div>
+      {/* SKILLS — colored tile grid. Tapping a tile opens the report for
+          that skill on the current project in a new tab. */}
+      <section className="clipboard-section">
+        <div className="clipboard-section-h">
+          <div className="clipboard-section-title">
+            <span>Skills</span>
+          </div>
+        </div>
+        <div className="clipboard-skills-grid">
+          {allSkills.map(s => (
+            <button
+              key={s.id}
+              type="button"
+              className="clipboard-skill-tile"
+              data-accent={skillAccent(s.id)}
+              onClick={() => startSkill(s)}
+              title={`Run ${s.name} on ${project.name}`}>
+              <Icon name={s.icon} size={18} className="clipboard-skill-icon" />
+              <span className="clipboard-skill-name">{shortName(s.name)}</span>
+              <Icon name="play_arrow" size={16} className="clipboard-skill-arrow" />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* RECENT SKILL RUNS — flat list, screenshot-style. Each row opens
+          its run in a new tab; the 3-dot button is a visual hook for a
+          per-row menu (Open, Pin, Re-run, etc.) when that's designed. */}
+      <section className="clipboard-section">
+        <div className="clipboard-section-h">
+          <div className="clipboard-section-title">
+            <span>Recent skill runs</span>
+          </div>
+        </div>
+        {projectRuns.length === 0 ? (
+          <div className="clipboard-empty-sm">No skill runs yet for this project.</div>
+        ) : (
+          <ul className="clipboard-list">
+            {projectRuns.map(r => {
+              const isRunning = r.status === "working";
+              const isFlashing = !!r.__flashing;
+              const clickable = r.status === "done" && !!skillToTab(r.skill);
+              const pct = Math.round((r.progress || 0) * 100);
+              const cls = "clipboard-run "
+                + (clickable ? "is-clickable " : "")
+                + (isRunning ? "is-running " : "")
+                + (isFlashing ? "is-flashing " : "");
+              return (
+                <li key={r.id}
+                    className={cls.trim()}
+                    onClick={clickable ? () => openRun(r) : undefined}
+                    role={clickable ? "button" : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                    onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openRun(r); } } : undefined}
+                    title={clickable ? "Open this run in a new tab" : undefined}>
+                  <Icon name={skillIcon(r.skill)} size={20} className="clipboard-run-leadicon" />
+                  <div className="clipboard-run-body">
+                    <div className="clipboard-run-name">{shortSkill(r.skill)}</div>
+                    <div className="clipboard-run-meta">
+                      {isRunning && <span className="clipboard-status working"><span className="dot" /></span>}
+                      {isRunning ? `${r.when} · ${pct}%` : runMeta(r)}
+                    </div>
+                    {isRunning && (
+                      <div className="clipboard-run-progress">
+                        <div className="clipboard-run-progress-bar" style={{ width: pct + "%" }} />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="clipboard-run-menu"
+                    title="More actions"
+                    aria-label="More actions"
+                    onClick={(e) => { e.stopPropagation(); /* placeholder for per-run menu */ }}>
+                    <Icon name="more_vert" size={18} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {projectRuns.length > 0 && (
+          <div className="clipboard-viewall">
+            <button className="link-btn" onClick={viewAllSkillRuns}>
+              View all Skill runs ({localProjectRuns.length + historicalRuns.length})
+              <Icon name="arrow_forward" size={14} />
+            </button>
+          </div>
+        )}
+      </section>
+
+      <div className="clipboard-divider" />
+
+      {(() => {
+        // Files section — drop zone + recent uploads with status pills.
+        // Pulls from BC_DATA.filesByProject so the side tray mirrors the
+        // Project Files tab. Newest 5 surface here; full list is one click
+        // away via the View all link.
+        const projectFiles = (((window.BC_DATA && window.BC_DATA.filesByProject) || {})[project.id]) || [];
+        const recentFiles = projectFiles.slice().reverse().slice(0, 5);
+        const ftypeIcon = (t) =>
+          t === "pdf"  ? "picture_as_pdf" :
+          t === "dwg"  ? "architecture" :
+          t === "xlsx" || t === "csv" ? "table_view" :
+          t === "docx" ? "description" :
+          t === "jpg"  || t === "png" ? "image" :
+          "insert_drive_file";
+        const viewAllFiles = () => {
+          window.dispatchEvent(new CustomEvent("bc-set-home-tab", { detail: "files" }));
+        };
+        return (
+          <section className="clipboard-section">
+            <div className="clipboard-section-h">
+              <div className="clipboard-section-title">
+                <span>Files</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="clipboard-drop"
+              title="Drop or pick files to upload"
+              onClick={(e) => { e.preventDefault(); /* upload picker — prototype stub */ }}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("drag"); }}
+              onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drag"); }}>
+              <Icon name="cloud_upload" size={20} />
+              <div className="clipboard-drop-title">Drop files to upload</div>
+              <div className="clipboard-drop-sub">Cody will index and categorize them automatically</div>
+            </button>
+            {recentFiles.length === 0 ? (
+              <div className="clipboard-empty-sm">No files yet for this project.</div>
+            ) : (
+              <ul className="clipboard-list clipboard-files-list">
+                {recentFiles.map(f => {
+                  const status = f.status || "uploaded";
+                  return (
+                    <li key={f.id} className="clipboard-file">
+                      <Icon name={ftypeIcon(f.ftype)} size={16} className="clipboard-file-icon" />
+                      <div className="clipboard-file-body">
+                        <div className="clipboard-file-name" title={f.name}>{f.name}</div>
+                        <div className="clipboard-file-meta">{f.size}{f.uploaded ? ` · ${f.uploaded}` : ""}</div>
+                      </div>
+                      {window.FileStatusBadge ? <window.FileStatusBadge status={status} /> : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {projectFiles.length > 0 && (
+              <div className="clipboard-viewall">
+                <button className="link-btn" onClick={viewAllFiles}>
+                  View all files ({projectFiles.length})
+                  <Icon name="arrow_forward" size={14} />
+                </button>
+              </div>
+            )}
+          </section>
+        );
+      })()}
     </div>
   );
 }
@@ -928,13 +1406,24 @@ function Taskbar({ crumbs, actions, onAskAI, switcher }) {
 // =====================================================
 // AI ASSISTANT — Docked right rail (collapsible)
 // =====================================================
-function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, onOpenProject, onStartSkillRun }) {
+function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, onOpenProject, onOpenProjectTabInNewTab, onStartSkillRun, onConfigureBid, onConfigureRom }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [working, setWorking] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   // Guided-flow state machine — { id, step, projectId?, projectPickerPage?, projectName? }
   const [flow, setFlow] = useState(null);
+  // Panel tab — Cody (the conversational assistant) or Clipboard (a
+  // context-aware tray of shortcuts + sections). Default flips by
+  // screen: Home leads with Cody (the user usually starts the day with
+  // a broad question), every other screen leads with Clipboard (which
+  // surfaces situational context for that view). Manual switches stick
+  // until the user navigates to a different screen.
+  const defaultTabForScreen = (s) => s === "home" ? "cody" : "clipboard";
+  const [panelTab, setPanelTab] = useState(() => defaultTabForScreen(context?.screen));
+  useEffect(() => {
+    setPanelTab(defaultTabForScreen(context?.screen));
+  }, [context?.screen]);
   const dragCounter = useRef(0);
   const bodyRef = useRef(null);
   const resizeRef = useRef(null);
@@ -1007,7 +1496,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
       if (tab === "reports") return ["Draft a weekly status report for this project.", "Pull the cost trend chart since kickoff."];
       return ["Walk me through what changed since yesterday.", "What are the biggest risks on this project?", "Summarize this project for a kickoff call.", "Open the most recent estimate."];
     }
-    if (s === "home") return ["Brief me on overnight runs.", "What needs my attention today?", "Which projects moved the most?", "Suggest a project to work on next."];
+    if (s === "home") return ["Catch me up to date on any changes since my last visit.", "What are the biggest risks on my projects?", "What projects did we bid this week?"];
     if (s === "projects") return ["Find projects with open critical RFCs.", "Show projects waiting on me.", "Which projects are over budget?", "Group projects by stage."];
     if (s === "skills") return ["Which skill should I run next?", "What did the last estimation flag?", "Show me runs that need review."];
     if (s === "reports") return ["Draft a weekly client report.", "Compare this week vs. last.", "Pull a cost trend across all projects."];
@@ -1267,16 +1756,31 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
   const isEmpty = messages.length === 0 && !working;
 
   return (
-    <div className="ai-panel">
+    <div className={"ai-panel " + (panelTab === "clipboard" ? "is-clipboard" : "")}>
       <div className="ai-resize-handle" ref={resizeRef} title="Drag to resize" />
       <div className="ai-panel-head ask-cody">
-        <div className="ai-head-title">
-          <CodyMark size={16} />
-          <h3>Ask Cody</h3>
+        <div className="ai-panel-tabs" role="tablist">
+          <button
+            role="tab"
+            aria-selected={panelTab === "cody"}
+            className={"ai-panel-tab " + (panelTab === "cody" ? "active" : "")}
+            onClick={() => setPanelTab("cody")}>
+            <CodyMark size={14} />
+            <span>Cody</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={panelTab === "clipboard"}
+            className={"ai-panel-tab " + (panelTab === "clipboard" ? "active" : "")}
+            onClick={() => setPanelTab("clipboard")}>
+            <Icon name="content_paste" size={14} />
+            <span>Clipboard</span>
+          </button>
         </div>
         <button className="icon-btn" onClick={onClose} title="Close"><Icon name="close" size={18} /></button>
       </div>
 
+      {panelTab === "cody" && <>
       <div className="ai-panel-body" ref={bodyRef}
            onDragEnter={onBodyDragEnter}
            onDragOver={onBodyDragOver}
@@ -1287,10 +1791,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
             <div className="ai-greeting">
               <CodyMark size={16} className="ai-greeting-sparkle" />
               <div className="ai-greeting-text">
-                <p>👋 Hi I'm Cody, your personal AI intern.</p>
-                <p>Need help reviewing plans? Upload them.</p>
-                <p>Need quantities taken off? I'll count them.</p>
-                <p>Need project insights, summaries, scope breakdowns, or quick answers buried somewhere inside 400 pages of PDFs? That's my thing.</p>
+                <p>If you have a task for me or anything that you'd like for me to take a look at, just shoot me a question or drag and drop your file to start!</p>
               </div>
             </div>
             <div className="ai-drop-hint">
@@ -1331,7 +1832,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
 
       {isEmpty && (
         <div className="ai-suggested-questions">
-          <div className="ai-suggested-label">Suggest Actions</div>
+          <div className="ai-suggested-label">Easy Convo Starters</div>
           <div className="ai-suggested-chips">
             {suggestedQuestions.map((q, i) => (
               <button key={i} className="ai-suggested-chip" onClick={() => send(q)}>{q}</button>
@@ -1353,6 +1854,17 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
           </button>
         </div>
       </div>
+      </>}
+
+      {panelTab === "clipboard" && (
+        <Clipboard
+          context={context}
+          onOpenProject={onOpenProject}
+          onOpenProjectTabInNewTab={onOpenProjectTabInNewTab}
+          onConfigureBid={onConfigureBid}
+          onConfigureRom={onConfigureRom}
+        />
+      )}
     </div>
   );
 }
@@ -1548,4 +2060,4 @@ function makeAIReply(t, context) {
 }
 
 // expose globals
-Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, ShareDropdown, OverflowMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, formatMoney, fullMoney, DrawingThumb });
+Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, ShareDropdown, OverflowMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, ProjectActivityPopover, formatMoney, fullMoney, DrawingThumb });

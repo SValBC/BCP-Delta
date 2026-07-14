@@ -954,6 +954,29 @@ button { font-family: inherit; }
 .btn-ghost:hover { background: rgba(39,38,53,0.05); color: var(--raisin-800); }
 .btn-ghost .mi { font-size: 16px; }
 
+/* Inline link-style button — used for "View Skills History" and similar
+   navigation links sitting below tables/cards. No background or border;
+   the orange accent + arrow do the visual work. */
+.link-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--orange-500);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 140ms, transform 140ms;
+}
+.link-btn:hover { color: #C73C00; }
+.link-btn:hover .mi { transform: translateX(2px); }
+.link-btn .mi { transition: transform 140ms; }
+[data-theme="dark"] .link-btn { color: #FF8C3E; }
+[data-theme="dark"] .link-btn:hover { color: #FFAB6A; }
+
 .ai-pill {
   background: var(--gradient-ai); color: #fff;
   font-weight: 700; border: none;
@@ -1266,12 +1289,18 @@ button { font-family: inherit; }
 }
 .rom-action-accept .mi { color: #fff !important; }
 .rom-action-accepted {
-  background: rgba(10, 144, 80, 0.10);
-  color: #0a9050;
-  border-color: rgba(10, 144, 80, 0.30);
+  background: rgba(72, 193, 181, 0.18);
+  color: #17514b;
+  border-color: rgba(72, 193, 181, 0.40);
   cursor: default;
 }
-.rom-action-accepted .mi { color: #0a9050 !important; }
+.rom-action-accepted .mi { color: #17514b !important; }
+[data-theme="dark"] .rom-action-accepted {
+  background: rgba(72, 193, 181, 0.20);
+  color: var(--tiffany-400);
+  border-color: rgba(72, 193, 181, 0.45);
+}
+[data-theme="dark"] .rom-action-accepted .mi { color: var(--tiffany-400) !important; }
 
 /* Comparison panel — appears above the summary when "Compare with v2"
    is toggled. KPI deltas on top, division movers below. */
@@ -1577,6 +1606,1339 @@ table.bc-table tbody tr.editing { background: rgba(232,70,0,0.06); }
 table.bc-table td.num, table.bc-table th.num { text-align: right; }
 table.bc-table td.center, table.bc-table th.center { text-align: center; }
 table.bc-table .item-title { font-family: var(--font-ui); font-weight: 600; font-size: 13px; color: var(--raisin-800); }
+
+/* ============================================================
+   TAKEOFFS TAB — quantity takeoff dataset on Project Home
+   ============================================================
+   Filter row (trade dropdown + confidence chips + search), a primary
+   table with the load-bearing columns, and an inline expanding detail
+   panel revealing the full provenance trail per item. */
+.takeoff-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 7px 28px 7px 12px;
+  border-radius: 100px;
+  border: 1px solid rgba(39, 38, 53, 0.18);
+  background: #fff
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23272635' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>")
+    no-repeat right 10px center;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--raisin-800);
+  cursor: pointer;
+  transition: border-color 140ms;
+}
+.takeoff-select:hover { border-color: rgba(232, 70, 0, 0.40); }
+.takeoff-select:focus { outline: none; border-color: var(--orange-500); }
+
+.takeoff-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fff;
+  border: 1px solid rgba(39, 38, 53, 0.18);
+  border-radius: 100px;
+  min-width: 240px;
+}
+.takeoff-search .mi { color: var(--bc-muted); }
+.takeoff-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--raisin-800);
+  min-width: 0;
+}
+.takeoff-search input::placeholder { color: var(--bc-muted); }
+.takeoff-search:focus-within { border-color: var(--orange-500); }
+
+/* ============================================================
+   MASTER FLOORPLAN — layered trade overlay on the Drawings tab
+   ============================================================
+   Single architectural base with per-trade markup layers that toggle
+   on/off. Goal: give every sub the same reference sheet so scope
+   overlaps surface before they hit the field. */
+
+/* ============================================================
+   TRADE SCOPING — skill results screen
+   ============================================================
+   Selection-driven multi-action workflow. Bulk action bar surfaces
+   Download PDF / Copy text / Invite to bid when trades are selected;
+   flash banner confirms each action. Row-level detail expands to the
+   full drafted scope + source references. */
+.trade-scope-actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  background: rgba(232, 70, 0, 0.06);
+  border: 1px solid rgba(232, 70, 0, 0.30);
+  border-radius: 10px;
+  animation: tradeActionbarIn 200ms ease-out both;
+}
+@keyframes tradeActionbarIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.trade-scope-actionbar-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--raisin-800);
+}
+.trade-scope-actionbar-count .mi { color: var(--orange-500); }
+.trade-scope-actionbar-count b { color: var(--orange-500); font-size: 15px; }
+.trade-scope-clear { padding: 4px 8px; font-size: 11.5px; margin-left: 6px; }
+.trade-scope-actionbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+[data-theme="dark"] .trade-scope-actionbar {
+  background: rgba(255, 140, 62, 0.10);
+  border-color: rgba(255, 140, 62, 0.40);
+}
+[data-theme="dark"] .trade-scope-actionbar-count { color: #fff; }
+[data-theme="dark"] .trade-scope-actionbar-count .mi,
+[data-theme="dark"] .trade-scope-actionbar-count b { color: #FF8C3E; }
+
+/* Flash toast — appears above the table right after a bulk action. */
+.trade-scope-flash {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  animation: tradeFlashIn 240ms ease-out both;
+}
+@keyframes tradeFlashIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.trade-scope-flash-invite { background: rgba(72, 193, 181, 0.16); color: #17514b; }
+.trade-scope-flash-copy   { background: rgba(80, 71, 243, 0.10); color: #5047F3; }
+.trade-scope-flash-pdf    { background: rgba(232, 70, 0, 0.10); color: var(--orange-500); }
+[data-theme="dark"] .trade-scope-flash-invite { background: rgba(72, 193, 181, 0.22); color: var(--tiffany-400); }
+[data-theme="dark"] .trade-scope-flash-copy   { background: rgba(125, 118, 255, 0.20); color: #A8A3FF; }
+[data-theme="dark"] .trade-scope-flash-pdf    { background: rgba(255, 140, 62, 0.20); color: #FF8C3E; }
+
+.trade-scope-table tbody tr.trade-scope-row.is-selected { background: rgba(232, 70, 0, 0.05); }
+.trade-scope-table tbody tr.trade-scope-row.is-open { background: rgba(232, 70, 0, 0.04); }
+.trade-scope-table tbody tr.trade-scope-row:hover { background: rgba(232, 70, 0, 0.03); }
+[data-theme="dark"] .trade-scope-table tbody tr.trade-scope-row.is-selected { background: rgba(255, 140, 62, 0.10); }
+[data-theme="dark"] .trade-scope-table tbody tr.trade-scope-row.is-open { background: rgba(255, 140, 62, 0.08); }
+[data-theme="dark"] .trade-scope-table tbody tr.trade-scope-row:hover { background: rgba(255, 140, 62, 0.06); }
+
+.trade-scope-highlights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--raisin-800);
+  line-height: 1.5;
+}
+.trade-scope-highlights li {
+  position: relative;
+  padding-left: 14px;
+}
+.trade-scope-highlights li::before {
+  content: "";
+  position: absolute;
+  left: 4px; top: 8px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--orange-500);
+}
+[data-theme="dark"] .trade-scope-highlights { color: rgba(255, 255, 255, 0.90); }
+[data-theme="dark"] .trade-scope-highlights li::before { background: #FF8C3E; }
+
+/* Row-level detail — full scope prose + source ref chips. */
+.trade-scope-detail-row td { background: rgba(15, 18, 32, 0.025); }
+.trade-scope-detail {
+  padding: 14px 4px 18px;
+  animation: takeoffDetailIn 180ms ease-out both;
+}
+.trade-scope-detail-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+  margin-bottom: 6px;
+}
+.trade-scope-detail-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--raisin-800);
+  margin: 0 0 14px;
+  max-width: 780px;
+}
+.trade-scope-detail-refs { margin-top: 6px; }
+.trade-scope-refs-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.trade-scope-ref {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: rgba(232, 70, 0, 0.08);
+  color: var(--orange-500);
+  border-radius: 100px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+}
+[data-theme="dark"] .trade-scope-detail-row td { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .trade-scope-detail-text { color: #fff; }
+[data-theme="dark"] .trade-scope-ref { background: rgba(255, 140, 62, 0.16); color: #FF8C3E; }
+
+/* ============================================================
+   MASTER APPROVAL WORKFLOW
+   ============================================================
+   Push-to-Master button + notifications bell live in the project
+   Taskbar. Push modal shows the current edit-event summary. Approvals
+   queue lives on the Company screen. Project activity popover surfaces
+   who's drafting + what's in review + recent Master changes. */
+.taskbar-push-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  animation: pushBtnIn 220ms ease-out both;
+}
+@keyframes pushBtnIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.taskbar-notify-btn {
+  position: relative;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba(39, 38, 53, 0.10);
+  color: var(--bc-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+.taskbar-notify-btn:hover { background: rgba(39, 38, 53, 0.06); color: var(--raisin-800); border-color: rgba(39, 38, 53, 0.18); }
+.taskbar-notify-dot {
+  position: absolute;
+  top: -4px; right: -4px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  background: var(--orange-500);
+  color: #fff;
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+[data-theme="dark"] .taskbar-notify-btn { border-color: rgba(255, 255, 255, 0.10); }
+[data-theme="dark"] .taskbar-notify-btn:hover { background: rgba(255, 255, 255, 0.06); color: #fff; border-color: rgba(255, 255, 255, 0.20); }
+[data-theme="dark"] .taskbar-notify-dot { border-color: #23222e; background: #FF8C3E; }
+
+/* Project activity popover — anchored to the top-right of the viewport
+   near the bell icon. Positioned as a fixed overlay so it doesn't get
+   clipped by the taskbar row. */
+.activity-popover-anchor {
+  position: fixed;
+  top: 62px;
+  right: 24px;
+  z-index: 60;
+}
+.activity-popover {
+  width: 380px;
+  max-height: calc(100vh - 100px);
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.10);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(15, 18, 32, 0.18), 0 4px 12px rgba(15, 18, 32, 0.10);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: activityPopoverIn 200ms ease-out both;
+}
+@keyframes activityPopoverIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.activity-popover-h {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(15, 18, 32, 0.08);
+}
+.activity-popover-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--orange-500);
+}
+.activity-popover-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--raisin-800);
+  margin-top: 2px;
+}
+.activity-popover-body {
+  overflow-y: auto;
+  padding: 8px 4px 12px;
+}
+.activity-section { padding: 8px 14px; }
+.activity-section + .activity-section { border-top: 1px solid rgba(15, 18, 32, 0.06); }
+.activity-section-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+}
+.activity-section-h .mi { color: var(--orange-500); }
+.activity-section-count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--bc-muted);
+  background: rgba(15, 18, 32, 0.06);
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+.activity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 4px;
+}
+.activity-row + .activity-row { border-top: 1px solid rgba(15, 18, 32, 0.05); }
+.activity-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(232, 70, 0, 0.10);
+  color: var(--orange-500);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 10.5px;
+  flex-shrink: 0;
+}
+.activity-avatar-approved { background: rgba(72, 193, 181, 0.20); color: #17514b; }
+.activity-row-body { flex: 1; min-width: 0; }
+.activity-row-name {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--raisin-800);
+}
+.activity-row-note {
+  font-size: 11.5px;
+  color: var(--bc-muted);
+  margin-top: 1px;
+}
+.activity-row-time {
+  font-size: 10.5px;
+  color: var(--bc-muted);
+  flex-shrink: 0;
+}
+.activity-empty {
+  font-size: 12px;
+  color: var(--bc-muted);
+  padding: 4px 0 6px;
+  font-style: italic;
+}
+[data-theme="dark"] .activity-popover { background: #23222e; border-color: rgba(255, 255, 255, 0.10); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.50); }
+[data-theme="dark"] .activity-popover-h { border-bottom-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .activity-popover-eyebrow { color: #FF8C3E; }
+[data-theme="dark"] .activity-popover-title { color: #fff; }
+[data-theme="dark"] .activity-section + .activity-section { border-top-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .activity-section-h { color: rgba(255, 255, 255, 0.55); }
+[data-theme="dark"] .activity-section-h .mi { color: #FF8C3E; }
+[data-theme="dark"] .activity-section-count { background: rgba(255, 255, 255, 0.10); color: rgba(255, 255, 255, 0.70); }
+[data-theme="dark"] .activity-avatar { background: rgba(255, 140, 62, 0.15); color: #FF8C3E; }
+[data-theme="dark"] .activity-avatar-approved { background: rgba(72, 193, 181, 0.22); color: var(--tiffany-400); }
+[data-theme="dark"] .activity-row + .activity-row { border-top-color: rgba(255, 255, 255, 0.06); }
+[data-theme="dark"] .activity-row-name { color: #fff; }
+[data-theme="dark"] .activity-row-note,
+[data-theme="dark"] .activity-row-time { color: rgba(255, 255, 255, 0.60); }
+
+/* Push-to-Master modal */
+.push-modal { max-width: 640px; display: flex; flex-direction: column; }
+.push-modal-body {
+  padding: 4px 28px 4px;
+  overflow-y: auto;
+}
+.push-modal-list {
+  list-style: none;
+  margin: 12px 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.push-modal-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(232, 70, 0, 0.04);
+  border: 1px solid rgba(232, 70, 0, 0.20);
+  border-radius: 8px;
+}
+.push-modal-list li .mi { color: var(--orange-500); margin-top: 2px; }
+.push-modal-list-body { flex: 1; min-width: 0; }
+.push-modal-list-label {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--raisin-800);
+}
+.push-modal-list-detail {
+  font-size: 11.5px;
+  color: var(--bc-muted);
+  margin-top: 2px;
+}
+.push-modal-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: rgba(72, 193, 181, 0.10);
+  border-radius: 8px;
+  color: var(--raisin-800);
+  font-size: 13px;
+  margin: 12px 0;
+}
+.push-modal-note {
+  margin-bottom: 20px;
+}
+.push-modal-note label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+  margin-bottom: 6px;
+}
+.push-modal-optional { color: var(--bc-muted); text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 11px; }
+.push-modal-note textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 18, 32, 0.15);
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--raisin-800);
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  transition: border-color 140ms;
+}
+.push-modal-note textarea:focus { border-color: var(--orange-500); }
+.push-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 28px;
+  border-top: 1px solid rgba(15, 18, 32, 0.06);
+  background: #FAFAF7;
+}
+.push-modal-foot-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--bc-muted);
+  line-height: 1.4;
+  max-width: 380px;
+}
+.push-modal-foot-meta .mi { color: var(--orange-500); flex-shrink: 0; }
+.push-modal-foot-actions { display: flex; gap: 8px; }
+[data-theme="dark"] .push-modal-list li { background: rgba(255, 140, 62, 0.08); border-color: rgba(255, 140, 62, 0.30); }
+[data-theme="dark"] .push-modal-list li .mi { color: #FF8C3E; }
+[data-theme="dark"] .push-modal-list-label { color: #fff; }
+[data-theme="dark"] .push-modal-empty { background: rgba(72, 193, 181, 0.15); color: #fff; }
+[data-theme="dark"] .push-modal-note textarea { background: #23222e; border-color: rgba(255, 255, 255, 0.12); color: #fff; }
+[data-theme="dark"] .push-modal-foot { background: #1c1b25; border-top-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .push-modal-foot-meta { color: rgba(255, 255, 255, 0.65); }
+[data-theme="dark"] .push-modal-foot-meta .mi { color: #FF8C3E; }
+
+/* Approvals queue on Company screen */
+.report-tab-count-attn { background: var(--orange-500) !important; color: #fff !important; }
+.company-approval-row:hover { background: rgba(232, 70, 0, 0.03); }
+.company-approval-detail-row td { background: rgba(15, 18, 32, 0.025); }
+.company-approval-detail { padding: 14px 20px 18px; }
+.company-approval-changes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.company-approval-changes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--raisin-800);
+}
+.company-approval-changes li .mi { color: var(--orange-500); flex-shrink: 0; }
+[data-theme="dark"] .company-approval-row:hover { background: rgba(255, 140, 62, 0.06); }
+[data-theme="dark"] .company-approval-detail-row td { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .company-approval-changes li { background: #23222e; border-color: rgba(255, 255, 255, 0.10); color: #fff; }
+[data-theme="dark"] .company-approval-changes li .mi { color: #FF8C3E; }
+
+/* ============================================================
+   COMPANY SCREEN — workspace-level company view
+   ============================================================ */
+.company-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 4px 0 4px;
+}
+.company-avatar {
+  width: 56px; height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(232,70,0,0.15), rgba(80,71,243,0.12));
+  border: 1px solid rgba(232,70,0,0.25);
+  color: var(--orange-500);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.company-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--orange-500);
+  margin-bottom: 4px;
+}
+.company-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--bc-muted);
+}
+.company-meta span { display: inline-flex; align-items: center; gap: 5px; }
+.company-meta .mi { color: rgba(39, 38, 53, 0.45); }
+.company-header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Permission role pills — three states with distinct color families.
+   Admin = orange, Collaborator = indigo, Viewer = teal. */
+.company-role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.company-role-admin        { background: rgba(232, 70, 0, 0.12); color: var(--orange-500); }
+.company-role-collaborator { background: rgba(80, 71, 243, 0.12); color: #5047F3; }
+.company-role-viewer       { background: rgba(72, 193, 181, 0.18); color: #17514b; }
+
+.company-member-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(232, 70, 0, 0.10);
+  color: var(--orange-500);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11.5px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+.company-member-row:hover { background: rgba(232, 70, 0, 0.03); }
+.company-member-detail-row td { background: rgba(15, 18, 32, 0.025); }
+.company-member-detail { padding: 14px 20px 16px; }
+.company-detail-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+  margin-bottom: 10px;
+}
+.company-project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+.company-project-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.10);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--raisin-800);
+}
+.company-project-chip-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-analytics-bar-track {
+  height: 6px;
+  background: rgba(15, 18, 32, 0.08);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.company-analytics-bar-fill {
+  height: 100%;
+  background: var(--orange-500);
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+
+/* Project Rates panel — Labor/Materials toggle, upload zone, and the
+   uploaded-file banner shown once a rate sheet has been dropped in. */
+.rates-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 3px;
+  background: rgba(15, 18, 32, 0.05);
+  border-radius: 100px;
+}
+.rates-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(39, 38, 53, 0.60);
+  cursor: pointer;
+  transition: background 140ms, color 140ms, box-shadow 140ms;
+}
+.rates-toggle button:hover { color: var(--raisin-800); }
+.rates-toggle button.active {
+  background: #FFFFFF;
+  color: var(--orange-500);
+  box-shadow: 0 1px 3px rgba(15, 18, 32, 0.10);
+}
+.rates-toggle button.active .mi { color: var(--orange-500); }
+.rates-toggle .mi { font-size: 14px; }
+
+.rates-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 28px 20px;
+  background: rgba(232, 70, 0, 0.04);
+  border: 1.5px dashed rgba(232, 70, 0, 0.35);
+  border-radius: 12px;
+  color: var(--raisin-800);
+  cursor: pointer;
+  text-align: center;
+  transition: background 140ms, border-color 140ms;
+}
+.rates-drop:hover, .rates-drop.drag {
+  background: rgba(232, 70, 0, 0.08);
+  border-color: var(--orange-500);
+}
+.rates-drop .mi { color: var(--orange-500); }
+.rates-drop-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 6px;
+}
+.rates-drop-sub {
+  font-size: 12.5px;
+  color: var(--bc-muted);
+  line-height: 1.5;
+  max-width: 520px;
+}
+
+.rates-file-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(72, 193, 181, 0.10);
+  border: 1px solid rgba(72, 193, 181, 0.35);
+  border-radius: 10px;
+}
+.rates-file-icon { color: #17514b; flex-shrink: 0; }
+.rates-file-body { flex: 1; min-width: 0; }
+.rates-file-name {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--raisin-800);
+}
+.rates-file-sub {
+  font-size: 12px;
+  color: var(--bc-muted);
+  margin-top: 2px;
+}
+.rates-file-remove {
+  color: #B53636;
+  flex-shrink: 0;
+}
+.rates-file-remove:hover { background: rgba(181, 54, 54, 0.08); color: #B53636; }
+.rates-file-remove .mi { color: #B53636 !important; }
+
+.rates-source-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-left: 10px;
+  border-radius: 100px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(72, 193, 181, 0.18);
+  color: #17514b;
+}
+.rates-source-pill .mi { font-size: 12px !important; }
+
+.rates-empty {
+  margin-top: 16px;
+  padding: 40px 24px;
+  text-align: center;
+  background: rgba(15, 18, 32, 0.02);
+  border: 1px dashed rgba(15, 18, 32, 0.12);
+  border-radius: 12px;
+}
+.rates-empty .mi { color: rgba(39, 38, 53, 0.35); }
+.rates-empty-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--raisin-800);
+  margin-top: 10px;
+}
+.rates-empty-sub {
+  font-size: 12.5px;
+  color: var(--bc-muted);
+  line-height: 1.55;
+  max-width: 460px;
+  margin: 6px auto 0;
+}
+
+[data-theme="dark"] .rates-toggle { background: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .rates-toggle button { color: rgba(255, 255, 255, 0.55); }
+[data-theme="dark"] .rates-toggle button:hover { color: #fff; }
+[data-theme="dark"] .rates-toggle button.active { background: #23222e; color: #FF8C3E; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.40); }
+[data-theme="dark"] .rates-toggle button.active .mi { color: #FF8C3E; }
+[data-theme="dark"] .rates-drop { background: rgba(255, 140, 62, 0.06); border-color: rgba(255, 140, 62, 0.40); color: #fff; }
+[data-theme="dark"] .rates-drop:hover, [data-theme="dark"] .rates-drop.drag { background: rgba(255, 140, 62, 0.14); border-color: #FF8C3E; }
+[data-theme="dark"] .rates-drop .mi { color: #FF8C3E; }
+[data-theme="dark"] .rates-file-banner { background: rgba(72, 193, 181, 0.15); border-color: rgba(72, 193, 181, 0.40); }
+[data-theme="dark"] .rates-file-icon { color: var(--tiffany-400); }
+[data-theme="dark"] .rates-file-name { color: #fff; }
+[data-theme="dark"] .rates-source-pill { background: rgba(72, 193, 181, 0.22); color: var(--tiffany-400); }
+[data-theme="dark"] .rates-empty { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); }
+[data-theme="dark"] .rates-empty .mi { color: rgba(255, 255, 255, 0.35); }
+[data-theme="dark"] .rates-empty-title { color: #fff; }
+[data-theme="dark"] .rates-file-remove { color: #FF8A8A; }
+[data-theme="dark"] .rates-file-remove:hover { background: rgba(255, 90, 90, 0.14); color: #FF8A8A; }
+[data-theme="dark"] .rates-file-remove .mi { color: #FF8A8A !important; }
+
+[data-theme="dark"] .company-avatar {
+  background: linear-gradient(135deg, rgba(255,140,62,0.18), rgba(125,118,255,0.15));
+  border-color: rgba(255,140,62,0.35);
+  color: #FF8C3E;
+}
+[data-theme="dark"] .company-eyebrow { color: #FF8C3E; }
+[data-theme="dark"] .company-meta .mi { color: rgba(255,255,255,0.45); }
+[data-theme="dark"] .company-role-admin        { background: rgba(255, 140, 62, 0.20); color: #FF8C3E; }
+[data-theme="dark"] .company-role-collaborator { background: rgba(125, 118, 255, 0.22); color: #A8A3FF; }
+[data-theme="dark"] .company-role-viewer       { background: rgba(72, 193, 181, 0.20); color: var(--tiffany-400); }
+[data-theme="dark"] .company-member-avatar { background: rgba(255, 140, 62, 0.15); color: #FF8C3E; }
+[data-theme="dark"] .company-member-row:hover { background: rgba(255, 140, 62, 0.06); }
+[data-theme="dark"] .company-member-detail-row td { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .company-project-chip { background: #23222e; border-color: rgba(255,255,255,0.10); color: #fff; }
+[data-theme="dark"] .company-analytics-bar-track { background: rgba(255, 255, 255, 0.10); }
+[data-theme="dark"] .company-analytics-bar-fill { background: #FF8C3E; }
+
+.masterplan-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.10);
+  border-radius: 12px;
+  padding: 20px 22px 18px;
+  margin-bottom: 24px;
+}
+.masterplan-h { margin-bottom: 14px; }
+.masterplan-eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--orange-500);
+  margin-bottom: 6px;
+}
+.masterplan-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--raisin-800);
+}
+.masterplan-sub {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--bc-muted);
+  margin-top: 4px;
+  max-width: 620px;
+}
+
+/* Sheet picker — scalable dropdown for the Master Floorplan. Trigger
+   shows the current sheet (number + label + subtitle + total count). On
+   open, the menu drops down with a search input and two sections:
+   Recently visited (last 4) and All sheets (full list). Search filters
+   the "All sheets" section by number, label, or subtitle text. */
+.masterplan-picker { position: relative; margin-bottom: 14px; }
+.masterplan-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.15);
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms, background 140ms;
+}
+.masterplan-picker-trigger:hover { border-color: rgba(232, 70, 0, 0.40); }
+.masterplan-picker-trigger.is-open { border-color: var(--orange-500); background: rgba(232, 70, 0, 0.03); }
+.masterplan-picker-ref {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--orange-500);
+  background: rgba(232, 70, 0, 0.10);
+  padding: 3px 8px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+.masterplan-picker-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+}
+.masterplan-picker-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--raisin-800);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.masterplan-picker-sub {
+  font-size: 11.5px;
+  color: var(--bc-muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.masterplan-picker-meta {
+  font-size: 11px;
+  color: var(--bc-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.masterplan-picker-trigger .mi:last-child {
+  color: var(--bc-muted);
+  transition: transform 160ms;
+  flex-shrink: 0;
+}
+.masterplan-picker-trigger.is-open .mi:last-child { transform: rotate(180deg); color: var(--orange-500); }
+
+.masterplan-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(15, 18, 32, 0.16), 0 4px 10px rgba(15, 18, 32, 0.08);
+  overflow: hidden;
+  animation: masterplanPickerIn 180ms ease-out both;
+}
+@keyframes masterplanPickerIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.masterplan-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(15, 18, 32, 0.08);
+  background: rgba(15, 18, 32, 0.02);
+}
+.masterplan-picker-search .mi { color: var(--bc-muted); flex-shrink: 0; }
+.masterplan-picker-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--raisin-800);
+  min-width: 0;
+}
+.masterplan-picker-search input::placeholder { color: var(--bc-muted); }
+.masterplan-picker-clear {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  border-radius: 4px;
+  color: var(--bc-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.masterplan-picker-clear:hover { background: rgba(15, 18, 32, 0.06); color: var(--raisin-800); }
+
+.masterplan-picker-scroll {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.masterplan-picker-section { padding: 6px 4px; }
+.masterplan-picker-section + .masterplan-picker-section { border-top: 1px solid rgba(15, 18, 32, 0.06); }
+.masterplan-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+}
+.masterplan-picker-label .mi { color: var(--orange-500); }
+.masterplan-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: left;
+  color: var(--raisin-800);
+  transition: background 140ms;
+}
+.masterplan-picker-item:hover { background: rgba(232, 70, 0, 0.05); }
+.masterplan-picker-item.is-active { background: rgba(232, 70, 0, 0.08); }
+.masterplan-picker-item-ref {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--orange-500);
+  background: rgba(232, 70, 0, 0.10);
+  padding: 2px 7px;
+  border-radius: 100px;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: center;
+}
+.masterplan-picker-item.is-active .masterplan-picker-item-ref { color: #fff; background: var(--orange-500); }
+.masterplan-picker-item-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.masterplan-picker-item-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--raisin-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.masterplan-picker-item-sub {
+  font-size: 11px;
+  color: var(--bc-muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.masterplan-picker-item .mi { color: var(--orange-500); flex-shrink: 0; }
+.masterplan-picker-empty {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--bc-muted);
+  font-size: 12.5px;
+}
+
+[data-theme="dark"] .masterplan-picker-trigger { background: #23222e; border-color: rgba(255, 255, 255, 0.12); }
+[data-theme="dark"] .masterplan-picker-trigger:hover { border-color: rgba(255, 140, 62, 0.45); }
+[data-theme="dark"] .masterplan-picker-trigger.is-open { border-color: #FF8C3E; background: rgba(255, 140, 62, 0.05); }
+[data-theme="dark"] .masterplan-picker-ref { color: #FF8C3E; background: rgba(255, 140, 62, 0.15); }
+[data-theme="dark"] .masterplan-picker-name { color: #fff; }
+[data-theme="dark"] .masterplan-picker-sub,
+[data-theme="dark"] .masterplan-picker-meta { color: rgba(255, 255, 255, 0.60); }
+[data-theme="dark"] .masterplan-picker-trigger.is-open .mi:last-child { color: #FF8C3E; }
+[data-theme="dark"] .masterplan-picker-menu {
+  background: #23222e;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.50), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .masterplan-picker-search { background: rgba(255, 255, 255, 0.04); border-bottom-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .masterplan-picker-search input { color: #fff; }
+[data-theme="dark"] .masterplan-picker-search input::placeholder { color: rgba(255, 255, 255, 0.45); }
+[data-theme="dark"] .masterplan-picker-clear:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+[data-theme="dark"] .masterplan-picker-section + .masterplan-picker-section { border-top-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .masterplan-picker-label { color: rgba(255, 255, 255, 0.55); }
+[data-theme="dark"] .masterplan-picker-label .mi { color: #FF8C3E; }
+[data-theme="dark"] .masterplan-picker-item { color: #fff; }
+[data-theme="dark"] .masterplan-picker-item:hover { background: rgba(255, 140, 62, 0.10); }
+[data-theme="dark"] .masterplan-picker-item.is-active { background: rgba(255, 140, 62, 0.16); }
+[data-theme="dark"] .masterplan-picker-item-ref { color: #FF8C3E; background: rgba(255, 140, 62, 0.15); }
+[data-theme="dark"] .masterplan-picker-item.is-active .masterplan-picker-item-ref { color: #fff; background: #FF8C3E; }
+[data-theme="dark"] .masterplan-picker-item-name { color: #fff; }
+[data-theme="dark"] .masterplan-picker-item-sub { color: rgba(255, 255, 255, 0.60); }
+[data-theme="dark"] .masterplan-picker-item .mi { color: #FF8C3E; }
+
+.masterplan-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.masterplan-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.15);
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bc-muted);
+  cursor: pointer;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+.masterplan-toggle:hover { color: var(--raisin-800); border-color: rgba(15, 18, 32, 0.30); }
+.masterplan-toggle.is-on { color: var(--raisin-800); }
+.masterplan-toggle-all {
+  color: var(--raisin-800);
+  border-color: rgba(15, 18, 32, 0.20);
+}
+.masterplan-toggle-all.is-on {
+  background: rgba(232, 70, 0, 0.08);
+  border-color: var(--orange-500);
+  color: var(--orange-500);
+}
+.masterplan-toggle-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(15, 18, 32, 0.15);
+  margin: 0 4px;
+}
+.masterplan-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.masterplan-canvas {
+  background: linear-gradient(180deg, rgba(15, 18, 32, 0.02), rgba(15, 18, 32, 0.05));
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  overflow: hidden;
+}
+.masterplan-svg {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  color: var(--raisin-800); /* used by base architectural strokes via currentColor */
+  display: block;
+}
+.masterplan-layer {
+  animation: masterplanLayerIn 220ms ease-out both;
+}
+@keyframes masterplanLayerIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.masterplan-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(15, 18, 32, 0.03);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--bc-muted);
+  line-height: 1.5;
+}
+.masterplan-legend .mi { color: var(--orange-500); }
+.masterplan-legend b { color: var(--raisin-800); font-weight: 700; }
+
+[data-theme="dark"] .masterplan-card { background: #23222e; border-color: rgba(255, 255, 255, 0.10); }
+[data-theme="dark"] .masterplan-title { color: #fff; }
+[data-theme="dark"] .masterplan-sub { color: rgba(255, 255, 255, 0.65); }
+[data-theme="dark"] .masterplan-toggle {
+  background: #23222e;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.60);
+}
+[data-theme="dark"] .masterplan-toggle:hover { color: #fff; border-color: rgba(255, 255, 255, 0.30); }
+[data-theme="dark"] .masterplan-toggle.is-on { color: #fff; }
+[data-theme="dark"] .masterplan-toggle-all { color: #fff; }
+[data-theme="dark"] .masterplan-toggle-all.is-on { background: rgba(255, 140, 62, 0.12); border-color: #FF8C3E; color: #FF8C3E; }
+[data-theme="dark"] .masterplan-toggle-sep { background: rgba(255, 255, 255, 0.15); }
+[data-theme="dark"] .masterplan-canvas {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.06));
+  border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .masterplan-svg { color: rgba(255, 255, 255, 0.85); }
+[data-theme="dark"] .masterplan-legend { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.65); }
+[data-theme="dark"] .masterplan-legend b { color: #fff; }
+[data-theme="dark"] .masterplan-legend .mi { color: #FF8C3E; }
+
+/* Drawings tab — sheet list with thumbnail + items-taken-off + source PDF. */
+.drawing-thumb-cell {
+  width: 80px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(15, 18, 32, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drawing-thumb-cell svg { width: 100%; height: 100%; display: block; }
+.drawings-table tbody tr.drawing-row:hover { background: rgba(232, 70, 0, 0.04); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .drawing-thumb-cell {
+  background: #fafafa;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .drawings-table tbody tr.drawing-row:hover { background: rgba(255, 140, 62, 0.08); }
+
+/* Source-cell link — verifying AI outputs against the actual source
+   drawing is the primary trust loop, so make this affordance loud:
+   orange text, a corner-arrow icon to signal "opens elsewhere", and
+   an underlined hover state to disambiguate from plain row text. */
+.takeoff-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  margin: -2px -6px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--orange-500);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 140ms, color 140ms;
+}
+.takeoff-source-link:hover {
+  background: rgba(232, 70, 0, 0.08);
+  color: #C73C00;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.takeoff-source-link .mi { transition: transform 140ms; }
+.takeoff-source-link:hover .mi { transform: translate(1px, -1px); }
+[data-theme="dark"] .takeoff-source-link { color: #FF8C3E; }
+[data-theme="dark"] .takeoff-source-link:hover { background: rgba(255, 140, 62, 0.12); color: #FFAB6A; }
+
+/* Division group headers — span the full table width and band the
+   takeoff rows beneath them so the dataset reads as organized by the
+   user's chosen format (MasterFormat / Uniformat / Omniclass). */
+.takeoff-table tbody tr.takeoff-group-row td {
+  background: rgba(232, 70, 0, 0.06);
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(232, 70, 0, 0.18);
+  border-top: 1px solid rgba(232, 70, 0, 0.18);
+}
+.takeoff-group-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--raisin-800);
+}
+.takeoff-group-count {
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  color: var(--orange-500);
+}
+[data-theme="dark"] .takeoff-table tbody tr.takeoff-group-row td {
+  background: rgba(255, 140, 62, 0.10);
+  border-top-color: rgba(255, 140, 62, 0.30);
+  border-bottom-color: rgba(255, 140, 62, 0.30);
+}
+[data-theme="dark"] .takeoff-group-label { color: #fff; }
+[data-theme="dark"] .takeoff-group-count { color: #FF8C3E; }
+
+.takeoff-table tbody tr.takeoff-row:hover { background: rgba(232, 70, 0, 0.04); }
+.takeoff-table tbody tr.takeoff-row.is-open { background: rgba(232, 70, 0, 0.05); }
+.takeoff-table tbody tr.takeoff-detail-row { background: rgba(15, 18, 32, 0.025); }
+.takeoff-table tbody tr.takeoff-detail-row td { padding: 0; border-bottom: 1px solid rgba(39, 38, 53, 0.08); }
+
+.takeoff-detail {
+  padding: 14px 20px 18px;
+  animation: takeoffDetailIn 180ms ease-out both;
+}
+@keyframes takeoffDetailIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.takeoff-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px 24px;
+}
+.takeoff-detail-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.takeoff-detail-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+}
+.takeoff-detail-value {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--raisin-800);
+  font-weight: 500;
+}
+.takeoff-detail-notes {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(80, 71, 243, 0.06);
+  border: 1px solid rgba(80, 71, 243, 0.18);
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.takeoff-detail-notes .mi { color: #5047F3; margin-top: 2px; }
+.takeoff-detail-notes .takeoff-detail-label { color: #5047F3; }
+.takeoff-detail-notes .takeoff-detail-value { margin-top: 2px; line-height: 1.5; }
+
+/* Dark theme overrides — Takeoff content lives on the main canvas (card +
+   bc-table surfaces), which stays LIGHT in hybrid mode. Only the dark
+   theme should swap to dark surfaces and white text here, or the detail
+   row text becomes white-on-white in hybrid. */
+/* Match the trade-trigger / skills-history dropdown pattern — a subtle
+   white-tinted lift over the dark canvas, NOT a solid dark surface, so
+   the filter and search controls read as part of the same input
+   vocabulary across the whole prototype. */
+[data-theme="dark"] .takeoff-select {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
+[data-theme="dark"] .takeoff-select:hover { border-color: rgba(232, 70, 0, 0.50); }
+[data-theme="dark"] .takeoff-search {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .takeoff-search:focus-within { border-color: var(--orange-500); }
+[data-theme="dark"] .takeoff-search input { color: #fff; }
+[data-theme="dark"] .takeoff-search input::placeholder { color: rgba(255, 255, 255, 0.50); }
+[data-theme="dark"] .takeoff-table tbody tr.takeoff-row:hover { background: rgba(255, 140, 62, 0.08); }
+[data-theme="dark"] .takeoff-table tbody tr.takeoff-row.is-open { background: rgba(255, 140, 62, 0.10); }
+[data-theme="dark"] .takeoff-table tbody tr.takeoff-detail-row { background: rgba(255, 255, 255, 0.04); }
+[data-theme="dark"] .takeoff-table tbody tr.takeoff-detail-row td { border-bottom-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .takeoff-detail-value { color: #fff; }
+[data-theme="dark"] .takeoff-detail-notes {
+  background: rgba(125, 118, 255, 0.10);
+  border-color: rgba(125, 118, 255, 0.30);
+}
+[data-theme="dark"] .takeoff-detail-notes .mi,
+[data-theme="dark"] .takeoff-detail-notes .takeoff-detail-label { color: #A8A3FF; }
+@media (max-width: 1100px) {
+  .takeoff-detail-grid { grid-template-columns: repeat(2, 1fr); }
+}
 table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0.55); font-size: 11px; margin-top: 2px; }
 
 /* Editable cell */
@@ -2096,6 +3458,585 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   background: #fff;
   flex-shrink: 0;
 }
+
+/* ============================================================
+   AI PANEL TABS — Cody chat vs Clipboard tray
+   ============================================================
+   Two-pill switcher inside the panel head. Active tab gets a filled
+   surface and orange text; inactive is muted. Used to route the panel
+   between the conversational assistant and the context-aware Clipboard. */
+.ai-panel-tabs {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(15, 18, 32, 0.05);
+  border-radius: 100px;
+}
+.ai-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(39, 38, 53, 0.60);
+  cursor: pointer;
+  transition: background 140ms, color 140ms, box-shadow 140ms;
+}
+.ai-panel-tab:hover { color: var(--raisin-800); }
+.ai-panel-tab.active {
+  background: #FFFFFF;
+  color: var(--orange-500);
+  box-shadow: 0 1px 3px rgba(15, 18, 32, 0.10);
+}
+.ai-panel-tab .mi { font-size: 14px; }
+/* The existing .ai-panel rule treats hybrid + dark themes the same — both
+   render the panel with a dark background. So the tab strip and the
+   Clipboard surfaces below need the same combined selector or they end
+   up light-on-dark in hybrid mode. */
+:is([data-theme="dark"], [data-theme="hybrid"]) .ai-panel-tabs { background: rgba(255, 255, 255, 0.08); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .ai-panel-tab { color: rgba(255, 255, 255, 0.55); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .ai-panel-tab:hover { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .ai-panel-tab.active { background: #23222e; color: #FF8C3E; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.40); }
+
+/* ============================================================
+   CLIPBOARD — context-aware tray in the right rail
+   ============================================================
+   Scrollable body with stacked sections: project context chip, recent
+   skill runs, file drop + recent files. Each section header has an
+   icon + title and an optional count. Uses muted card surfaces so it
+   reads as secondary content next to the primary Cody chat. */
+.clipboard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.clipboard-context {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(232, 70, 0, 0.06);
+  border: 1px solid rgba(232, 70, 0, 0.18);
+  border-radius: 100px;
+  font-size: 11.5px;
+  color: var(--raisin-800);
+  align-self: flex-start;
+}
+.clipboard-context .mi { color: var(--orange-500); }
+
+/* Project / skill context header — shown at the top of the Clipboard
+   on Project Home and skill-result screens so the tray reads as scoped
+   to whatever the main canvas is currently showing. */
+.clipboard-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid rgba(15, 18, 32, 0.08);
+  padding-bottom: 14px;
+  margin-bottom: 2px;
+}
+.clipboard-header > .mi {
+  color: var(--orange-500);
+  flex-shrink: 0;
+}
+.clipboard-header-text { flex: 1; min-width: 0; }
+.clipboard-header-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--raisin-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.25;
+}
+.clipboard-header-skill {
+  font-size: 12px;
+  color: var(--bc-muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-header { border-bottom-color: rgba(255, 255, 255, 0.08); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-header > .mi { color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-header-name { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-header-skill { color: rgba(255, 255, 255, 0.65); }
+
+.clipboard-section { display: flex; flex-direction: column; gap: 8px; }
+.clipboard-section-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.clipboard-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(39, 38, 53, 0.70);
+}
+.clipboard-section-title .mi { color: var(--orange-500); }
+.clipboard-section-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--bc-muted);
+  background: rgba(15, 18, 32, 0.06);
+  border-radius: 100px;
+  padding: 1px 7px;
+}
+.clipboard-subhead {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+  margin-top: 4px;
+}
+
+.clipboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   CLIPBOARD SKILL TILES — 2-col grid above the runs list
+   ============================================================
+   Each tile is a flat dark surface with a subtle accent tint per skill,
+   carrying an icon (top-left), name (bottom-left), and chevron (right).
+   Modeled on the NotebookLM-style "Studio" panel: distinct hue per
+   action, no heavy borders. Tap → opens that skill's report in a new
+   tab. Accent colors map to BuildCrew's primary palette. */
+.clipboard-skills-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.clipboard-skill-tile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(15, 18, 32, 0.04);
+  border: 1px solid rgba(15, 18, 32, 0.08);
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: left;
+  transition: background 140ms, border-color 140ms, transform 140ms;
+}
+.clipboard-skill-tile:hover {
+  border-color: rgba(15, 18, 32, 0.20);
+  transform: translateY(-1px);
+}
+.clipboard-skill-icon { color: var(--raisin-800); flex-shrink: 0; }
+.clipboard-skill-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--raisin-800);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.clipboard-skill-arrow {
+  flex-shrink: 0;
+  color: rgba(39, 38, 53, 0.40);
+  transition: color 140ms, transform 140ms;
+}
+.clipboard-skill-tile:hover .clipboard-skill-arrow { color: var(--raisin-800); transform: translateX(2px); }
+/* Per-accent tints — light theme keeps the surface neutral but tints
+   the icon/arrow; dark theme tints the surface itself (see overrides). */
+.clipboard-skill-tile[data-accent="orange"] .clipboard-skill-icon { color: var(--orange-500); }
+.clipboard-skill-tile[data-accent="tiffany"] .clipboard-skill-icon { color: var(--tiffany-400); }
+.clipboard-skill-tile[data-accent="indigo"] .clipboard-skill-icon { color: #5047F3; }
+
+/* ============================================================
+   CLIPBOARD RUN ROW — flat, screenshot-style
+   ============================================================
+   Icon on the left, two-line title/meta in the middle, 3-dot menu on
+   the right. No card border; rows separated by a subtle divider on
+   hover and a press-state highlight only when clickable. */
+.clipboard-run {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px 10px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: default;
+  transition: background 140ms;
+}
+.clipboard-run.is-clickable { cursor: pointer; }
+.clipboard-run.is-clickable:hover { background: rgba(15, 18, 32, 0.05); }
+
+/* Running state — subtle left-to-right orange shimmer that replays every
+   3 seconds, plus a thin progress bar below the meta line. Designed to
+   feel like ambient activity, not a noisy in-progress alarm. */
+.clipboard-run.is-running { position: relative; overflow: hidden; }
+.clipboard-run.is-running::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(232, 70, 0, 0.00) 20%,
+    rgba(232, 70, 0, 0.22) 50%,
+    rgba(232, 70, 0, 0.00) 80%,
+    transparent 100%);
+  transform: translateX(-100%);
+  animation: clipboardRunWipe 3s ease-in-out infinite;
+}
+@keyframes clipboardRunWipe {
+  0%   { transform: translateX(-100%); }
+  45%  { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+.clipboard-run-progress {
+  height: 3px;
+  background: rgba(232, 70, 0, 0.15);
+  border-radius: 100px;
+  margin-top: 5px;
+  overflow: hidden;
+}
+.clipboard-run-progress-bar {
+  height: 100%;
+  background: var(--orange-500);
+  border-radius: inherit;
+  transition: width 600ms ease;
+}
+
+/* Completion flash — a brief green pulse on the row when a run transitions
+   from working → done, then fades back to the normal done appearance. */
+.clipboard-run.is-flashing { animation: clipboardRunFlash 1.2s ease-out both; }
+@keyframes clipboardRunFlash {
+  0%   { background: rgba(72, 193, 181, 0.00); box-shadow: 0 0 0 0 rgba(72, 193, 181, 0.00); }
+  18%  { background: rgba(72, 193, 181, 0.28); box-shadow: 0 0 0 2px rgba(72, 193, 181, 0.30); }
+  100% { background: rgba(72, 193, 181, 0.00); box-shadow: 0 0 0 0 rgba(72, 193, 181, 0.00); }
+}
+
+/* Dark / hybrid variants for the new states. */
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run.is-running::after {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 140, 62, 0.00) 20%,
+    rgba(255, 140, 62, 0.28) 50%,
+    rgba(255, 140, 62, 0.00) 80%,
+    transparent 100%);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-progress { background: rgba(255, 140, 62, 0.20); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-progress-bar { background: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run.is-flashing {
+  animation: clipboardRunFlashDark 1.2s ease-out both;
+}
+@keyframes clipboardRunFlashDark {
+  0%   { background: rgba(72, 193, 181, 0.00); box-shadow: 0 0 0 0 rgba(72, 193, 181, 0.00); }
+  18%  { background: rgba(72, 193, 181, 0.20); box-shadow: 0 0 0 2px rgba(72, 193, 181, 0.40); }
+  100% { background: rgba(72, 193, 181, 0.00); box-shadow: 0 0 0 0 rgba(72, 193, 181, 0.00); }
+}
+
+.clipboard-viewall {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.clipboard-run-leadicon {
+  color: var(--orange-500);
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+.clipboard-run-menu {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  border-radius: 6px;
+  color: rgba(39, 38, 53, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 140ms, color 140ms;
+}
+.clipboard-run-menu:hover { background: rgba(15, 18, 32, 0.08); color: var(--raisin-800); }
+.clipboard-run-body { flex: 1; min-width: 0; }
+.clipboard-run-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--raisin-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.clipboard-run-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--bc-muted);
+}
+.clipboard-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 100px;
+  font-weight: 600;
+}
+.clipboard-status.done {
+  background: rgba(72, 193, 181, 0.18);
+  color: #17514b;
+}
+.clipboard-status.working {
+  background: rgba(232, 70, 0, 0.10);
+  color: var(--orange-500);
+}
+.clipboard-status .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  animation: clipboardPulse 1.2s ease-in-out infinite;
+}
+@keyframes clipboardPulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+.clipboard-run-when { color: var(--bc-muted); }
+
+.clipboard-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 14px;
+  background: rgba(232, 70, 0, 0.04);
+  border: 1.5px dashed rgba(232, 70, 0, 0.30);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms;
+  text-align: center;
+}
+.clipboard-drop:hover, .clipboard-drop.drag {
+  background: rgba(232, 70, 0, 0.08);
+  border-color: var(--orange-500);
+}
+.clipboard-drop .mi { color: var(--orange-500); }
+.clipboard-drop-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--raisin-800);
+}
+.clipboard-drop-sub {
+  font-size: 11px;
+  color: var(--bc-muted);
+  line-height: 1.4;
+}
+
+.clipboard-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(15, 18, 32, 0.03);
+  border-radius: 6px;
+}
+.clipboard-file-icon { color: var(--orange-500); flex-shrink: 0; }
+.clipboard-file-body { flex: 1; min-width: 0; }
+.clipboard-file-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--raisin-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.clipboard-file-meta {
+  font-size: 10.5px;
+  color: var(--bc-muted);
+  margin-top: 1px;
+}
+.clipboard-files-list { gap: 4px; }
+
+/* Separator between the Skills/Runs block and the Files block. */
+.clipboard-divider {
+  height: 1px;
+  background: rgba(15, 18, 32, 0.10);
+  margin: 6px 0 4px;
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-divider { background: rgba(255, 255, 255, 0.10); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-file-icon { color: #FF8C3E; }
+
+/* File upload status badge — shared between the Project Files tab and
+   the Clipboard's recent files list so the status vocabulary is
+   consistent everywhere. */
+.file-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.file-status .mi { font-size: 12px !important; }
+.file-status-uploaded {
+  background: rgba(72, 193, 181, 0.18);
+  color: #17514b;
+}
+.file-status-processing {
+  background: rgba(232, 70, 0, 0.10);
+  color: var(--orange-500);
+}
+.file-status-processing .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: fileStatusPulse 1.2s ease-in-out infinite;
+}
+@keyframes fileStatusPulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50%      { opacity: 1; transform: scale(1.10); }
+}
+.file-status-failed {
+  background: rgba(181, 54, 54, 0.10);
+  color: #B53636;
+}
+[data-theme="dark"] .file-status-uploaded { background: rgba(72, 193, 181, 0.18); color: var(--tiffany-400); }
+[data-theme="dark"] .file-status-processing { background: rgba(255, 140, 62, 0.18); color: #FF8C3E; }
+[data-theme="dark"] .file-status-failed { background: rgba(255, 90, 90, 0.18); color: #FF8A8A; }
+
+.clipboard-empty {
+  margin: 24px auto;
+  max-width: 240px;
+  text-align: center;
+  color: var(--bc-muted);
+}
+.clipboard-empty .mi { color: rgba(39, 38, 53, 0.40); }
+.clipboard-empty-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--raisin-800);
+  margin: 8px 0 6px;
+}
+.clipboard-empty p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+.clipboard-empty-sm {
+  font-size: 12px;
+  color: var(--bc-muted);
+  padding: 8px 2px;
+}
+
+/* Dark theme — the AI panel renders dark in BOTH dark and hybrid modes
+   (see .ai-panel rule below at :is(dark,hybrid)), so the Clipboard inside
+   it has to match for both. Using one combined selector keeps the
+   surfaces and text in sync with whichever dark-leaning theme is active. */
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-context {
+  background: rgba(255, 140, 62, 0.08);
+  border-color: rgba(255, 140, 62, 0.30);
+  color: #fff;
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-context .mi { color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-section-title { color: rgba(255, 255, 255, 0.78); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-section-title .mi { color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-section-count { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.70); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-subhead { color: rgba(255, 255, 255, 0.60); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run { background: transparent; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run.is-clickable:hover { background: rgba(255, 255, 255, 0.05); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-leadicon { color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-menu { color: rgba(255, 255, 255, 0.45); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-menu:hover { background: rgba(255, 255, 255, 0.10); color: #fff; }
+
+/* Skill tile dark variants — each accent paints a subtle tinted surface
+   so the colored panel reads at a glance against the dark panel. The
+   chevron stays muted unless hovered. */
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-name { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-icon { color: rgba(255, 255, 255, 0.85); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-arrow { color: rgba(255, 255, 255, 0.35); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile:hover .clipboard-skill-arrow { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="orange"] {
+  background: rgba(255, 140, 62, 0.12);
+  border-color: rgba(255, 140, 62, 0.22);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="orange"]:hover {
+  background: rgba(255, 140, 62, 0.18);
+  border-color: rgba(255, 140, 62, 0.40);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="orange"] .clipboard-skill-icon { color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="tiffany"] {
+  background: rgba(72, 193, 181, 0.12);
+  border-color: rgba(72, 193, 181, 0.22);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="tiffany"]:hover {
+  background: rgba(72, 193, 181, 0.18);
+  border-color: rgba(72, 193, 181, 0.40);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="tiffany"] .clipboard-skill-icon { color: var(--tiffany-400); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="indigo"] {
+  background: rgba(125, 118, 255, 0.14);
+  border-color: rgba(125, 118, 255, 0.24);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="indigo"]:hover {
+  background: rgba(125, 118, 255, 0.22);
+  border-color: rgba(125, 118, 255, 0.45);
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-skill-tile[data-accent="indigo"] .clipboard-skill-icon { color: #A8A3FF; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-name { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-meta,
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-run-when { color: rgba(255, 255, 255, 0.60); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-status.done { background: rgba(72, 193, 181, 0.20); color: var(--tiffany-400); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-status.working { background: rgba(255, 140, 62, 0.18); color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-drop { background: rgba(255, 140, 62, 0.08); border-color: rgba(255, 140, 62, 0.40); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-drop:hover,
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-drop.drag { background: rgba(255, 140, 62, 0.16); border-color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-drop .mi { color: #FF8C3E; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-drop-title { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-drop-sub { color: rgba(255, 255, 255, 0.60); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-file { background: rgba(255, 255, 255, 0.06); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-file-name { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-file-meta { color: rgba(255, 255, 255, 0.60); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-empty { color: rgba(255, 255, 255, 0.65); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-empty .mi { color: rgba(255, 255, 255, 0.40); }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-empty-title { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .clipboard-empty-sm { color: rgba(255, 255, 255, 0.60); }
 .ai-panel-head .ai-mascot {
   width: 40px; height: 40px; border-radius: 12px;
   background: var(--gradient-ai);
@@ -4877,6 +6818,49 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   text-align: left;
 }
 .settings-side-item:hover { background: rgba(39,38,53,0.04); }
+
+/* Settings — Division formatting card picker */
+.settings-format-card {
+  text-align: left;
+  background: #fff;
+  border: 1px solid rgba(15, 18, 32, 0.10);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms, box-shadow 140ms;
+}
+.settings-format-card:hover { border-color: rgba(232, 70, 0, 0.40); }
+.settings-format-card.is-active {
+  border-color: var(--orange-500);
+  background: rgba(232, 70, 0, 0.05);
+  box-shadow: 0 0 0 3px rgba(232, 70, 0, 0.12);
+}
+.settings-format-card-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.settings-format-card-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--raisin-800);
+}
+.settings-format-card .mi { color: rgba(39, 38, 53, 0.35); }
+.settings-format-card.is-active .mi { color: var(--orange-500); }
+.settings-format-card-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--bc-muted);
+}
+[data-theme="dark"] .settings-format-card { background: #23222e; border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .settings-format-card:hover { border-color: rgba(255,140,62,0.45); }
+[data-theme="dark"] .settings-format-card.is-active { background: rgba(255,140,62,0.10); border-color: #FF8C3E; box-shadow: 0 0 0 3px rgba(255,140,62,0.18); }
+[data-theme="dark"] .settings-format-card-name { color: #fff; }
+[data-theme="dark"] .settings-format-card .mi { color: rgba(255,255,255,0.35); }
+[data-theme="dark"] .settings-format-card.is-active .mi { color: #FF8C3E; }
 .settings-side-item.is-active {
   background: rgba(232,70,0,0.08);
   color: var(--orange-500);
@@ -5640,6 +7624,105 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
 /* ============================================================
    BID LEVEL ANALYSIS — Pre-run configuration modal
    ============================================================ */
+/* ============================================================
+   ROM PRE-RUN MODAL — division picker
+   ============================================================
+   3-column checkbox grid of CSI divisions, with select-all / clear-all
+   shortcuts in the meta bar and a count + runtime estimate that updates
+   live. Mirrors the visual weight of the Bid Leveling pre-run modal. */
+.rom-run-modal { max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; }
+.rom-run-meta {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 12px 28px;
+  border-top: 1px solid rgba(39,38,53,0.06);
+  border-bottom: 1px solid rgba(39,38,53,0.06);
+  background: #FAFAF7;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--raisin-800);
+}
+.rom-run-meta-spacer { flex: 1; }
+.rom-run-meta-actions { display: flex; gap: 4px; }
+.rom-run-meta-actions .btn-ghost { padding: 6px 10px; font-size: 12px; }
+.rom-run-meta-actions .btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.rom-run-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 18px 28px;
+  overflow-y: auto;
+}
+.rom-run-div {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 18, 32, 0.10);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms;
+}
+.rom-run-div:hover { border-color: rgba(232, 70, 0, 0.45); }
+.rom-run-div.is-on { border-color: var(--orange-500); background: rgba(232, 70, 0, 0.04); }
+.rom-run-div input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.rom-run-div-body { flex: 1; min-width: 0; }
+.rom-run-div-h {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bc-muted);
+  margin-bottom: 4px;
+}
+.rom-run-div-code { color: var(--orange-500); }
+.rom-run-div-name {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--raisin-800);
+  line-height: 1.3;
+}
+.rom-run-div-meta {
+  font-size: 11px;
+  color: var(--bc-muted);
+  margin-top: 3px;
+}
+.rom-run-div-check {
+  color: rgba(39, 38, 53, 0.30);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.rom-run-div.is-on .rom-run-div-check { color: var(--orange-500); }
+
+[data-theme="dark"] .rom-run-meta { background: #1c1b25; border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .rom-run-div { background: #23222e; border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .rom-run-div:hover { border-color: rgba(255,140,62,0.45); }
+[data-theme="dark"] .rom-run-div.is-on { background: rgba(255,140,62,0.10); border-color: #FF8C3E; }
+[data-theme="dark"] .rom-run-div-name { color: #fff; }
+[data-theme="dark"] .rom-run-div-check { color: rgba(255,255,255,0.30); }
+[data-theme="dark"] .rom-run-div.is-on .rom-run-div-check { color: #FF8C3E; }
+@media (max-width: 720px) {
+  .rom-run-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.rom-run-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 28px;
+  border-top: 1px solid rgba(39, 38, 53, 0.06);
+  background: #fff;
+}
+[data-theme="dark"] .rom-run-foot { background: #23222e; border-top-color: rgba(255, 255, 255, 0.06); }
+
 .bid-run-modal { max-width: 760px; max-height: 88vh; display: flex; flex-direction: column; }
 
 .bid-run-toolbar {
@@ -5729,9 +7812,58 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   display: flex; align-items: center; gap: 12px;
   padding: 8px 16px 8px 40px; /* indent past the checkbox visually */
   border-bottom: 1px solid rgba(39,38,53,0.04);
+  transition: opacity 140ms, background 140ms;
 }
 .bid-run-file:last-child { border-bottom: none; }
 .bid-run-file .files-ftype-icon { width: 28px; height: 28px; }
+.bid-run-file[draggable="true"] { cursor: grab; }
+.bid-run-file:active[draggable="true"] { cursor: grabbing; }
+.bid-run-file.is-dragging { opacity: 0.45; background: rgba(232, 70, 0, 0.04); }
+
+/* Drag handle — six-dot grip icon (Material drag_indicator) on the right
+   side of each file row, replacing the old per-row "Trade" select. */
+.bid-run-file-handle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  color: rgba(39, 38, 53, 0.35);
+  cursor: grab;
+  transition: color 140ms, background 140ms;
+}
+.bid-run-file-handle:hover { color: var(--orange-500); background: rgba(232, 70, 0, 0.06); }
+.bid-run-file-handle:active { cursor: grabbing; }
+[data-theme="dark"] .bid-run-file-handle { color: rgba(255, 255, 255, 0.35); }
+[data-theme="dark"] .bid-run-file-handle:hover { color: #FF8C3E; background: rgba(255, 140, 62, 0.10); }
+
+/* Drop-target highlight on the trade card while a file is being dragged
+   over it. Orange focus ring + a small inline hint at the bottom. */
+.bid-run-trade.is-drop-target {
+  border-color: var(--orange-500);
+  box-shadow: 0 0 0 3px rgba(232, 70, 0, 0.18);
+  background: rgba(232, 70, 0, 0.04);
+}
+.bid-run-drop-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px 10px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--orange-500);
+  border-top: 1px dashed rgba(232, 70, 0, 0.30);
+}
+.bid-run-drop-hint b { color: var(--raisin-800); font-weight: 700; }
+[data-theme="dark"] .bid-run-trade.is-drop-target {
+  border-color: #FF8C3E;
+  background: rgba(255, 140, 62, 0.08);
+  box-shadow: 0 0 0 3px rgba(255, 140, 62, 0.22);
+}
+[data-theme="dark"] .bid-run-drop-hint { color: #FF8C3E; border-top-color: rgba(255, 140, 62, 0.35); }
+[data-theme="dark"] .bid-run-drop-hint b { color: #fff; }
 
 .bid-run-file-meta { flex: 1; min-width: 0; }
 .bid-run-file-name {
@@ -5958,6 +8090,41 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
 }
 .fux-option.is-selected > .mi,
 .fux-option.is-selected .fux-option-check { color: var(--orange-500); }
+
+/* "Other" text input shown beneath the Division Format options on q5
+   when the user picks Other. Matches the FUX option card surface so it
+   reads as a sibling input rather than a foreign control. */
+.fux-q-other {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+  animation: fuxOtherIn 220ms ease-out both;
+}
+@keyframes fuxOtherIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fux-q-other-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: rgba(39, 38, 53, 0.55);
+}
+.fux-q-other-input {
+  padding: 12px 14px;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(232, 70, 0, 0.45);
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--raisin-800);
+  outline: none;
+  transition: border-color 140ms, box-shadow 140ms;
+}
+.fux-q-other-input::placeholder { color: rgba(39, 38, 53, 0.45); }
+.fux-q-other-input:focus { border-color: var(--orange-500); box-shadow: 0 0 0 3px rgba(232, 70, 0, 0.15); }
 
 .fux-q-foot {
   display: flex; justify-content: flex-end;

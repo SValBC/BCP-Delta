@@ -120,7 +120,7 @@ function SkillRunScreen({ project, ctx, setCtx, onAskAI, onRunSkill, projectSwit
 // =====================================================
 // ESTIMATION REPORT — HERO, with edit mode
 // =====================================================
-function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawing, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
   const data = window.BC_DATA.estimation;
   const [edits, setEdits] = uS3({}); // line item id -> { unitCost, qty, name }
   const [editingCell, setEditingCell] = uS3(null); // {id, field}
@@ -244,6 +244,11 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
   return (
     <div className="col-detail">
       <Taskbar
+        projectId={project.id}
+        hasPending={!!(hasPendingEdits && (hasPendingEdits[project.id] || []).length)}
+        onPushToMaster={onPushToMaster ? () => onPushToMaster(project.id) : undefined}
+        onOpenNotifications={onOpenNotifications ? () => onOpenNotifications(project.id) : undefined}
+        notificationCount={notificationCount}
         crumbs={[
           { label: "Projects" }, { useSwitcher: true }, { label: "Rough Order of Magnitude (ROM) Estimate", bold: true }
         ]}
@@ -309,7 +314,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
           </div>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {runStatus === "accepted" && (
-              <span className="badge b-done" style={{ background: "rgba(0,150,80,0.10)", color: "#0a9050" }}>
+              <span className="badge b-done">
                 <Icon name="check_circle" size={12} style={{ opacity: 0.85 }} />Accepted
               </span>
             )}
@@ -1027,7 +1032,7 @@ function Donut({ items, total }) {
 // =====================================================
 // RFC — Kanban-style by priority + edit category
 // =====================================================
-function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
   // Seed each issue with a resolved flag — defaults to true for "No clarification needed".
   const initial = window.BC_DATA.rfc.issues.map(i => ({
     ...i,
@@ -1074,6 +1079,11 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
   return (
     <div className="col-detail">
       <Taskbar
+        projectId={project.id}
+        hasPending={!!(hasPendingEdits && (hasPendingEdits[project.id] || []).length)}
+        onPushToMaster={onPushToMaster ? () => onPushToMaster(project.id) : undefined}
+        onOpenNotifications={onOpenNotifications ? () => onOpenNotifications(project.id) : undefined}
+        notificationCount={notificationCount}
         crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Clarifications & Potential RFIs", bold: true }]}
         actions={
           <>
@@ -1372,7 +1382,7 @@ function TradeDropdown({ trades, activeTradeId, setActiveTradeId, tradeOpen, set
   );
 }
 
-function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, editMode, setEditMode, edits: globalEdits, recordEdit, revertEdits, editCount, onPushGlobal, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
   const data = window.BC_DATA.bidLeveling;
   const trades = data.trades || [];
   const [activeTradeId, setActiveTradeId] = uS3(trades[0] && trades[0].id);
@@ -1418,6 +1428,11 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
   return (
     <div className="col-detail">
       <Taskbar
+        projectId={project.id}
+        hasPending={!!(hasPendingEdits && (hasPendingEdits[project.id] || []).length)}
+        onPushToMaster={onPushToMaster ? () => onPushToMaster(project.id) : undefined}
+        onOpenNotifications={onOpenNotifications ? () => onOpenNotifications(project.id) : undefined}
+        notificationCount={notificationCount}
         crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]}
         actions={<><PinButton pinId={"skill:" + project.id + "/bid"} pinnedSet={pinnedSet} onPin={onPin} /><ShareDropdown options={[
           { label: "Email", icon: "email", onClick: () => {} },
@@ -1851,4 +1866,345 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
   );
 }
 
-Object.assign(window, { SkillRunScreen, EstimationScreen, RFCScreen, BidLevelingScreen });
+// =====================================================
+// TRADE SCOPING SCREEN
+// Compiles every trade + scope Cody extracted from the project documents.
+// Users can multi-select trades and Download PDF / Invite to Bid / Copy
+// text — the core "get bids out the door" workflow.
+// =====================================================
+function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
+  const data = (window.BC_DATA && window.BC_DATA.tradeScoping) || { trades: [] };
+  const allTrades = data.trades || [];
+
+  const [selected, setSelected] = uS3(new Set());
+  const [invitedIds, setInvitedIds] = uS3(new Set());
+  const [expandedIds, setExpandedIds] = uS3(new Set());
+  const [flash, setFlash] = uS3(null); // { kind: "invite"|"copy"|"pdf", text }
+  const flashTimerRef = uR3(null);
+  const [confFilter, setConfFilter] = uS3("all");
+  const [query, setQuery] = uS3("");
+
+  const showFlash = (kind, text) => {
+    setFlash({ kind, text });
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setFlash(null), 2600);
+  };
+  uE3(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current); }, []);
+
+  const visible = uM3(() => {
+    const q = query.trim().toLowerCase();
+    return allTrades.filter(t => {
+      if (confFilter !== "all" && t.confidence !== confFilter) return false;
+      if (q) {
+        const blob = `${t.division} ${t.name} ${t.csi} ${(t.highlights || []).join(" ")} ${t.scope || ""}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [allTrades, confFilter, query]);
+
+  const toggleSelect = (id) => setSelected(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const toggleExpand = (id) => setExpandedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const selectAllVisible = () => setSelected(new Set(visible.map(t => t.id)));
+  const clearSelection = () => setSelected(new Set());
+  const allVisibleSelected = visible.length > 0 && visible.every(t => selected.has(t.id));
+
+  const selectedTrades = allTrades.filter(t => selected.has(t.id));
+
+  const formatSelectedAsText = () => selectedTrades.map(t => {
+    const lines = [];
+    lines.push(`Division ${t.division} · ${t.name}`);
+    lines.push(`CSI ${t.csi}`);
+    lines.push("");
+    lines.push("SCOPE:");
+    lines.push(t.scope || "");
+    if (t.highlights && t.highlights.length) {
+      lines.push("");
+      lines.push("KEY ITEMS:");
+      for (const h of t.highlights) lines.push("• " + h);
+    }
+    if (t.sourceRefs && t.sourceRefs.length) {
+      lines.push("");
+      lines.push("SOURCES: " + t.sourceRefs.join(", "));
+    }
+    return lines.join("\n");
+  }).join("\n\n---\n\n");
+
+  const handleCopy = () => {
+    const text = formatSelectedAsText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => showFlash("copy", `Copied ${selected.size} trade scope${selected.size === 1 ? "" : "s"} to clipboard`),
+        () => showFlash("copy", "Couldn't copy — clipboard access blocked")
+      );
+    } else {
+      showFlash("copy", `Copied ${selected.size} trade scope${selected.size === 1 ? "" : "s"} to clipboard`);
+    }
+  };
+  const handleInvite = () => {
+    setInvitedIds(prev => {
+      const next = new Set(prev);
+      for (const id of selected) next.add(id);
+      return next;
+    });
+    showFlash("invite", `${selected.size} trade${selected.size === 1 ? "" : "s"} invited to bid`);
+    clearSelection();
+  };
+  const handleDownloadPDF = () => {
+    showFlash("pdf", `Preparing PDF for ${selected.size} trade${selected.size === 1 ? "" : "s"}…`);
+  };
+
+  const confBadge = (level) => {
+    if (level === "high") return <span className="badge b-done" style={{ fontSize: 9 }}><Icon name="check" size={10} />High</span>;
+    if (level === "med")  return <span className="badge b-warn" style={{ fontSize: 9 }}>Med</span>;
+    if (level === "low")  return <span className="badge" style={{ fontSize: 9, background: "rgba(181, 54, 54, 0.10)", color: "#B53636" }}>Low</span>;
+    return <span className="badge" style={{ fontSize: 9 }}>{level}</span>;
+  };
+
+  if (isLoading) return (
+    <div className="col-detail">
+      <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Trade Scoping", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
+      <SkillLoadingShell projectName={project.name} title="Trade Scoping" progress={loadProgress} onStop={onStop} />
+    </div>
+  );
+
+  const invitedCount = invitedIds.size;
+  const pendingCount = allTrades.length - invitedCount;
+  const highCount = allTrades.filter(t => t.confidence === "high").length;
+  const highPct = allTrades.length ? Math.round((highCount / allTrades.length) * 100) : 0;
+
+  return (
+    <div className="col-detail">
+      <Taskbar
+        projectId={project.id}
+        hasPending={!!(hasPendingEdits && (hasPendingEdits[project.id] || []).length)}
+        onPushToMaster={onPushToMaster ? () => onPushToMaster(project.id) : undefined}
+        onOpenNotifications={onOpenNotifications ? () => onOpenNotifications(project.id) : undefined}
+        notificationCount={notificationCount}
+        crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Trade Scoping", bold: true }]}
+        actions={
+          <>
+            <PinButton pinId={"skill:" + project.id + "/trades"} pinnedSet={pinnedSet} onPin={onPin} />
+            <ShareDropdown options={[
+              { label: "Email", icon: "email", onClick: () => {} },
+              { label: "Download as PDF", icon: "picture_as_pdf", onClick: () => {} },
+            ]} />
+            <OverflowMenu options={[
+              { label: "Build report", icon: "add_chart", onClick: () => {} },
+              { label: "Export CSV", icon: "table_view", onClick: () => {} },
+            ]} />
+          </>
+        }
+        onAskAI={onAskAI}
+        switcher={projectSwitcher}
+      />
+      <div className="canvas">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4, gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 4 }}>{project.name}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <h2 className="page-h1" style={{ marginBottom: 0 }}>Trade Scoping</h2>
+              {onRerun && <button className="btn rerun-inline" onClick={onRerun}><Icon name="refresh" size={14} />Re-run skill</button>}
+            </div>
+            <p className="page-sub" style={{ marginTop: 4 }}>
+              {data.version} · Run finished {data.finishedAt} in {data.duration} · {data.scopeItemsTotal} scope items across {data.filesAnalyzed} indexed documents
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <span className="badge b-done"><Icon name="verified" size={12} style={{ opacity: 0.7 }} />{Math.round((data.confidence || 0) * 100)}% confidence</span>
+          </div>
+        </div>
+
+        {/* Cody insight */}
+        <div style={{ marginTop: 20 }}>
+          <CodyMessage
+            eyebrow="Cody's takeaway"
+            title={`${allTrades.length} trades identified — ${highCount} ready to invite`}
+            pillLabel="Walk me through it"
+            onPill={onAskAI}>
+            <p>
+              I pulled every trade referenced across the {data.filesAnalyzed} indexed documents and drafted a scope for each — <b>{highCount} are high-confidence</b> (ready to invite as-is), the rest need a quick sanity check before you send them out.
+            </p>
+            <p>Select the trades you want to move on and use the toolbar to <b>download a PDF packet</b>, <b>invite the subs to bid</b>, or <b>copy the scope text</b> straight into your outreach.</p>
+          </CodyMessage>
+        </div>
+
+        {/* KPI strip */}
+        <div className="summary-row" style={{ marginTop: 20 }}>
+          <div className="kpi-strip" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+            <div className="kpi">
+              <Icon className="bg" name="groups" />
+              <div className="label">Trades identified</div>
+              <div className="value">{allTrades.length}</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>Across {data.filesAnalyzed} documents</div>
+            </div>
+            <div className="kpi kpi-accent" style={{ "--kpi-accent": "#48C1B5" }}>
+              <Icon className="bg" name="verified" />
+              <div className="label">High confidence</div>
+              <div className="value">{highCount}</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>{highPct}% of all trades</div>
+            </div>
+            <div className="kpi">
+              <Icon className="bg" name="mark_email_read" />
+              <div className="label">Invited to bid</div>
+              <div className="value">{invitedCount}</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>{pendingCount} pending</div>
+            </div>
+            <div className="kpi kpi-accent" style={{ "--kpi-accent": "#E84600" }}>
+              <Icon className="bg" name="playlist_add_check" />
+              <div className="label">Scope items</div>
+              <div className="value">{data.scopeItemsTotal}</div>
+              <div className="delta" style={{ color: "var(--bc-muted)" }}>Line items in the drafted scopes</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+          <div className="chip-group">
+            <button className={"chip " + (confFilter === "all" ? "active" : "")} onClick={() => setConfFilter("all")}>All confidence<span className="chip-count">{allTrades.length}</span></button>
+            <button className={"chip " + (confFilter === "high" ? "active" : "")} onClick={() => setConfFilter("high")}>High<span className="chip-count">{allTrades.filter(t => t.confidence === "high").length}</span></button>
+            <button className={"chip " + (confFilter === "med" ? "active" : "")} onClick={() => setConfFilter("med")}>Med<span className="chip-count">{allTrades.filter(t => t.confidence === "med").length}</span></button>
+            <button className={"chip " + (confFilter === "low" ? "active" : "")} onClick={() => setConfFilter("low")}>Low<span className="chip-count">{allTrades.filter(t => t.confidence === "low").length}</span></button>
+          </div>
+          <div className="takeoff-search">
+            <Icon name="search" size={14} />
+            <input type="text" placeholder="Search trades or scope text…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          </div>
+        </div>
+
+        {/* Bulk action bar — sticky feel via elevation, shows count + actions when trades selected */}
+        {selected.size > 0 && (
+          <div className="trade-scope-actionbar">
+            <div className="trade-scope-actionbar-count">
+              <Icon name="check_circle" size={16} />
+              <b>{selected.size}</b> trade{selected.size === 1 ? "" : "s"} selected
+              <button type="button" className="btn-ghost trade-scope-clear" onClick={clearSelection}>Clear</button>
+            </div>
+            <div className="trade-scope-actionbar-actions">
+              <button className="btn" onClick={handleDownloadPDF}>
+                <Icon name="picture_as_pdf" size={14} />Download as PDF
+              </button>
+              <button className="btn" onClick={handleCopy}>
+                <Icon name="content_copy" size={14} />Copy text
+              </button>
+              <button className="btn-primary" onClick={handleInvite}>
+                <Icon name="mark_email_read" size={14} />Invite to bid
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Flash banner */}
+        {flash && (
+          <div className={"trade-scope-flash trade-scope-flash-" + flash.kind}>
+            <Icon name={flash.kind === "copy" ? "content_copy" : flash.kind === "invite" ? "mark_email_read" : "picture_as_pdf"} size={14} />
+            {flash.text}
+          </div>
+        )}
+
+        {/* Trade table */}
+        <div className="card no-pad" style={{ marginTop: 12 }}>
+          <table className="bc-table trade-scope-table">
+            <thead>
+              <tr>
+                <th style={{ width: 42 }}>
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={() => allVisibleSelected ? clearSelection() : selectAllVisible()}
+                    aria-label="Select all visible trades"
+                  />
+                </th>
+                <th style={{ width: 30 }}></th>
+                <th>Trade</th>
+                <th>Scope highlights</th>
+                <th className="num">Suggested subs</th>
+                <th>Confidence</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map(t => {
+                const isSelected = selected.has(t.id);
+                const isOpen = expandedIds.has(t.id);
+                const isInvited = invitedIds.has(t.id);
+                return (
+                  <React.Fragment key={t.id}>
+                    <tr
+                      className={"trade-scope-row " + (isSelected ? "is-selected " : "") + (isOpen ? "is-open" : "")}
+                      onClick={() => toggleExpand(t.id)}
+                      style={{ cursor: "pointer" }}>
+                      <td className="center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(t.id)}
+                          aria-label={`Select ${t.name}`}
+                        />
+                      </td>
+                      <td className="center">
+                        <Icon name={isOpen ? "expand_more" : "chevron_right"} size={16} style={{ color: "var(--bc-muted)" }} />
+                      </td>
+                      <td>
+                        <div className="item-title">{t.name}</div>
+                        <div style={{ fontSize: 11, color: "var(--bc-muted)", marginTop: 2 }}>Div {t.division} · CSI {t.csi}</div>
+                      </td>
+                      <td>
+                        <ul className="trade-scope-highlights">
+                          {(t.highlights || []).slice(0, 3).map((h, i) => (<li key={i}>{h}</li>))}
+                        </ul>
+                      </td>
+                      <td className="num"><b>{t.subs}</b><span style={{ fontSize: 11, color: "var(--bc-muted)", marginLeft: 4 }}>subs</span></td>
+                      <td>{confBadge(t.confidence)}<span style={{ fontSize: 11, color: "var(--bc-muted)", marginLeft: 6 }}>{Math.round(t.confidenceScore * 100)}%</span></td>
+                      <td>
+                        {isInvited
+                          ? <span className="badge b-done" style={{ fontSize: 9 }}><Icon name="mark_email_read" size={10} />Invited</span>
+                          : <span className="badge" style={{ fontSize: 9, background: "rgba(15, 18, 32, 0.06)", color: "var(--bc-muted)" }}>Not sent</span>}
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="trade-scope-detail-row">
+                        <td></td>
+                        <td></td>
+                        <td colSpan={5}>
+                          <div className="trade-scope-detail">
+                            <div className="trade-scope-detail-label">Full drafted scope</div>
+                            <p className="trade-scope-detail-text">{t.scope}</p>
+                            {t.sourceRefs && t.sourceRefs.length > 0 && (
+                              <div className="trade-scope-detail-refs">
+                                <span className="trade-scope-detail-label">Source references</span>
+                                <div className="trade-scope-refs-list">
+                                  {t.sourceRefs.map(ref => (
+                                    <span key={ref} className="trade-scope-ref">{ref}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+              {visible.length === 0 && (
+                <tr><td colSpan={7} style={{ padding: 32, textAlign: "center", color: "var(--bc-muted)" }}>No trades match this filter.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { SkillRunScreen, EstimationScreen, RFCScreen, BidLevelingScreen, TradeScopingScreen });

@@ -42,7 +42,9 @@
       "theme": "hybrid",
       "density": "regular",
       "aiPlacement": "floating",
-      "homeAccent": "raisin"
+      "homeAccent": "raisin",
+      "divisionFormat": "masterformat",
+      "divisionFormatOther": ""
     }/*EDITMODE-END*/;
 
     function App() {
@@ -61,7 +63,7 @@
       const [tabs, setTabs] = useState([initialTab]);
       const [activeTabId, setActiveTabId] = useState("t-home");
       const [tabHistory, setTabHistory] = useState([]); // recently visited stack
-      const [aiOpen, setAiOpen] = useState(false);
+      const [aiOpen, setAiOpen] = useState(true);
       const [navCollapsed, setNavCollapsed] = useState(false);
       const toggleNavCollapsed = () => setNavCollapsed(v => !v);
       // Tracks the panel state before entering a Drawing tab so we can restore
@@ -83,7 +85,18 @@
       // slide back to their normal widths using the same panel-shift easing
       // as the nav/AI collapse-expand transition.
       const [fuxPanelsHidden, setFuxPanelsHidden] = useState(freshMode);
-      const onFuxFullyComplete = () => setFuxPanelsHidden(false);
+      const onFuxFullyComplete = (answers) => {
+        setFuxPanelsHidden(false);
+        // Persist the Division formatting choice the user picked in the FUX
+        // so the rest of the platform (Takeoffs, estimates, reports) groups
+        // and labels by that format from this session onward.
+        if (answers && answers.divisionFormat) {
+          setTweak("divisionFormat", answers.divisionFormat);
+          if (answers.divisionFormat === "other" && answers.divisionFormatOther) {
+            setTweak("divisionFormatOther", answers.divisionFormatOther);
+          }
+        }
+      };
       const [pinned, setPinned] = useState(new Set(freshMode ? [] : [
         "rec-wellness",
         "rivergrove",
@@ -140,6 +153,10 @@
             setSkillRuns(prev => { const n = { ...prev }; delete n[key]; return n; });
             // Mark completion and trigger celebration animation
             setSkillCompletions(prev => ({ ...prev, [key]: { completedAt: Date.now(), justCompleted: true } }));
+            // Running a skill IS an edit event — the result is a draft
+            // until the user pushes it to Master.
+            const skillNames = { estimation: "ROM Estimate", rfc: "Clarifications & RFIs", bid: "Bid Level Analysis", trades: "Trade Scoping" };
+            triggerEditEvent(projectId, { kind: "skill_run", label: (skillNames[skillId] || "Skill") + " completed (draft)" });
             setTimeout(() => {
               setSkillCompletions(prev => prev[key] ? ({ ...prev, [key]: { ...prev[key], justCompleted: false } }) : prev);
             }, CELEBRATION_MS);
@@ -185,21 +202,99 @@
       const bidConfigByProject = data.bidConfig || {};
       const [showBidRunModal, setShowBidRunModal] = useState(false);
       const [bidRunProjectId, setBidRunProjectId] = useState(null);
-      const openBidRunModal = (projectId) => {
+      // When the Clipboard initiates a configurable skill run, it passes a
+      // confirm callback that should fire instead of the default canvas
+      // card animation. Stored in a ref to survive re-renders between
+      // modal open and confirm.
+      const skillConfirmRef = React.useRef(null);
+      const openBidRunModal = (projectId, onConfirmOverride) => {
         setBidRunProjectId(projectId);
+        skillConfirmRef.current = onConfirmOverride || null;
         setShowBidRunModal(true);
       };
       const confirmBidRun = ({ projectId, trades, assignments }) => {
-        // For the prototype: just close the modal and kick off the existing
-        // 7-second skill-run animation. In production this payload would
-        // travel with the skill run to scope the analysis to the chosen trades.
         setShowBidRunModal(false);
-        // Use a short timeout so the modal exit feels clean before the card
-        // animation begins.
+        const override = skillConfirmRef.current;
+        skillConfirmRef.current = null;
         setTimeout(() => {
-          startSkillRunCard(projectId, "bid");
+          if (override) override({ projectId, trades, assignments });
+          else startSkillRunCard(projectId, "bid");
         }, 80);
       };
+
+      // ROM pre-run modal — lets users de-select divisions they don't want
+      // estimated to keep the run fast and focused. Defaults to all-selected.
+      const [showRomRunModal, setShowRomRunModal] = useState(false);
+      const [romRunProjectId, setRomRunProjectId] = useState(null);
+      const openRomRunModal = (projectId, onConfirmOverride) => {
+        setRomRunProjectId(projectId);
+        skillConfirmRef.current = onConfirmOverride || null;
+        setShowRomRunModal(true);
+      };
+      const confirmRomRun = ({ projectId, divisions }) => {
+        setShowRomRunModal(false);
+        const override = skillConfirmRef.current;
+        skillConfirmRef.current = null;
+        setTimeout(() => {
+          if (override) override({ projectId, divisions });
+          else startSkillRunCard(projectId, "estimation");
+        }, 80);
+      };
+      // ============================================================
+      // MASTER APPROVAL WORKFLOW
+      // ============================================================
+      // hasPendingEdits: per-project map of open edit events. When true
+      // for a given project, the taskbar surfaces the "Push to Master"
+      // button on that project's screens. Wire triggerEditEvent from any
+      // interaction that constitutes an edit (skill run, upload, inline
+      // data change, revision, rate update).
+      const [hasPendingEdits, setHasPendingEdits] = useState({}); // { [projectId]: [changeDescriptor, ...] }
+      const triggerEditEvent = (projectId, change) => {
+        if (!projectId) return;
+        setHasPendingEdits(prev => ({
+          ...prev,
+          [projectId]: [...(prev[projectId] || []), change || { kind: "edit", label: "Edit event" }],
+        }));
+      };
+      const discardEditEvent = (projectId) => {
+        setHasPendingEdits(prev => { const n = { ...prev }; delete n[projectId]; return n; });
+      };
+
+      // Approval queue — seeded from BC_DATA.pendingApprovals; the
+      // "Push to Master" and admin approve/deny actions mutate this
+      // list. Sorted newest-first on render.
+      const [approvals, setApprovals] = useState(() => (data.pendingApprovals || []).slice());
+      const submitForApproval = (projectId, changes) => {
+        const id = "app-" + Date.now().toString(36);
+        const newEntry = {
+          id, projectId,
+          requestedBy: data.user && (data.user.id || "u-victor"),
+          requestedByName: data.user && data.user.name,
+          requestedAt: "Just now",
+          dateISO: new Date().toISOString(),
+          status: "pending",
+          summary: changes.length === 1 ? changes[0].label : (changes.length + " changes pending approval"),
+          changes,
+          __submittedByCurrentUser: true,
+        };
+        setApprovals(prev => [newEntry, ...prev]);
+        discardEditEvent(projectId);
+      };
+      const resolveApproval = (id, verdict, reason) => {
+        setApprovals(prev => prev.map(a => a.id === id
+          ? { ...a, status: verdict, resolvedBy: "u-victor", resolvedAt: "Just now", denyReason: verdict === "denied" ? (reason || "") : undefined }
+          : a));
+      };
+
+      // Push-to-Master modal state.
+      const [pushModal, setPushModal] = useState(null); // { projectId } | null
+      const openPushToMaster = (projectId) => setPushModal({ projectId });
+      const closePushToMaster = () => setPushModal(null);
+      // Project-notifications popover — the bell in the Taskbar toggles it.
+      const [activityPopover, setActivityPopover] = useState(null); // { projectId } | null
+      const openActivityPopover = (projectId) => setActivityPopover({ projectId });
+      const closeActivityPopover = () => setActivityPopover(null);
+
       const [pendingDelete, setPendingDelete] = useState(null); // { id, name, projectId, projectName, revisionName, ... }
       const requestDeleteFile = (file) => setPendingDelete(file);
       const confirmDeleteFile = (file) => {
@@ -300,10 +395,10 @@
 
       // ---- Setters used by NavRail (replace current tab if static, else create new) ----
       const goToScreen = (screenId) => {
-        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "files", "settings"].includes(screenId);
+        const isStaticScreen = ["home", "company", "projects", "skills", "reports", "labor", "files", "settings"].includes(screenId);
         if (!isStaticScreen) return;
-        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", files:"Files", settings:"Settings" };
-        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", files:"folder_copy", settings:"tune" };
+        const labels = { home:"Home", company:"Company", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", files:"Files", settings:"Settings" };
+        const icons  = { home:"home", company:"domain", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", files:"folder_copy", settings:"tune" };
         // Workspace nav items don't open as separate tabs — they replace
         // the content of the current active tab (unless that tab is a
         // project / skill-run / drawing, which we want to preserve).
@@ -334,10 +429,10 @@
 
       // Open a workspace screen in a brand-new tab (bypasses goToScreen's replace/switch logic)
       const openScreenInNewTab = (screenId) => {
-        const isStaticScreen = ["home", "projects", "skills", "reports", "labor", "files", "settings"].includes(screenId);
+        const isStaticScreen = ["home", "company", "projects", "skills", "reports", "labor", "files", "settings"].includes(screenId);
         if (!isStaticScreen) return;
-        const labels = { home:"Home", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", files:"Files", settings:"Settings" };
-        const icons  = { home:"home", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", files:"folder_copy", settings:"tune" };
+        const labels = { home:"Home", company:"Company", projects:"Projects", skills:"Skills", reports:"Reports", labor:"Labor rates", files:"Files", settings:"Settings" };
+        const icons  = { home:"home", company:"domain", projects:"folder_open", skills:"auto_awesome", reports:"assessment", labor:"engineering", files:"folder_copy", settings:"tune" };
         addTab({
           kind: "static",
           screen: screenId,
@@ -365,13 +460,14 @@
         const skillLabels = {
           estimation: "Rough Order of Magnitude (ROM) Estimate",
           rfc: "Clarifications & Potential RFIs",
-          bid: "Bid Level Analysis"
+          bid: "Bid Level Analysis",
+          trades: "Trade Scoping"
         };
         const tabLabels = { overview:"", files:": Files", skills:": Skills", reports:": Reports", schedule:": Schedule" };
         const label = skillLabels[tab] || (proj.name + (tabLabels[tab] || ""));
-        // Skill-result tabs (estimation / rfc / bid) carry the skill's own icon;
-        // everything else uses the project's folder icon.
-        const skillTabIcons = { estimation: "calculate", rfc: "rule", bid: "compare_arrows" };
+        // Skill-result tabs carry the skill's own icon; everything else uses
+        // the project's folder icon.
+        const skillTabIcons = { estimation: "calculate", rfc: "rule", bid: "compare_arrows", trades: "groups" };
         const tabIcon = skillTabIcons[tab] || (proj.icon || "folder_open");
         addTab({
           kind: "project",
@@ -466,7 +562,7 @@
           id: tabId,
           kind: "skill",
           screen: "skill-run",
-          ctx: { projectId: proj.id, skillId, tab: skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : "bid" },
+          ctx: { projectId: proj.id, skillId, tab: skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : skillId === "trade-scoping" ? "trades" : "bid" },
           label: skill.title + ": " + proj.name,
           subLabel: "Running…",
           icon: skill.icon || "auto_awesome",
@@ -481,8 +577,8 @@
         const tick = () => {
           p += 0.04 + Math.random() * 0.06;
           if (p >= 1) {
-            const subTab = skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : "bid";
-            const skillLabels = { estimation: "Rough Order of Magnitude (ROM) Estimate", rfc: "Clarifications & Potential RFIs", bid: "Bid Level Analysis" };
+            const subTab = skillId === "estimation" ? "estimation" : skillId === "rfc-issues" ? "rfc" : skillId === "trade-scoping" ? "trades" : "bid";
+            const skillLabels = { estimation: "Rough Order of Magnitude (ROM) Estimate", rfc: "Clarifications & Potential RFIs", bid: "Bid Level Analysis", trades: "Trade Scoping" };
             updateTab(tabId, { runProgress: 1, runStatus: "done", subLabel: "Done", screen: "project", kind: "project", ctx: { projectId: proj.id, tab: subTab }, label: skillLabels[subTab] });
             return;
           }
@@ -607,8 +703,9 @@
       else if (screen === "skills") detail = <SkillRunScreen project={projects[0]} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} />;
       else if (screen === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} />;
       else if (screen === "labor") detail = <LaborScreen ctx={ctx} onAskAI={onAskAI} />;
+      else if (screen === "company") detail = <CompanyScreen ctx={ctx} onAskAI={onAskAI} onOpenProject={openProject} projects={projects} approvals={approvals} onResolveApproval={resolveApproval} />;
       else if (screen === "files") detail = <WorkspaceFilesScreen ctx={ctx} onAskAI={onAskAI} projects={projects} filesByProject={filesByProject} onDeleteFile={requestDeleteFile} onCtxMenu={openCtxMenu} />;
-      else if (screen === "settings") detail = <SettingsScreen ctx={ctx} onAskAI={onAskAI} theme={t.theme} onToggleTheme={onToggleTheme} connections={connections} onAddConnection={onAddConnection} onToggleConnection={toggleConnection} />;
+      else if (screen === "settings") detail = <SettingsScreen ctx={ctx} onAskAI={onAskAI} theme={t.theme} onToggleTheme={onToggleTheme} connections={connections} onAddConnection={onAddConnection} onToggleConnection={toggleConnection} divisionFormat={t.divisionFormat || "masterformat"} divisionFormatOther={t.divisionFormatOther || ""} onSetDivisionFormat={(v) => setTweak("divisionFormat", v)} onSetDivisionFormatOther={(v) => setTweak("divisionFormatOther", v)} />;
       else if (screen === "project" || screen === "skill-run") {
         const p = activeProject || projects[0];
         const tab = ctx.tab || "overview";
@@ -621,12 +718,13 @@
             onOpenInTab={openProjectInNewTab}
           />
         );
-        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onOpenTabInNewTab={(t) => openProject(p.id, { tab: t, force: true })} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} onCtxMenu={openCtxMenu} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onOpenTabInNewTab={(t) => openProject(p.id, { tab: t, force: true })} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} onCtxMenu={openCtxMenu} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} divisionFormat={t.divisionFormat || "masterformat"} divisionFormatOther={t.divisionFormatOther || ""} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
         else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
         else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
-        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} onStop={() => stopSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
-        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "rfc")} onStop={() => stopSkillRunCard(p.id, "rfc")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
-        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "bid")} onStop={() => stopSkillRunCard(p.id, "bid")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} />;
+        else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} onStop={() => stopSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
+        else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "rfc")} onStop={() => stopSkillRunCard(p.id, "rfc")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
+        else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "bid")} onStop={() => stopSkillRunCard(p.id, "bid")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
+        else if (tab === "trades") detail = <TradeScopingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/trades"]} loadProgress={(skillRuns[p.id + "/trades"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "trades")} onStop={() => stopSkillRunCard(p.id, "trades")} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
         else if (tab === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} projectSwitcher={projectSwitcher} />;
         else if (tab === "schedule") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
       }
@@ -735,7 +833,10 @@
             projects={projects}
             pendingAction={pendingAction}
             onOpenProject={openProject}
+            onOpenProjectTabInNewTab={(id, tab) => openProject(id, { tab, force: true })}
             onStartSkillRun={startSkillRunCard}
+            onConfigureBid={openBidRunModal}
+            onConfigureRom={openRomRunModal}
           />
 
           <TweaksPanel>
@@ -746,6 +847,10 @@
             <TweakRadio label="Density" value={t.density}
                         options={[{value:"compact",label:"Compact"},{value:"regular",label:"Regular"},{value:"roomy",label:"Roomy"}]}
                         onChange={(v) => setTweak("density", v)} />
+            <TweakSection label="Permissions" />
+            <TweakRadio label="Demo role" value={data.user.role || "admin"}
+                        options={[{value:"admin",label:"Admin"},{value:"collaborator",label:"Collaborator"},{value:"viewer",label:"Viewer"}]}
+                        onChange={(v) => { data.user.role = v; setTweak("__roleBump", (Date.now())); }} />
           </TweaksPanel>
 
           <NewProjectModal
@@ -783,11 +888,44 @@
 
           <RunBidAnalysisModal
             open={showBidRunModal}
-            onClose={() => setShowBidRunModal(false)}
+            onClose={() => { setShowBidRunModal(false); skillConfirmRef.current = null; }}
             onConfirm={confirmBidRun}
             project={projects.find(p => p.id === bidRunProjectId)}
             bidConfig={bidRunProjectId ? bidConfigByProject[bidRunProjectId] : null}
           />
+
+          <RunRomEstimateModal
+            open={showRomRunModal}
+            onClose={() => { setShowRomRunModal(false); skillConfirmRef.current = null; }}
+            onConfirm={confirmRomRun}
+            project={projects.find(p => p.id === romRunProjectId)}
+          />
+
+          <PushToMasterModal
+            open={!!pushModal}
+            onClose={closePushToMaster}
+            project={pushModal ? projects.find(p => p.id === pushModal.projectId) : null}
+            changes={pushModal ? (hasPendingEdits[pushModal.projectId] || []) : []}
+            user={data.user}
+            onSubmit={(bundle) => {
+              if (pushModal) submitForApproval(pushModal.projectId, bundle);
+              closePushToMaster();
+            }}
+          />
+
+          {activityPopover && (
+            <div className="activity-popover-anchor">
+              <ProjectActivityPopover
+                open={!!activityPopover}
+                onClose={closeActivityPopover}
+                projectId={activityPopover.projectId}
+                projectName={(projects.find(p => p.id === activityPopover.projectId) || {}).name}
+                activity={(data.projectActivity && data.projectActivity[activityPopover.projectId]) || []}
+                approvals={approvals}
+                members={data.companyMembers || []}
+              />
+            </div>
+          )}
 
           <ContextMenu menu={ctxMenu} onClose={closeCtxMenu} />
 

@@ -1,37 +1,51 @@
 // BuildCrew.AI — Project Home + Files screens
-const { useState: uS2, useEffect: uE2, useRef: uR2 } = React;
+const { useState: uS2, useEffect: uE2, useRef: uR2, useMemo: uM2 } = React;
+
+// =====================================================
+// FILE UPLOAD STATUS BADGE — shared between the Project Files tab and
+// the Clipboard's recent files list so the language is consistent
+// everywhere. Three states: uploaded (final, green), processing
+// (indexing in progress, orange + pulsing dot), failed (red).
+// =====================================================
+function FileStatusBadge({ status }) {
+  if (status === "processing") {
+    return (
+      <span className="file-status file-status-processing">
+        <span className="dot" />Processing
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <span className="file-status file-status-failed">
+        <Icon name="error_outline" size={11} />Failed
+      </span>
+    );
+  }
+  return (
+    <span className="file-status file-status-uploaded">
+      <Icon name="check_circle" size={11} />Uploaded
+    </span>
+  );
+}
 
 // =====================================================
 // PROJECT HOME (workspace overview when project opened)
 // =====================================================
-function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, onCtxMenu, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal }) {
+function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, onCtxMenu, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal, divisionFormat, divisionFormatOther, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
   const drawings = window.BC_DATA.drawings || [];
-  // Project Home sub-tabs: overview | files | bids | labor
+  // Project Home sub-tabs: overview | files | takeoffs | drawings | labor | history
   const [homeTab, setHomeTab] = uS2("overview");
-  const [drawingSort, setDrawingSort] = uS2({ key: "plan", direction: "asc" });
-  const toggleDrawingSort = (key) => {
-    setDrawingSort(prev => prev.key === key
-      ? { key, direction: prev.direction === "desc" ? "asc" : "desc" }
-      : { key, direction: key === "plan" ? "asc" : "desc" }
-    );
-  };
-  const [drawingTrade, setDrawingTrade] = uS2("All");
-
-  // available trades, derived
-  const trades = ["All", ...Array.from(new Set(drawings.map((d) => d.trade)))];
-
-  const visibleDrawings = drawings.
-  filter((d) => drawingTrade === "All" || d.trade === drawingTrade).
-  slice().
-  sort((a, b) => {
-    const { key, direction } = drawingSort;
-    if (key === "views") return direction === "desc" ? b.views - a.views : a.views - b.views;
-    if (key === "recent") {
-      const ai = drawings.indexOf(a), bi = drawings.indexOf(b);
-      return direction === "desc" ? bi - ai : ai - bi;
-    }
-    return direction === "asc" ? a.planOrder - b.planOrder : b.planOrder - a.planOrder;
-  });
+  // Listen for cross-tree sub-tab requests (e.g. the Clipboard's "View
+  // all skill runs" link, which sits in the right panel and can't reach
+  // setHomeTab directly through React props).
+  uE2(() => {
+    const handler = (e) => {
+      if (e && e.detail && typeof e.detail === "string") setHomeTab(e.detail);
+    };
+    window.addEventListener("bc-set-home-tab", handler);
+    return () => window.removeEventListener("bc-set-home-tab", handler);
+  }, []);
 
   // Revisions — default to the latest (last in array). Per-project state, reset on project switch.
   const [revisions, setRevisions] = uS2(project.revisions || []);
@@ -86,6 +100,11 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
   return (
     <div className="col-detail">
       <Taskbar
+        projectId={project.id}
+        hasPending={!!(hasPendingEdits && (hasPendingEdits[project.id] || []).length)}
+        onPushToMaster={onPushToMaster ? () => onPushToMaster(project.id) : undefined}
+        onOpenNotifications={onOpenNotifications ? () => onOpenNotifications(project.id) : undefined}
+        notificationCount={notificationCount}
         crumbs={[
         { label: "Projects" },
         { useSwitcher: true, bold: true }]
@@ -210,11 +229,16 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           <button className={"report-tab " + (homeTab === "files" ? "active" : "")} onClick={() => setHomeTab("files")}>
             <Icon name="folder_copy" size={14} />Files
           </button>
-          <button className={"report-tab " + (homeTab === "bids" ? "active" : "")} onClick={() => setHomeTab("bids")}>
-            <Icon name="gavel" size={14} />Bid Tracker
+          <button className={"report-tab " + (homeTab === "takeoffs" ? "active" : "")} onClick={() => setHomeTab("takeoffs")}>
+            <Icon name="straighten" size={14} />Takeoffs
+            <span className="report-tab-count">{(((window.BC_DATA && window.BC_DATA.takeoffsByProject) || {})[project.id] || []).length}</span>
+          </button>
+          <button className={"report-tab " + (homeTab === "drawings" ? "active" : "")} onClick={() => setHomeTab("drawings")}>
+            <Icon name="architecture" size={14} />Drawings
+            <span className="report-tab-count">{((window.BC_DATA && window.BC_DATA.drawings) || []).length}</span>
           </button>
           <button className={"report-tab " + (homeTab === "labor" ? "active" : "")} onClick={() => setHomeTab("labor")}>
-            <Icon name="engineering" size={14} />Labor Rates
+            <Icon name="engineering" size={14} />Project Rates
           </button>
           <button className={"report-tab " + (homeTab === "history" ? "active" : "")} onClick={() => setHomeTab("history")}>
             <Icon name="history" size={14} />Skills History
@@ -223,7 +247,8 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         </div>
 
         {homeTab === "files" && <ProjectFilesTab project={project} onOpenDrawing={onOpenDrawing} />}
-        {homeTab === "bids" && <BidTrackerTab project={project} onOpenTab={onOpenTab} onOpenTabInNewTab={onOpenTabInNewTab} onCtxMenu={onCtxMenu} />}
+        {homeTab === "takeoffs" && <ProjectTakeoffsTab project={project} onOpenDrawing={onOpenDrawing} divisionFormat={divisionFormat} divisionFormatOther={divisionFormatOther} />}
+        {homeTab === "drawings" && <ProjectDrawingsTab project={project} onOpenDrawing={onOpenDrawing} />}
         {homeTab === "labor" && <ProjectLaborTab project={project} />}
         {homeTab === "history" && <ProjectHistoryTab project={project} onOpenTab={onOpenTab} />}
 
@@ -423,11 +448,12 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         })()}
 
         <div className="section-h" style={{ marginTop: 64 }}><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 16 }}>
           {[
           { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: null, success: false },
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
-          { id: "bid", title: "Bid Level Analysis", icon: "compare_arrows", desc: "Compares contractor bids fairly by standardizing submissions, identifying missing or inconsistent scope items, and adjusting costs so every bid reflects an equivalent scope, ensuring award decisions are based on true value, not just the lowest number.", lastRun: null, success: false }].
+          { id: "bid", title: "Bid Level Analysis", icon: "compare_arrows", desc: "Compares contractor bids fairly by standardizing submissions, identifying missing or inconsistent scope items, and adjusting costs so every bid reflects an equivalent scope, ensuring award decisions are based on true value, not just the lowest number.", lastRun: null, success: false },
+          { id: "trades", title: "Trade Scoping", icon: "groups", desc: "Compiles every trade referenced across your uploaded documentation and drafts a scope of work for each, ready to attach to bid invitations. Feeds directly into the trade-invite workflow so bids go out the door faster.", lastRun: null, success: false }].
           map((s) => {
             const runKey = project.id + "/" + s.id;
             const run = skillRuns && skillRuns[runKey];
@@ -524,152 +550,164 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           })}
         </div>
 
-        {/* RECENT SKILL RUNS — table only, no section heading. Scoped to this project. */}
+        {/* RECENT SKILL RUNS — approved runs only. Master-visible history
+            for this project; the runner's own drafts show up on their
+            Home screen instead. Capped at 5. */}
         {(() => {
           const allRuns = (window.BC_DATA && window.BC_DATA.runs) || [];
           const projectRuns = allRuns
             .filter(r => r.projectId === project.id)
+            .filter(r => r.status !== "done" || r.approved !== false)   // hide unapproved drafts on Project Home
             .slice()
             .sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || ""));
           if (projectRuns.length === 0) return null;
+          const visibleRuns = projectRuns.slice(0, 5);
+          const hiddenCount = projectRuns.length - visibleRuns.length;
           const skillIcon = (name) =>
             name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
             name === "Bid Level Analysis" ? "compare_arrows" :
             name === "Clarifications & Potential RFIs" ? "rule" :
+            name === "Trade Scoping" ? "groups" :
             "auto_awesome";
           const skillToTab = (name) =>
             name === "Rough Order of Magnitude (ROM) Estimate" ? "estimation" :
             name === "Bid Level Analysis" ? "bid" :
             name === "Clarifications & Potential RFIs" ? "rfc" :
+            name === "Trade Scoping" ? "trades" :
             null;
           return (
-            <div className="card no-pad" style={{ marginBottom: 28 }}>
-              <table className="bc-table">
-                <thead>
-                  <tr>
-                    <th>Skill</th>
-                    <th>Status</th>
-                    <th>When</th>
-                    <th>Duration</th>
-                    <th className="num">Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {projectRuns.map(r => (
-                    <tr key={r.id}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => {
-                          const tab = r.status === "done" ? skillToTab(r.skill) : null;
-                          if (tab && onOpenTab) onOpenTab(tab);
-                        }}>
-                      <td>
-                        <div className="item-title" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} />
-                          </div>
-                          {r.skill}
-                        </div>
-                      </td>
-                      <td>
-                        {r.status === "done"
-                          ? <span className="badge b-done">Done</span>
-                          : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>
-                        }
-                      </td>
-                      <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
-                      <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.duration}</span></td>
-                      <td className="num">
-                        {r.ai && r.ai.total && <b>{r.ai.total}</b>}
-                        {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
-                        {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
-                        {!r.ai && "N/A"}
-                      </td>
+            <div style={{ marginBottom: 28 }}>
+              <div className="card no-pad">
+                <table className="bc-table">
+                  <thead>
+                    <tr>
+                      <th>Skill</th>
+                      <th>Status</th>
+                      <th>When</th>
+                      <th>Duration</th>
+                      <th className="num">Result</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {visibleRuns.map(r => {
+                      const isBid = r.skill === "Bid Level Analysis" && r.ai && r.ai.winner;
+                      return (
+                        <tr key={r.id}
+                            style={{ cursor: "pointer" }}
+                            onClick={() => {
+                              const tab = r.status === "done" ? skillToTab(r.skill) : null;
+                              if (tab && onOpenTab) onOpenTab(tab);
+                            }}>
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} />
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div className="item-title">{r.skill}</div>
+                                {r.skill === "Bid Level Analysis" && r.ai && r.ai.division && (
+                                  <div style={{ fontSize: 11, color: "var(--bc-muted)", marginTop: 2 }}>
+                                    {r.ai.division}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            {r.status === "done"
+                              ? <span className="badge b-done"><Icon name="check_circle" size={11} />Approved</span>
+                              : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>
+                            }
+                          </td>
+                          <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
+                          <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.duration}</span></td>
+                          <td className="num">
+                            {isBid ? (
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, lineHeight: 1.35 }}>
+                                <b>{r.ai.winner}</b>
+                                <span style={{ fontSize: 11.5, color: "var(--bc-muted)", fontWeight: 500 }}>
+                                  {r.ai.bid} bid
+                                  {r.ai.savings && <> · <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b></>}
+                                </span>
+                              </div>
+                            ) : (
+                              <>
+                                {r.ai && r.ai.total && <b>{r.ai.total}</b>}
+                                {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
+                                {r.ai && r.ai.savings && !r.ai.winner && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
+                                {!r.ai && "N/A"}
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                <button className="link-btn" onClick={() => setHomeTab("history")}>
+                  View Skills History
+                  {hiddenCount > 0 && <span style={{ color: "var(--bc-muted)", fontWeight: 500, marginLeft: 4 }}>({hiddenCount} more)</span>}
+                  <Icon name="arrow_forward" size={14} />
+                </button>
+              </div>
             </div>
           );
         })()}
 
-        {/* DRAWINGS */}
+        {/* RECENTLY VISITED DRAWINGS — a quick-glance widget on the Overview.
+            Top 6 most-viewed sheets stand in for true visit recency until
+            we wire up a real lastVisitedAt timestamp. The full browseable
+            list (with trade filters + sort) lives on the Drawings tab. */}
         <div className="section-h" style={{ marginTop: 64 }}>
           <Icon name="architecture" size={16} style={{ color: "var(--orange-500)" }} />
-          <h3>Drawings</h3>
+          <h3>Recently Visited Drawings</h3>
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 11, color: "var(--bc-muted)" }}>
-            {visibleDrawings.length} of {drawings.length} sheets · {visibleDrawings.reduce((a, d) => a + d.markups, 0)} AI markups
-          </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            {/* Trade filter — chip group */}
-            <div className="chip-group">
-              {trades.map((t) =>
-              <button
-                key={t}
-                className={"chip " + (drawingTrade === t ? "active" : "")}
-                onClick={() => setDrawingTrade(t)}>
-
-                  {t}
-                  {t !== "All" &&
-                <span className="chip-count">{drawings.filter((d) => d.trade === t).length}</span>
+        {(() => {
+          const recentDrawings = drawings.slice().sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
+          return (
+            <>
+              <div style={{ fontSize: 11, color: "var(--bc-muted)", marginBottom: 12 }}>
+                {recentDrawings.length} of {drawings.length} sheets · {recentDrawings.reduce((a, d) => a + d.markups, 0)} AI markups
+              </div>
+              <div className="drawings-strip" style={{ marginBottom: 12 }}>
+                {recentDrawings.map((d) =>
+                <div key={d.id} className="drawing-card" onClick={() => onOpenDrawing ? onOpenDrawing(d.id) : onOpenTab("files")}>
+                  <div className="drawing-thumb">
+                    <DrawingThumb kind={d.thumb} color={d.color} markups={d.markups} />
+                    <div className="markup-pill"><Icon name="auto_awesome" size={11} />{d.markups}</div>
+                    {d.status === "flagged" && <div className="flag-pill-abs"><Icon name="flag" size={10} />Flagged</div>}
+                  </div>
+                  <div className="drawing-meta">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                      <span className="code">{d.id}</span>
+                      <span className="trade-tag">{d.trade}</span>
+                    </div>
+                    <span className="title">{d.title}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginTop: 2 }}>
+                      <span className="scale">{d.scale}</span>
+                      <span className="views"><Icon name="visibility" size={10} />{d.views}</span>
+                    </div>
+                  </div>
+                </div>
+                )}
+                {recentDrawings.length === 0 &&
+                <div style={{ gridColumn: "1 / -1", padding: "32px 16px", textAlign: "center", color: "var(--bc-muted)", fontSize: 13, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12 }}>
+                  No drawings have been visited yet for this project.
+                </div>
                 }
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
+                <button className="link-btn" onClick={() => setHomeTab("drawings")}>
+                  View all drawings
+                  {drawings.length > recentDrawings.length && <span style={{ color: "var(--bc-muted)", fontWeight: 500, marginLeft: 4 }}>({drawings.length - recentDrawings.length} more)</span>}
+                  <Icon name="arrow_forward" size={14} />
                 </button>
-              )}
-            </div>
-            {/* Sort segmented — click active to toggle direction */}
-            <div className="seg">
-              <button
-                className={drawingSort.key === "plan" ? "active" : ""}
-                onClick={() => toggleDrawingSort("plan")}
-                title={"Plan order · " + (drawingSort.key === "plan" && drawingSort.direction === "desc" ? "last sheet first" : "first sheet first")}>
-                <Icon name="format_list_numbered" size={13} />Plan order
-                {drawingSort.key === "plan" && <Icon name={drawingSort.direction === "asc" ? "arrow_upward" : "arrow_downward"} size={12} />}
-              </button>
-              <button
-                className={drawingSort.key === "recent" ? "active" : ""}
-                onClick={() => toggleDrawingSort("recent")}
-                title={"Added · " + (drawingSort.key === "recent" && drawingSort.direction === "asc" ? "oldest first" : "newest first")}>
-                <Icon name="schedule" size={13} />Recently added
-                {drawingSort.key === "recent" && <Icon name={drawingSort.direction === "desc" ? "arrow_downward" : "arrow_upward"} size={12} />}
-              </button>
-              <button
-                className={drawingSort.key === "views" ? "active" : ""}
-                onClick={() => toggleDrawingSort("views")}
-                title={"Views · " + (drawingSort.key === "views" && drawingSort.direction === "asc" ? "least viewed first" : "most viewed first")}>
-                <Icon name="visibility" size={13} />Most viewed
-                {drawingSort.key === "views" && <Icon name={drawingSort.direction === "desc" ? "arrow_downward" : "arrow_upward"} size={12} />}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="drawings-strip" style={{ marginBottom: 24 }}>
-          {visibleDrawings.map((d) =>
-          <div key={d.id} className="drawing-card" onClick={() => onOpenDrawing ? onOpenDrawing(d.id) : onOpenTab("files")}>
-              <div className="drawing-thumb">
-                <DrawingThumb kind={d.thumb} color={d.color} markups={d.markups} />
-                <div className="markup-pill"><Icon name="auto_awesome" size={11} />{d.markups}</div>
-                {d.status === "flagged" && <div className="flag-pill-abs"><Icon name="flag" size={10} />Flagged</div>}
               </div>
-              <div className="drawing-meta">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                  <span className="code">{d.id}</span>
-                  <span className="trade-tag">{d.trade}</span>
-                </div>
-                <span className="title">{d.title}</span>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginTop: 2 }}>
-                  <span className="scale">{d.scale}</span>
-                  <span className="views"><Icon name="visibility" size={10} />{d.views}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          {visibleDrawings.length === 0 &&
-          <div style={{ gridColumn: "1 / -1", padding: "32px 16px", textAlign: "center", color: "var(--bc-muted)", fontSize: 13, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12 }}>
-              No drawings tagged <b>{drawingTrade}</b>. <button className="btn-ghost" style={{ display: "inline-flex", marginLeft: 8 }} onClick={() => setDrawingTrade("All")}>Clear filter</button>
-            </div>
-          }
-        </div>
+            </>
+          );
+        })()}
         </>}
 
       </div>
@@ -819,11 +857,12 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
                 <div className="files-empty files-empty-rev">No files in this revision.</div>
               ) : (
                 <table className="bc-table files-table">
-                  <thead><tr><th style={{ width: "46%" }}>Filename</th><th style={{ width: 80 }}>Type</th><th className="num" style={{ width: 90 }}>Size</th><th style={{ width: 150 }}>Uploaded</th><th style={{ width: 140 }}>By</th></tr></thead>
+                  <thead><tr><th style={{ width: "40%" }}>Filename</th><th style={{ width: 70 }}>Type</th><th className="num" style={{ width: 80 }}>Size</th><th style={{ width: 140 }}>Uploaded</th><th style={{ width: 130 }}>By</th><th style={{ width: 110 }}>Status</th></tr></thead>
                   <tbody>
                     {revFiles.map(f => {
                       const ft = ftypeIcon(f.ftype);
                       const isDrawing = /^[A-Z]-\d{3}/.test(f.name);
+                      const status = f.status || "uploaded";
                       return (
                         <tr key={f.id} style={isDrawing ? { cursor: "pointer" } : undefined}
                             onClick={isDrawing && onOpenDrawing ? () => { const m = f.name.match(/^([A-Z]-\d{3})/); if (m) onOpenDrawing(m[1], project.id); } : undefined}>
@@ -832,6 +871,7 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
                           <td className="num">{f.size}</td>
                           <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-strong)" }}>{f.uploaded}</span></td>
                           <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{f.uploadedBy}</span></td>
+                          <td><FileStatusBadge status={status} /></td>
                         </tr>
                       );
                     })}
@@ -915,13 +955,1035 @@ function BidTrackerTab({ project, onOpenTab, onOpenTabInNewTab, onCtxMenu }) {
 // =====================================================
 // PROJECT HOME — LABOR RATES TAB (project-scoped, overrides global)
 // =====================================================
+// =====================================================
+// PROJECT HOME — DRAWINGS TAB
+// List of every detected drawing sheet on the project. Each row shows a
+// preview thumbnail, the sheet ID/title, how many items Cody took off
+// the sheet, and the source PDF it was detected in. Click → opens the
+// drawing viewer for that sheet.
+// =====================================================
+// =====================================================
+// MASTER FLOORPLAN — layered trade overlay
+// Renders a single architectural base plan with per-trade markups
+// (structural columns, HVAC ducts, electrical fixtures, plumbing runs)
+// as togglable SVG layers. Solves the coordination problem: subs can
+// see how their scope overlaps with adjacent trades on the same sheet.
+// =====================================================
+function MasterFloorplan({ projectId }) {
+  const TRADES = [
+    { id: "struct", label: "Structural", color: "#48C1B5" },
+    { id: "mech",   label: "Mechanical", color: "#FFBD15" },
+    { id: "elec",   label: "Electrical", color: "#5047F3" },
+    { id: "plumb",  label: "Plumbing",   color: "#00A3E0" },
+  ];
+  // Master sheets — every plan-view sheet in the project that has a
+  // reconciled overlay available. Pulled from BC_DATA so real projects
+  // can carry hundreds of sheets. Falls back to a minimal set so the
+  // control still works if no data is present.
+  const FALLBACK_SHEETS = [
+    { id: "A-101", label: "Level 1 floor plan",    subtitle: "Aquatic center + lobby",   template: "L1" },
+    { id: "A-102", label: "Level 2 floor plan",    subtitle: "Offices + fitness studios", template: "L2" },
+    { id: "A-301", label: "RCP — Lobby",           subtitle: "Coffered ceiling grid",     template: "RCP" },
+  ];
+  const sheets = uM2(() => {
+    const seeded = (window.BC_DATA && window.BC_DATA.masterSheetsByProject && projectId && window.BC_DATA.masterSheetsByProject[projectId]) || [];
+    return seeded.length ? seeded : FALLBACK_SHEETS;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  const [activeSheetId, setActiveSheetId] = uS2((sheets[0] && sheets[0].id) || "");
+  const [active, setActive] = uS2(new Set(TRADES.map(t => t.id))); // default: all on
+  const [recentIds, setRecentIds] = uS2([]); // ordered most-recent first, capped at 4
+  const [pickerOpen, setPickerOpen] = uS2(false);
+  const [query, setQuery] = uS2("");
+  const pickerRef = uR2(null);
+
+  // Close the picker on outside click / Escape
+  uE2(() => {
+    if (!pickerOpen) return;
+    const onDoc = (e) => { if (pickerRef.current && !pickerRef.current.contains(e.target)) setPickerOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setPickerOpen(false); };
+    setTimeout(() => document.addEventListener("mousedown", onDoc), 0);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [pickerOpen]);
+
+  const isOn = (id) => active.has(id);
+  const toggle = (id) => setActive(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const setAll = (on) => setActive(new Set(on ? TRADES.map(t => t.id) : []));
+  const allOn = active.size === TRADES.length;
+  const noneOn = active.size === 0;
+
+  const activeSheetMeta = sheets.find(s => s.id === activeSheetId) || sheets[0];
+  const activeTemplate = (activeSheetMeta && activeSheetMeta.template) || "L1";
+
+  // Compose the sheet lists shown inside the picker.
+  const recentSheets = recentIds.map(id => sheets.find(s => s.id === id)).filter(Boolean);
+  const q = query.trim().toLowerCase();
+  const filteredSheets = q
+    ? sheets.filter(s => `${s.id} ${s.label} ${s.subtitle}`.toLowerCase().includes(q))
+    : sheets;
+
+  const selectSheet = (id) => {
+    setActiveSheetId(id);
+    setRecentIds(prev => {
+      const next = [id, ...prev.filter(x => x !== id)];
+      return next.slice(0, 4);
+    });
+    setPickerOpen(false);
+    setQuery("");
+  };
+
+  return (
+    <div className="masterplan-card">
+      <div className="masterplan-h">
+        <div>
+          <div className="masterplan-eyebrow">Master Floorplan · Trade Overlays</div>
+          <div className="masterplan-title">Layered view — {activeSheetMeta ? activeSheetMeta.label : "Sheet"}</div>
+          <div className="masterplan-sub">
+            Toggle any trade to see how its scope overlaps with the base architectural plan.
+            Every sub is looking at the same sheet, so coordination issues surface before they hit the field.
+          </div>
+        </div>
+      </div>
+
+      {/* Sheet picker — dropdown scales to hundreds of sheets, with a
+          live search and a "Recently visited" shortlist of the last four
+          sheets the user opened. */}
+      <div className="masterplan-picker" ref={pickerRef}>
+        <button
+          type="button"
+          className={"masterplan-picker-trigger " + (pickerOpen ? "is-open" : "")}
+          onClick={() => setPickerOpen(o => !o)}
+          aria-haspopup="listbox"
+          aria-expanded={pickerOpen}>
+          <span className="masterplan-picker-ref">{activeSheetMeta ? activeSheetMeta.id : "—"}</span>
+          <span className="masterplan-picker-stack">
+            <span className="masterplan-picker-name">{activeSheetMeta ? activeSheetMeta.label : "Select a sheet"}</span>
+            <span className="masterplan-picker-sub">{activeSheetMeta ? activeSheetMeta.subtitle : ""}</span>
+          </span>
+          <span className="masterplan-picker-meta">{sheets.length} sheets</span>
+          <Icon name="expand_more" size={18} />
+        </button>
+        {pickerOpen && (
+          <div className="masterplan-picker-menu" role="listbox">
+            <div className="masterplan-picker-search">
+              <Icon name="search" size={14} />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search sheets by number, name, or area…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {query && (
+                <button className="masterplan-picker-clear" onClick={() => setQuery("")} title="Clear search">
+                  <Icon name="close" size={14} />
+                </button>
+              )}
+            </div>
+            <div className="masterplan-picker-scroll">
+              {!q && recentSheets.length > 0 && (
+                <div className="masterplan-picker-section">
+                  <div className="masterplan-picker-label">
+                    <Icon name="schedule" size={11} />Recently visited
+                  </div>
+                  {recentSheets.map(s => (
+                    <button key={"rec-" + s.id}
+                            type="button"
+                            role="option"
+                            aria-selected={s.id === activeSheetId}
+                            className={"masterplan-picker-item " + (s.id === activeSheetId ? "is-active" : "")}
+                            onClick={() => selectSheet(s.id)}>
+                      <span className="masterplan-picker-item-ref">{s.id}</span>
+                      <span className="masterplan-picker-item-stack">
+                        <span className="masterplan-picker-item-name">{s.label}</span>
+                        <span className="masterplan-picker-item-sub">{s.subtitle}</span>
+                      </span>
+                      {s.id === activeSheetId && <Icon name="check" size={14} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="masterplan-picker-section">
+                <div className="masterplan-picker-label">
+                  {q ? `Results (${filteredSheets.length})` : `All sheets (${sheets.length})`}
+                </div>
+                {filteredSheets.length === 0 ? (
+                  <div className="masterplan-picker-empty">No sheets match "{query}".</div>
+                ) : filteredSheets.map(s => (
+                  <button key={s.id}
+                          type="button"
+                          role="option"
+                          aria-selected={s.id === activeSheetId}
+                          className={"masterplan-picker-item " + (s.id === activeSheetId ? "is-active" : "")}
+                          onClick={() => selectSheet(s.id)}>
+                    <span className="masterplan-picker-item-ref">{s.id}</span>
+                    <span className="masterplan-picker-item-stack">
+                      <span className="masterplan-picker-item-name">{s.label}</span>
+                      <span className="masterplan-picker-item-sub">{s.subtitle}</span>
+                    </span>
+                    {s.id === activeSheetId && <Icon name="check" size={14} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="masterplan-toggles">
+        <button
+          type="button"
+          className={"masterplan-toggle masterplan-toggle-all " + (allOn ? "is-on" : "")}
+          onClick={() => setAll(!allOn)}
+          title={allOn ? "Hide all trade overlays" : "Show all trade overlays"}>
+          <Icon name={allOn ? "layers" : "layers_clear"} size={14} />
+          {allOn ? "All trades on" : (noneOn ? "All trades off" : "Show all trades")}
+        </button>
+        <div className="masterplan-toggle-sep" />
+        {TRADES.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            className={"masterplan-toggle " + (isOn(t.id) ? "is-on" : "")}
+            style={isOn(t.id) ? { "--trade-color": t.color, borderColor: t.color, background: t.color + "18" } : { "--trade-color": t.color }}
+            onClick={() => toggle(t.id)}>
+            <span className="masterplan-swatch" style={{ background: t.color }} />
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="masterplan-canvas">
+        <svg key={activeSheetId} viewBox="0 0 400 280" preserveAspectRatio="xMidYMid meet" className="masterplan-svg" aria-label="Layered floorplan">
+          {/* =========================================================
+              ARCHITECTURAL BASE — always visible. Walls, doors, room
+              labels, and a subtle grid form the constant reference frame.
+              Layout changes per active sheet (Level 1 / Level 2 / RCP). */}
+          <g className="masterplan-layer-arch">
+            {/* faint grid — same on every sheet */}
+            <g opacity="0.10">
+              {[80, 160, 240, 320].map(x => (
+                <line key={"gx" + x} x1={x} y1="20" x2={x} y2="260" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 3" />
+              ))}
+              {[80, 140, 200].map(y => (
+                <line key={"gy" + y} x1="20" y1={y} x2="380" y2={y} stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 3" />
+              ))}
+            </g>
+            {/* exterior walls — consistent envelope across sheets */}
+            <rect x="20" y="20" width="360" height="240" fill="none" stroke="currentColor" strokeWidth="2" />
+
+            {activeTemplate === "L1" && <>
+              {/* interior partitions */}
+              <line x1="20"  y1="120" x2="220" y2="120" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="220" y1="20"  x2="220" y2="120" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="140" y1="120" x2="140" y2="260" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="220" y1="120" x2="220" y2="200" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="220" y1="200" x2="380" y2="200" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="300" y1="20"  x2="300" y2="120" stroke="currentColor" strokeWidth="1.2" />
+              {/* door swings */}
+              <path d="M 60 120  A 14 14 0 0 1 74 106" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              <path d="M 140 170 A 12 12 0 0 1 152 158" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              <path d="M 220 160 A 12 12 0 0 0 232 172" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              <path d="M 300 60  A 12 12 0 0 1 312 48" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              {/* room labels */}
+              {[
+                { x: 120, y: 70,  n: "LOBBY" },
+                { x: 260, y: 70,  n: "AQUATIC CENTER" },
+                { x: 340, y: 70,  n: "STORAGE" },
+                { x: 80,  y: 190, n: "LOCKERS" },
+                { x: 180, y: 190, n: "OFFICES" },
+                { x: 300, y: 165, n: "MECH ROOM" },
+                { x: 300, y: 230, n: "POOL DECK" },
+              ].map(r => (
+                <text key={r.n} x={r.x} y={r.y} fill="currentColor" fillOpacity="0.55" fontSize="7" fontFamily="var(--font-ui)" textAnchor="middle" fontWeight="700" letterSpacing="0.5">{r.n}</text>
+              ))}
+            </>}
+
+            {activeTemplate === "L2" && <>
+              {/* Level 2 partitions — corridor down the middle, offices
+                  along the perimeter, group fitness studios at south. */}
+              <line x1="20"  y1="80"  x2="380" y2="80"  stroke="currentColor" strokeWidth="1.2" />
+              <line x1="20"  y1="180" x2="380" y2="180" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="120" y1="20"  x2="120" y2="80"  stroke="currentColor" strokeWidth="1.2" />
+              <line x1="220" y1="20"  x2="220" y2="80"  stroke="currentColor" strokeWidth="1.2" />
+              <line x1="300" y1="20"  x2="300" y2="80"  stroke="currentColor" strokeWidth="1.2" />
+              <line x1="180" y1="180" x2="180" y2="260" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="280" y1="180" x2="280" y2="260" stroke="currentColor" strokeWidth="1.2" />
+              {/* door swings */}
+              <path d="M 60 80   A 12 12 0 0 1 72 68"  fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              <path d="M 160 80  A 12 12 0 0 1 172 68" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              <path d="M 260 80  A 12 12 0 0 1 272 68" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              <path d="M 140 180 A 12 12 0 0 0 152 192" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.60" />
+              {/* room labels */}
+              {[
+                { x: 70,  y: 50, n: "OFFICE 201" },
+                { x: 170, y: 50, n: "OFFICE 202" },
+                { x: 260, y: 50, n: "CONF" },
+                { x: 340, y: 50, n: "OFFICE 203" },
+                { x: 200, y: 135, n: "CORRIDOR" },
+                { x: 100, y: 225, n: "STUDIO A" },
+                { x: 230, y: 225, n: "STUDIO B" },
+                { x: 330, y: 225, n: "RESTROOMS" },
+              ].map(r => (
+                <text key={r.n} x={r.x} y={r.y} fill="currentColor" fillOpacity="0.55" fontSize="7" fontFamily="var(--font-ui)" textAnchor="middle" fontWeight="700" letterSpacing="0.5">{r.n}</text>
+              ))}
+            </>}
+
+            {activeTemplate === "RCP" && <>
+              {/* Reflected Ceiling Plan — 2x2 acoustic tile grid overlay
+                  as the base, with soffit outlines and a coffered lobby. */}
+              <g opacity="0.20">
+                {[60, 100, 140, 180, 220, 260, 300, 340].map(x => (
+                  <line key={"rx" + x} x1={x} y1="20" x2={x} y2="260" stroke="currentColor" strokeWidth="0.5" />
+                ))}
+                {[60, 100, 140, 180, 220].map(y => (
+                  <line key={"ry" + y} x1="20" y1={y} x2="380" y2={y} stroke="currentColor" strokeWidth="0.5" />
+                ))}
+              </g>
+              {/* coffered lobby ceiling */}
+              <rect x="90" y="70" width="160" height="90" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="110" y="90" width="120" height="50" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.55" />
+              {/* soffit / bulkhead outlines */}
+              <line x1="20"  y1="220" x2="380" y2="220" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="280" y1="20"  x2="280" y2="220" stroke="currentColor" strokeWidth="1.2" />
+              {/* labels */}
+              {[
+                { x: 170, y: 130, n: "COFFERED CEILING" },
+                { x: 200, y: 245, n: "9'-0\" CLG" },
+                { x: 330, y: 130, n: "OPEN TO STRUCTURE" },
+              ].map(r => (
+                <text key={r.n} x={r.x} y={r.y} fill="currentColor" fillOpacity="0.55" fontSize="7" fontFamily="var(--font-ui)" textAnchor="middle" fontWeight="700" letterSpacing="0.5">{r.n}</text>
+              ))}
+            </>}
+          </g>
+
+          {/* =========================================================
+              STRUCTURAL — Level 1/L2: full column grid + beams. RCP:
+              exposed beam pattern at ceiling. */}
+          {isOn("struct") && (activeTemplate === "L1" || activeTemplate === "L2") && (
+            <g className="masterplan-layer masterplan-layer-struct">
+              {[
+                [80, 60, 160, 60], [160, 60, 240, 60], [240, 60, 320, 60],
+                [80, 140, 160, 140], [160, 140, 240, 140], [240, 140, 320, 140],
+                [80, 220, 160, 220], [240, 220, 320, 220],
+                [80, 60, 80, 220], [160, 60, 160, 220], [240, 60, 240, 220], [320, 60, 320, 220],
+              ].map(([x1, y1, x2, y2], i) => (
+                <line key={"b" + i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#48C1B5" strokeWidth="1.5" opacity="0.75" />
+              ))}
+              {[
+                [80, 60], [160, 60], [240, 60], [320, 60],
+                [80, 140], [160, 140], [240, 140], [320, 140],
+                [80, 220], [160, 220], [240, 220], [320, 220],
+              ].map(([cx, cy], i) => (
+                <g key={"col" + i}>
+                  <circle cx={cx} cy={cy} r="4" fill="#48C1B5" />
+                  <circle cx={cx} cy={cy} r="6" fill="none" stroke="#48C1B5" strokeWidth="1" opacity="0.60" />
+                </g>
+              ))}
+              {["A", "B", "C", "D"].map((letter, i) => (
+                <text key={letter} x={80 + i * 80} y="14" fill="#48C1B5" fontSize="7" fontFamily="var(--font-ui)" fontWeight="700" textAnchor="middle">{letter}</text>
+              ))}
+            </g>
+          )}
+          {isOn("struct") && activeTemplate === "RCP" && (
+            <g className="masterplan-layer masterplan-layer-struct">
+              {/* exposed beam bays visible above the ceiling grid */}
+              {[80, 160, 240, 320].map(x => (
+                <line key={"rcp-col" + x} x1={x} y1="20" x2={x} y2="260" stroke="#48C1B5" strokeWidth="2" opacity="0.55" />
+              ))}
+              {[60, 140, 220].map(y => (
+                <line key={"rcp-beam" + y} x1="20" y1={y} x2="380" y2={y} stroke="#48C1B5" strokeWidth="1" opacity="0.35" strokeDasharray="4 3" />
+              ))}
+              {[[80, 60], [160, 60], [240, 60], [320, 60], [80, 140], [160, 140], [240, 140], [320, 140], [80, 220], [160, 220], [240, 220], [320, 220]].map(([cx, cy], i) => (
+                <circle key={"c" + i} cx={cx} cy={cy} r="3.5" fill="#48C1B5" opacity="0.85" />
+              ))}
+            </g>
+          )}
+
+          {/* =========================================================
+              MECHANICAL — sheet-specific HVAC layout. */}
+          {isOn("mech") && activeTemplate === "L1" && (
+            <g className="masterplan-layer masterplan-layer-mech">
+              <line x1="30" y1="90" x2="215" y2="90" stroke="#FFBD15" strokeWidth="4" opacity="0.60" strokeLinecap="round" />
+              <line x1="225" y1="90" x2="370" y2="90" stroke="#FFBD15" strokeWidth="4" opacity="0.60" strokeLinecap="round" />
+              <line x1="290" y1="140" x2="290" y2="240" stroke="#FFBD15" strokeWidth="4" opacity="0.60" strokeLinecap="round" />
+              <line x1="100" y1="90" x2="100" y2="140" stroke="#FFBD15" strokeWidth="2" opacity="0.55" />
+              <line x1="180" y1="90" x2="180" y2="140" stroke="#FFBD15" strokeWidth="2" opacity="0.55" />
+              <line x1="260" y1="90" x2="260" y2="140" stroke="#FFBD15" strokeWidth="2" opacity="0.55" />
+              {[
+                [70, 90], [140, 90], [210, 90], [270, 90], [340, 90],
+                [100, 155], [180, 155], [260, 155], [290, 175], [290, 215],
+              ].map(([cx, cy], i) => (
+                <rect key={"d" + i} x={cx - 5} y={cy - 5} width="10" height="10" fill="none" stroke="#FFBD15" strokeWidth="1.4" opacity="0.85" />
+              ))}
+              <text x="382" y="86" fill="#FFBD15" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700" textAnchor="end">HVAC-1</text>
+            </g>
+          )}
+          {isOn("mech") && activeTemplate === "L2" && (
+            <g className="masterplan-layer masterplan-layer-mech">
+              {/* trunk down the corridor, branches into each office */}
+              <line x1="30" y1="130" x2="370" y2="130" stroke="#FFBD15" strokeWidth="4" opacity="0.60" strokeLinecap="round" />
+              {[60, 120, 180, 240, 300, 340].map(x => (
+                <line key={"vl2" + x} x1={x} y1="80" x2={x} y2="130" stroke="#FFBD15" strokeWidth="1.6" opacity="0.55" />
+              ))}
+              {[
+                [60, 50], [120, 50], [180, 50], [240, 50], [300, 50], [340, 50],
+                [100, 220], [200, 220], [320, 220],
+              ].map(([cx, cy], i) => (
+                <rect key={"d2" + i} x={cx - 5} y={cy - 5} width="10" height="10" fill="none" stroke="#FFBD15" strokeWidth="1.4" opacity="0.85" />
+              ))}
+              <text x="382" y="126" fill="#FFBD15" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700" textAnchor="end">HVAC-2</text>
+            </g>
+          )}
+          {isOn("mech") && activeTemplate === "RCP" && (
+            <g className="masterplan-layer masterplan-layer-mech">
+              {/* dominant on RCP — diffusers on ceiling grid + exposed duct routes */}
+              <line x1="30" y1="110" x2="370" y2="110" stroke="#FFBD15" strokeWidth="3.5" opacity="0.55" strokeLinecap="round" />
+              <line x1="30" y1="170" x2="370" y2="170" stroke="#FFBD15" strokeWidth="3.5" opacity="0.55" strokeLinecap="round" />
+              {[
+                [80, 110], [140, 110], [200, 110], [260, 110], [320, 110],
+                [80, 170], [140, 170], [200, 170], [260, 170], [320, 170],
+                [110, 60], [230, 60], [110, 220], [230, 220],
+              ].map(([cx, cy], i) => (
+                <rect key={"drcp" + i} x={cx - 5} y={cy - 5} width="10" height="10" fill="none" stroke="#FFBD15" strokeWidth="1.4" opacity="0.85" />
+              ))}
+            </g>
+          )}
+
+          {/* =========================================================
+              ELECTRICAL — sheet-specific lighting + panels. */}
+          {isOn("elec") && activeTemplate === "L1" && (
+            <g className="masterplan-layer masterplan-layer-elec">
+              {[
+                [60, 50], [100, 50], [140, 50], [180, 50],
+                [60, 90], [100, 90], [140, 90], [180, 90],
+                [260, 50], [310, 50], [360, 50],
+                [260, 100], [310, 100], [360, 100],
+                [60, 165], [110, 165], [160, 175],
+                [200, 175], [280, 175], [340, 175],
+              ].map(([cx, cy], i) => (
+                <g key={"lt" + i}>
+                  <rect x={cx - 5} y={cy - 3} width="10" height="6" fill="none" stroke="#5047F3" strokeWidth="1" />
+                  <line x1={cx - 5} y1={cy} x2={cx + 5} y2={cy} stroke="#5047F3" strokeWidth="1" />
+                </g>
+              ))}
+              <rect x="45" y="230" width="14" height="20" fill="#5047F3" opacity="0.85" />
+              <text x="52" y="243" fill="#fff" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700" textAnchor="middle">P1</text>
+              <path d="M 52 230 L 52 200 L 100 200 L 100 175 M 100 200 L 200 200 L 200 175 M 200 200 L 300 200 L 300 175" fill="none" stroke="#5047F3" strokeWidth="1" opacity="0.55" strokeDasharray="3 2" />
+            </g>
+          )}
+          {isOn("elec") && activeTemplate === "L2" && (
+            <g className="masterplan-layer masterplan-layer-elec">
+              {/* office-heavy — grid of 2x4 troffers */}
+              {[
+                [50, 40], [90, 40], [130, 40], [170, 40], [210, 40], [250, 40], [290, 40], [330, 40], [360, 40],
+                [50, 60], [90, 60], [130, 60], [170, 60], [210, 60], [250, 60], [290, 60], [330, 60], [360, 60],
+                [70, 210], [130, 210], [200, 210], [260, 210], [320, 210],
+                [70, 240], [130, 240], [200, 240], [260, 240], [320, 240],
+              ].map(([cx, cy], i) => (
+                <g key={"lt2" + i}>
+                  <rect x={cx - 5} y={cy - 3} width="10" height="6" fill="none" stroke="#5047F3" strokeWidth="1" />
+                  <line x1={cx - 5} y1={cy} x2={cx + 5} y2={cy} stroke="#5047F3" strokeWidth="1" />
+                </g>
+              ))}
+              <rect x="360" y="130" width="14" height="20" fill="#5047F3" opacity="0.85" />
+              <text x="367" y="143" fill="#fff" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700" textAnchor="middle">P2</text>
+            </g>
+          )}
+          {isOn("elec") && activeTemplate === "RCP" && (
+            <g className="masterplan-layer masterplan-layer-elec">
+              {/* dominant on RCP — pendants + recessed downlights */}
+              {[
+                [110, 100], [150, 100], [190, 100], [230, 100],
+                [110, 130], [150, 130], [190, 130], [230, 130],
+                [60, 200], [100, 200], [140, 200], [180, 200], [220, 200], [260, 200],
+                [320, 100], [360, 100], [320, 200], [360, 200],
+              ].map(([cx, cy], i) => (
+                <circle key={"rl" + i} cx={cx} cy={cy} r="3" fill="none" stroke="#5047F3" strokeWidth="1.2" />
+              ))}
+              {/* exit signs */}
+              {[[20, 80], [380, 80], [200, 260]].map(([cx, cy], i) => (
+                <g key={"exit" + i}>
+                  <rect x={cx - 6} y={cy - 3} width="12" height="6" fill="#5047F3" opacity="0.85" />
+                  <text x={cx} y={cy + 2} fill="#fff" fontSize="4" fontFamily="var(--font-ui)" fontWeight="700" textAnchor="middle">EXIT</text>
+                </g>
+              ))}
+            </g>
+          )}
+
+          {/* =========================================================
+              PLUMBING — sheet-specific fixtures + runs. */}
+          {isOn("plumb") && activeTemplate === "L1" && (
+            <g className="masterplan-layer masterplan-layer-plumb">
+              {[
+                [45, 155], [45, 175], [45, 195], [45, 215],
+                [90, 235], [110, 235], [130, 235],
+              ].map(([cx, cy], i) => (
+                <circle key={"pf" + i} cx={cx} cy={cy} r="4" fill="none" stroke="#00A3E0" strokeWidth="1.5" />
+              ))}
+              {[[260, 235], [300, 235], [340, 235]].map(([cx, cy], i) => (
+                <circle key={"sh" + i} cx={cx} cy={cy} r="3.5" fill="#00A3E0" opacity="0.85" />
+              ))}
+              <path d="M 30 155 L 30 220 L 130 220 L 130 235" fill="none" stroke="#00A3E0" strokeWidth="1.4" opacity="0.65" strokeDasharray="4 2" />
+              <path d="M 250 250 L 340 250 L 340 235" fill="none" stroke="#00A3E0" strokeWidth="1.4" opacity="0.65" strokeDasharray="4 2" />
+              <text x="30" y="150" fill="#00A3E0" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700">CW/HW</text>
+            </g>
+          )}
+          {isOn("plumb") && activeTemplate === "L2" && (
+            <g className="masterplan-layer masterplan-layer-plumb">
+              {/* restrooms + drinking fountains cluster */}
+              {[
+                [305, 205], [305, 220], [305, 235], [305, 250],
+                [335, 205], [335, 220], [335, 235], [335, 250],
+                [40, 130], [40, 145],
+              ].map(([cx, cy], i) => (
+                <circle key={"pl2" + i} cx={cx} cy={cy} r="4" fill="none" stroke="#00A3E0" strokeWidth="1.5" />
+              ))}
+              <path d="M 30 100 L 30 200 L 300 200 L 300 220 M 300 200 L 340 200 L 340 220" fill="none" stroke="#00A3E0" strokeWidth="1.4" opacity="0.65" strokeDasharray="4 2" />
+              <text x="30" y="95" fill="#00A3E0" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700">CW/HW</text>
+            </g>
+          )}
+          {isOn("plumb") && activeTemplate === "RCP" && (
+            <g className="masterplan-layer masterplan-layer-plumb">
+              {/* sprinkler heads on ceiling grid */}
+              {[
+                [70, 90], [140, 90], [210, 90], [280, 90], [350, 90],
+                [70, 150], [140, 150], [210, 150], [280, 150], [350, 150],
+                [70, 210], [140, 210], [210, 210], [280, 210], [350, 210],
+              ].map(([cx, cy], i) => (
+                <g key={"sp" + i}>
+                  <circle cx={cx} cy={cy} r="2.5" fill="none" stroke="#00A3E0" strokeWidth="1" />
+                  <circle cx={cx} cy={cy} r="1" fill="#00A3E0" />
+                </g>
+              ))}
+              <text x="30" y="80" fill="#00A3E0" fontSize="6" fontFamily="var(--font-ui)" fontWeight="700">SPKLR</text>
+            </g>
+          )}
+        </svg>
+      </div>
+
+      <div className="masterplan-legend">
+        <Icon name="info" size={13} />
+        <span>
+          <b>{active.size}</b> of {TRADES.length} trade layer{active.size === 1 ? "" : "s"} visible.{" "}
+          Every sub sees the same architectural base, so scope conflicts stay visible before they hit the field.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ProjectDrawingsTab({ project, onOpenDrawing }) {
+  const drawings = (window.BC_DATA && window.BC_DATA.drawings) || [];
+  const files = (window.BC_DATA && window.BC_DATA.files) || [];
+  const [tradeFilter, setTradeFilter] = uS2("All");
+  const [query, setQuery] = uS2("");
+
+  // Source file lookup: each drawing's id is the prefix of its source PDF
+  // name (e.g. "A-101 Level 1 floor plan.pdf"). Fall back to a synthetic
+  // filename if no real file is in the indexed set yet.
+  const sourceFor = (d) => {
+    const match = files.find(f => f.name && f.name.startsWith(d.id));
+    return match ? match.name : `${d.id} ${d.title}.pdf`;
+  };
+
+  const trades = uM2(() => {
+    const set = new Set(drawings.map(d => d.trade).filter(Boolean));
+    return ["All", ...Array.from(set).sort()];
+  }, [drawings]);
+
+  const visible = uM2(() => {
+    const q = query.trim().toLowerCase();
+    return drawings.filter(d => {
+      if (tradeFilter !== "All" && d.trade !== tradeFilter) return false;
+      if (q) {
+        const blob = `${d.id} ${d.title} ${d.trade} ${d.scale}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [drawings, tradeFilter, query]);
+
+  if (project.isNew || drawings.length === 0) {
+    return (
+      <div className="card" style={{ marginTop: 24, padding: 32, textAlign: "center" }}>
+        <Icon name="architecture" size={28} style={{ color: "var(--orange-500)", opacity: 0.8 }} />
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginTop: 10 }}>No drawings detected yet</div>
+        <div style={{ fontSize: 13, color: "var(--bc-muted)", maxWidth: 420, margin: "8px auto 0", lineHeight: 1.55 }}>
+          Upload a drawing set on the Files tab and Cody will detect individual sheets and surface them here.
+        </div>
+      </div>
+    );
+  }
+
+  const totalTakeoffs = visible.reduce((sum, d) => sum + (d.markups || 0), 0);
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <MasterFloorplan projectId={project.id} />
+
+      {/* Filter row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+        <div className="chip-group">
+          {trades.map(t => (
+            <button key={t}
+                    className={"chip " + (tradeFilter === t ? "active" : "")}
+                    onClick={() => setTradeFilter(t)}>
+              {t}
+              <span className="chip-count">{t === "All" ? drawings.length : drawings.filter(d => d.trade === t).length}</span>
+            </button>
+          ))}
+        </div>
+        <div className="takeoff-search">
+          <Icon name="search" size={14} />
+          <input
+            type="text"
+            placeholder="Search sheets..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: "var(--bc-muted)", marginBottom: 8 }}>
+        Showing <b>{visible.length}</b> of {drawings.length} sheets · <b>{totalTakeoffs}</b> items taken off
+      </div>
+
+      <div className="card no-pad">
+        <table className="bc-table drawings-table">
+          <thead>
+            <tr>
+              <th style={{ width: 96 }}>Preview</th>
+              <th>Sheet</th>
+              <th>Sheet Type</th>
+              <th className="num">Items taken off (AI)</th>
+              <th>Source file</th>
+              <th className="center" style={{ width: 60 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map(d => (
+              <tr key={d.id}
+                  className="drawing-row"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => onOpenDrawing && onOpenDrawing(d.id)}>
+                <td>
+                  <div className="drawing-thumb-cell">
+                    <DrawingThumb kind={d.thumb} color={d.color} markups={d.markups} />
+                  </div>
+                </td>
+                <td>
+                  <div className="item-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: "var(--font-mono, monospace)", color: "var(--bc-muted)", fontWeight: 700, fontSize: 12 }}>{d.id}</span>
+                    {d.title}
+                    {d.status === "flagged" && <span className="badge b-warn" style={{ fontSize: 9 }}><Icon name="flag" size={10} />Flagged</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--bc-muted)", marginTop: 3 }}>
+                    {d.scale}
+                  </div>
+                </td>
+                <td>
+                  <span style={{ fontFamily: "var(--font-ui)", fontSize: 12.5 }}>{d.trade || "—"}</span>
+                </td>
+                <td className="num">
+                  <b>{d.markups}</b>
+                  <span style={{ fontSize: 11, color: "var(--bc-muted)", marginLeft: 4 }}>items</span>
+                </td>
+                <td>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <Icon name="picture_as_pdf" size={14} style={{ color: "var(--bc-muted)" }} />
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>{sourceFor(d)}</span>
+                  </div>
+                </td>
+                <td className="center">
+                  <button
+                    className="btn-ghost"
+                    style={{ padding: "4px 6px" }}
+                    title="More actions"
+                    onClick={(e) => { e.stopPropagation(); }}>
+                    <Icon name="more_vert" size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// PROJECT HOME — TAKEOFFS TAB
+// Structured quantity-takeoff dataset that powers the rest of the
+// preconstruction workflow. Surfaces the full provenance trail per item:
+// what it is, what trade/division owns it, how much of it, where it
+// came from in the drawings, the spec/revision context, AI confidence,
+// linked cost code, and historical benchmark. Primary columns render in
+// the table; secondary fields appear when a row is expanded.
+// =====================================================
+function ProjectTakeoffsTab({ project, onOpenDrawing, divisionFormat, divisionFormatOther }) {
+  const format = divisionFormat || "masterformat";
+  const allItems = (((window.BC_DATA && window.BC_DATA.takeoffsByProject) || {})[project.id]) || [];
+
+  // MasterFormat: 50-division standard (CSI Work Results). Items keep
+  // their existing two-digit `division` value (e.g. "03" → Concrete).
+  const MF_LABELS = {
+    "01": "General Requirements", "02": "Existing Conditions", "03": "Concrete",
+    "04": "Masonry", "05": "Metals", "06": "Wood, Plastics & Composites",
+    "07": "Thermal & Moisture Protection", "08": "Openings", "09": "Finishes",
+    "10": "Specialties", "11": "Equipment", "12": "Furnishings",
+    "13": "Special Construction", "14": "Conveying Equipment",
+    "21": "Fire Suppression", "22": "Plumbing", "23": "HVAC",
+    "26": "Electrical", "27": "Communications", "28": "Electronic Safety",
+    "31": "Earthwork", "32": "Exterior Improvements", "33": "Utilities",
+  };
+  // Uniformat II: 7 top-level element groups. We derive the group from
+  // the first letter of each item's existing assembly code.
+  const UF_LABELS = {
+    "A": "Substructure", "B": "Shell", "C": "Interiors",
+    "D": "Services", "E": "Equipment & Furnishings",
+    "F": "Special Construction & Demolition", "G": "Building Sitework",
+  };
+  // Omniclass Table 22 (Work Results) — aligned 1:1 with MasterFormat,
+  // so we surface the same divisions with the 22- table prefix.
+
+  // Group an item by the currently selected format and return { key, label }.
+  const groupOf = (i) => {
+    if (format === "uniformat") {
+      const letter = (i.assembly || "?").charAt(0);
+      return { key: letter, label: `${letter} · ${UF_LABELS[letter] || "Other elements"}` };
+    }
+    if (format === "omniclass") {
+      const div = i.division;
+      return { key: div, label: `22-${div} · ${MF_LABELS[div] || "Other"}` };
+    }
+    if (format === "other") {
+      const label = (divisionFormatOther && divisionFormatOther.trim()) || "Custom format";
+      return { key: "all", label };
+    }
+    // masterformat (default)
+    const div = i.division;
+    return { key: div, label: `Div ${div} · ${MF_LABELS[div] || "Other"}` };
+  };
+  // Resolve the set of indexed drawing IDs once — used to decide whether a
+  // takeoff's source reference is clickable (resolves to a drawing in the
+  // viewer) or just a plain string. Verifying AI outputs against the
+  // source drawing is the main reason this column exists.
+  const drawingIds = uM2(() => {
+    const ids = new Set();
+    for (const d of ((window.BC_DATA && window.BC_DATA.drawings) || [])) ids.add(d.id);
+    return ids;
+  }, []);
+  const openSource = (id) => { if (onOpenDrawing && id && drawingIds.has(id)) onOpenDrawing(id); };
+  const [tradeFilter, setTradeFilter] = uS2("all");
+  const [confFilter, setConfFilter] = uS2("all");
+  const [query, setQuery] = uS2("");
+  const [expanded, setExpanded] = uS2(new Set());
+
+  const trades = uM2(() => {
+    const set = new Set(allItems.map(i => i.trade));
+    return ["all", ...Array.from(set).sort()];
+  }, [allItems]);
+
+  const visible = uM2(() => {
+    const q = query.trim().toLowerCase();
+    return allItems.filter(i => {
+      if (tradeFilter !== "all" && i.trade !== tradeFilter) return false;
+      if (confFilter !== "all" && i.confidence !== confFilter) return false;
+      if (q) {
+        const blob = `${i.item} ${i.trade} ${i.division} ${i.sourceDrawing} ${i.spec} ${i.assembly} ${i.room}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [allItems, tradeFilter, confFilter, query]);
+
+  const toggleRow = (id) => setExpanded(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  if (project.isNew || allItems.length === 0) {
+    return (
+      <div className="card" style={{ marginTop: 24, padding: 32, textAlign: "center" }}>
+        <Icon name="straighten" size={28} style={{ color: "var(--orange-500)", opacity: 0.8 }} />
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginTop: 10 }}>No takeoff items yet</div>
+        <div style={{ fontSize: 13, color: "var(--bc-muted)", maxWidth: 420, margin: "8px auto 16px", lineHeight: 1.55 }}>
+          Run a takeoff on the indexed drawings and Cody will build the structured dataset that powers estimates, bid leveling, and clarifications.
+        </div>
+        <button className="btn-primary"><Icon name="play_arrow" size={14} />Run takeoff</button>
+      </div>
+    );
+  }
+
+  const confBadge = (level) => {
+    if (level === "high") return <span className="badge b-done" style={{ fontSize: 9 }}><Icon name="check" size={10} />High</span>;
+    if (level === "med")  return <span className="badge b-warn" style={{ fontSize: 9 }}>Med</span>;
+    if (level === "low")  return <span className="badge"        style={{ fontSize: 9, background: "rgba(181, 54, 54, 0.10)", color: "#B53636" }}>Low</span>;
+    return <span className="badge" style={{ fontSize: 9 }}>{level}</span>;
+  };
+  const totalsByDiv = {};
+  for (const i of visible) totalsByDiv[i.division] = (totalsByDiv[i.division] || 0) + 1;
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      {/* Filter row — trade dropdown, confidence chips, search */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <select
+            className="takeoff-select"
+            value={tradeFilter}
+            onChange={(e) => setTradeFilter(e.target.value)}>
+            {trades.map(t => (
+              <option key={t} value={t}>{t === "all" ? `All trades (${allItems.length})` : t}</option>
+            ))}
+          </select>
+          <div className="chip-group">
+            {["all", "high", "med", "low"].map(c => (
+              <button key={c}
+                      className={"chip " + (confFilter === c ? "active" : "")}
+                      onClick={() => setConfFilter(c)}>
+                {c === "all" ? "All confidence" : c.charAt(0).toUpperCase() + c.slice(1)}
+                <span className="chip-count">{c === "all" ? allItems.length : allItems.filter(i => i.confidence === c).length}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="takeoff-search">
+          <Icon name="search" size={14} />
+          <input
+            type="text"
+            placeholder="Search items, drawings, specs..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: "var(--bc-muted)", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          Showing <b>{visible.length}</b> of {allItems.length} items
+          {Object.keys(totalsByDiv).length > 1 && <> across {Object.keys(totalsByDiv).length} divisions</>}
+        </div>
+        <div style={{ fontSize: 11, color: "var(--bc-muted)" }}>
+          Organized by <b style={{ color: "var(--orange-500)" }}>{
+            format === "uniformat" ? "Uniformat" :
+            format === "omniclass" ? "Omniclass" :
+            format === "other" ? (divisionFormatOther || "Custom format") :
+            "MasterFormat"
+          }</b>
+        </div>
+      </div>
+
+      {/* Group visible items by the current format. Each group gets a
+          section-header row (full-width, sticky to its band) so users
+          can scan the dataset by Division. The Division column inside
+          each row shows the format-appropriate code (Div 03 / B1010 /
+          22-03) so rows stay self-describing even when sorted/filtered. */}
+      {(() => {
+        const groups = [];
+        const byKey = {};
+        for (const i of visible) {
+          const g = groupOf(i);
+          if (!byKey[g.key]) {
+            byKey[g.key] = { ...g, items: [] };
+            groups.push(byKey[g.key]);
+          }
+          byKey[g.key].items.push(i);
+        }
+        // Sort groups by key (alphabetical for letters, numeric for divisions).
+        groups.sort((a, b) => String(a.key).localeCompare(String(b.key), undefined, { numeric: true }));
+        const divCellText = (i) =>
+          format === "uniformat" ? (i.assembly || "—").split(" ")[0] :
+          format === "omniclass" ? `22-${i.division}` :
+          `Div ${i.division}`;
+        const divColHeader =
+          format === "uniformat" ? "Element" :
+          format === "omniclass" ? "Code" :
+          "Div";
+        return (
+      <div className="card no-pad">
+        <table className="bc-table takeoff-table">
+          <thead>
+            <tr>
+              <th style={{ width: 30 }}></th>
+              <th>Item</th>
+              <th>Trade</th>
+              <th>{divColHeader}</th>
+              <th className="num">Quantity</th>
+              <th>Source</th>
+              <th>Confidence</th>
+              <th className="num" style={{ width: 40 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map(g => (
+              <React.Fragment key={g.key}>
+                <tr className="takeoff-group-row">
+                  <td colSpan={8}>
+                    <div className="takeoff-group-label">
+                      <span>{g.label}</span>
+                      <span className="takeoff-group-count">{g.items.length} {g.items.length === 1 ? "item" : "items"}</span>
+                    </div>
+                  </td>
+                </tr>
+                {g.items.map(i => {
+              const isOpen = expanded.has(i.id);
+              return (
+                <React.Fragment key={i.id}>
+                  <tr
+                    className={"takeoff-row " + (isOpen ? "is-open" : "")}
+                    onClick={() => toggleRow(i.id)}
+                    style={{ cursor: "pointer" }}>
+                    <td className="center">
+                      <Icon name={isOpen ? "expand_more" : "chevron_right"} size={16} style={{ color: "var(--bc-muted)" }} />
+                    </td>
+                    <td>
+                      <div className="item-title">{i.item}</div>
+                      <div style={{ fontSize: 11, color: "var(--bc-muted)", marginTop: 2 }}>{i.assembly}</div>
+                    </td>
+                    <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>{i.trade}</span></td>
+                    <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{divCellText(i)}</span></td>
+                    <td className="num">
+                      <b>{i.qty.toLocaleString()}</b>
+                      <span style={{ fontSize: 11, color: "var(--bc-muted)", marginLeft: 4 }}>{i.unit}</span>
+                    </td>
+                    <td>
+                      {drawingIds.has(i.sourceDrawing) ? (
+                        <button
+                          type="button"
+                          className="takeoff-source-link"
+                          title={`Open ${i.sourceDrawing} in the drawing viewer`}
+                          onClick={(e) => { e.stopPropagation(); openSource(i.sourceDrawing); }}>
+                          {i.sourceDrawing}
+                          <Icon name="north_east" size={12} />
+                        </button>
+                      ) : (
+                        <span style={{ fontFamily: "var(--font-ui)", fontSize: 12 }}>{i.sourceDrawing}</span>
+                      )}
+                      {i.detail && i.detail !== "—" && <span style={{ fontSize: 11, color: "var(--bc-muted)", marginLeft: 6 }}>· {i.detail}</span>}
+                    </td>
+                    <td>{confBadge(i.confidence)}<span style={{ fontSize: 11, color: "var(--bc-muted)", marginLeft: 6 }}>{Math.round(i.confidenceScore * 100)}%</span></td>
+                    <td className="center">
+                      <button
+                        className="btn-ghost"
+                        style={{ padding: "4px 6px" }}
+                        title="More actions"
+                        onClick={(e) => { e.stopPropagation(); }}>
+                        <Icon name="more_vert" size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                  {isOpen && (
+                    <tr className="takeoff-detail-row">
+                      <td></td>
+                      <td colSpan={7}>
+                        <div className="takeoff-detail">
+                          <div className="takeoff-detail-grid">
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Building</div>
+                              <div className="takeoff-detail-value">{i.building}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Level</div>
+                              <div className="takeoff-detail-value">{i.level}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Room / Area</div>
+                              <div className="takeoff-detail-value">{i.room}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Detail reference</div>
+                              <div className="takeoff-detail-value">{i.detail}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Specification</div>
+                              <div className="takeoff-detail-value">{i.spec}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Revision</div>
+                              <div className="takeoff-detail-value">{i.revision}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Linked cost code</div>
+                              <div className="takeoff-detail-value" style={{ fontFamily: "var(--font-mono, monospace)" }}>{i.costCode}</div>
+                            </div>
+                            <div className="takeoff-detail-cell">
+                              <div className="takeoff-detail-label">Historical benchmark</div>
+                              <div className="takeoff-detail-value">{i.benchmark}</div>
+                            </div>
+                          </div>
+                          {i.aiNotes && (
+                            <div className="takeoff-detail-notes">
+                              <Icon name="auto_awesome" size={13} />
+                              <div>
+                                <div className="takeoff-detail-label">Cody's notes</div>
+                                <div className="takeoff-detail-value">{i.aiNotes}</div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+// Sample rows populated when the user drops a rate sheet — stands in
+// for real CSV/XLSX parsing. Kept here alongside the tab so the
+// project-level view is self-contained.
+const PROJECT_SAMPLE_LABOR_UPLOAD = [
+  { trade: "Project Manager",           rate: 152.00, fringe: 0.42 },
+  { trade: "Superintendent",            rate: 126.00, fringe: 0.42 },
+  { trade: "Foreman: Carpenter",        rate: 90.00,  fringe: 0.55 },
+  { trade: "Carpenter, Journey",        rate: 76.00,  fringe: 0.58 },
+  { trade: "Carpenter, Apprentice",     rate: 56.00,  fringe: 0.55 },
+  { trade: "Ironworker",                rate: 80.00,  fringe: 0.55 },
+  { trade: "Electrician, Journey",      rate: 87.00,  fringe: 0.60 },
+  { trade: "Plumber",                   rate: 85.00,  fringe: 0.58 },
+  { trade: "Operating Engineer",        rate: 90.00,  fringe: 0.60 },
+  { trade: "Laborer",                   rate: 45.00,  fringe: 0.48 },
+];
+const PROJECT_SAMPLE_MATERIAL_UPLOAD = [
+  { trade: "Ready-mix concrete, 4000 PSI",      rate: 198.00,  fringe: 0.08 },
+  { trade: "Reinforcing steel, Grade 60",       rate: 0.94,    fringe: 0.10 },
+  { trade: "Structural steel, A992 W-shapes",   rate: 2895.00, fringe: 0.12 },
+  { trade: "Steel deck, 3\" composite",         rate: 4.20,    fringe: 0.10 },
+  { trade: "Gypsum wallboard, 5/8\" type X",    rate: 1.15,    fringe: 0.06 },
+  { trade: "Acoustic ceiling tile, 24x24",      rate: 3.25,    fringe: 0.06 },
+  { trade: "Broadloom carpet, 32 oz nylon",     rate: 4.90,    fringe: 0.08 },
+  { trade: "Storefront glazing, aluminum",      rate: 78.00,   fringe: 0.10 },
+  { trade: "Wood door, solid core paint grade", rate: 645.00,  fringe: 0.08 },
+];
+
 function ProjectLaborTab({ project }) {
   const globalRates = (window.BC_DATA && window.BC_DATA.laborRates) || [];
   const overrides = (window.BC_DATA && window.BC_DATA.laborRatesByProject && window.BC_DATA.laborRatesByProject[project.id]) || [];
-  // Merge: project override row wins over the matching global trade row.
-  // Track which individual fields differ from global so we can highlight
-  // exactly the values the user edited (not the whole row).
-  const rows = globalRates.map(g => {
+  // Merge preset labor rates + per-project overrides. Overrides win per
+  // trade; we also flag which fields differ so we can highlight them.
+  const presetLaborRows = globalRates.map(g => {
     const o = overrides.find(x => x.trade === g.trade);
     if (!o) return { ...g, overridden: false };
     return {
@@ -932,28 +1994,49 @@ function ProjectLaborTab({ project }) {
       fringeChanged: o.fringe !== g.fringe,
     };
   });
-  const overrideCount = rows.filter(r => r.overridden).length;
+  const overrideCount = presetLaborRows.filter(r => r.overridden).length;
 
-  const [drag, setDrag] = uS2(false);
-  const inputRef = uR2(null);
+  const [activeType, setActiveType] = uS2("labor");
+  const [laborUpload, setLaborUpload] = uS2(null);
+  const [materialUpload, setMaterialUpload] = uS2(null);
+  const currentUpload = activeType === "labor" ? laborUpload : materialUpload;
+  const currentSetUpload = activeType === "labor" ? setLaborUpload : setMaterialUpload;
 
-  // Newly created projects: show only the upload zone (no table, no info note)
+  const simulateUpload = () => {
+    if (activeType === "labor") {
+      setLaborUpload({ fileName: project.name + " · labor rates.xlsx", uploadedAt: "Just now", rates: PROJECT_SAMPLE_LABOR_UPLOAD });
+    } else {
+      setMaterialUpload({ fileName: project.name + " · material rates.xlsx", uploadedAt: "Just now", rates: PROJECT_SAMPLE_MATERIAL_UPLOAD });
+    }
+  };
+  const removeUpload = () => currentSetUpload(null);
+
+  // Rows to render in the table for the active type.
+  // Labor: if uploaded → uploaded rows; else preset+override merge.
+  // Materials: if uploaded → uploaded rows; else nothing (show upload-only).
+  const usingUpload = !!currentUpload;
+  const laborRows = laborUpload ? laborUpload.rates.map(r => ({ ...r, overridden: false, region: "Uploaded" })) : presetLaborRows;
+  const rows = activeType === "labor" ? laborRows : (materialUpload ? materialUpload.rates : []);
+  const showEmptyMaterials = activeType === "materials" && !materialUpload;
+
+  const fmtRate = (n) => n >= 100
+    ? "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "$" + n.toFixed(2);
+
+  // Newly created projects render just the toggle + upload zone.
   if (project.isNew) {
     return (
       <div style={{ marginTop: 24 }}>
-        <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} />
-        <div
-          className={"labor-prompt " + (drag ? "drag" : "")}
-          style={{ marginTop: 0, padding: "48px 32px" }}
-          onClick={() => inputRef.current && inputRef.current.click()}
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); }}>
-          <div className="labor-prompt-title"><Icon name="payments" size={18} />Upload project labor rates</div>
-          <p>Drop a CSV or XLSX with your trade rates and overhead burdens to seed this project's rates. Until rates are uploaded, this project will use your global PDX metro rates.</p>
-          <div className="labor-prompt-cta">
-            <Icon name="cloud_upload" size={20} />
-            <span>Drop a CSV or XLSX, or <b>click to browse</b></span>
+        <ProjectRatesHeader activeType={activeType} setActiveType={setActiveType} />
+        <div className="rates-drop" onClick={simulateUpload}
+             onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag"); }}
+             onDragLeave={(e) => e.currentTarget.classList.remove("drag")}
+             onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drag"); simulateUpload(); }}>
+          <Icon name="cloud_upload" size={22} />
+          <div className="rates-drop-title">Upload project {activeType === "labor" ? "labor" : "material"} rates</div>
+          <div className="rates-drop-sub">
+            Drop a CSV or XLSX with {activeType === "labor" ? "trade rates and fringe" : "material costs and delivery/tax markup"}.
+            Uploaded rates apply to this project only.
           </div>
         </div>
       </div>
@@ -962,70 +2045,147 @@ function ProjectLaborTab({ project }) {
 
   return (
     <div style={{ marginTop: 24 }}>
-      {/* Upload field — above the table */}
-      <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} />
-      <div
-        className={"labor-prompt " + (drag ? "drag" : "")}
-        style={{ marginTop: 0, marginBottom: 16, padding: "28px 24px" }}
-        onClick={() => inputRef.current && inputRef.current.click()}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => { e.preventDefault(); setDrag(false); }}>
-        <div className="labor-prompt-title"><Icon name="payments" size={18} />Upload project labor rates</div>
-        <p>Drop a CSV or XLSX with your trade rates and overhead burdens. Uploaded rates override the global rates for this project only.</p>
-        <div className="labor-prompt-cta">
-          <Icon name="cloud_upload" size={20} />
-          <span>Drop a CSV or XLSX, or <b>click to browse</b></span>
+      <ProjectRatesHeader activeType={activeType} setActiveType={setActiveType} />
+
+      {!currentUpload ? (
+        <button
+          type="button"
+          className="rates-drop"
+          onClick={(e) => { e.preventDefault(); simulateUpload(); }}
+          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag"); }}
+          onDragLeave={(e) => e.currentTarget.classList.remove("drag")}
+          onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("drag"); simulateUpload(); }}>
+          <Icon name="cloud_upload" size={22} />
+          <div className="rates-drop-title">
+            Drop {activeType === "labor" ? "your labor" : "your material"} rate sheet for this project
+          </div>
+          <div className="rates-drop-sub">
+            {activeType === "labor"
+              ? "CSV or XLSX with trade + base rate + fringe. Uploaded rates fully replace the defaults + any per-trade overrides for this project."
+              : "CSV or XLSX with material + base rate + markup. Cody parses and populates the rate list."}
+          </div>
+        </button>
+      ) : (
+        <div className="rates-file-banner">
+          <Icon name="task" size={18} className="rates-file-icon" />
+          <div className="rates-file-body">
+            <div className="rates-file-name">{currentUpload.fileName}</div>
+            <div className="rates-file-sub">
+              {currentUpload.rates.length} {activeType === "labor" ? "trades" : "materials"} parsed · Uploaded {currentUpload.uploadedAt}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn-ghost rates-file-remove"
+            title={activeType === "labor" ? "Remove file and restore preset + overrides" : "Remove file and clear the list"}
+            onClick={removeUpload}>
+            <Icon name="delete_outline" size={14} />Remove file
+          </button>
         </div>
-      </div>
+      )}
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 0 12px" }}>
-        <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>
-          {rows.length} trades · {overrideCount > 0 ? <b style={{ color: "var(--orange-500)" }}>{overrideCount} project override{overrideCount === 1 ? "" : "s"}</b> : "inheriting global rates"}
+      {showEmptyMaterials ? (
+        <div className="rates-empty">
+          <Icon name="inventory_2" size={28} />
+          <div className="rates-empty-title">No project material rates yet</div>
+          <div className="rates-empty-sub">Drop a materials rate sheet above and every line item will populate — base rate, delivery/tax markup, and the loaded rate Cody uses on this project's estimates.</div>
         </div>
-        <button className="btn"><Icon name="restart_alt" size={16} />Reset to global</button>
-      </div>
+      ) : (
+        <>
+          {activeType === "labor" && !laborUpload && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "12px 0 12px" }}>
+              <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>
+                {presetLaborRows.length} trades · {overrideCount > 0 ? <b style={{ color: "var(--orange-500)" }}>{overrideCount} project override{overrideCount === 1 ? "" : "s"}</b> : "inheriting global rates"}
+              </div>
+              <button className="btn"><Icon name="restart_alt" size={16} />Reset to global</button>
+            </div>
+          )}
 
-      <div className="card no-pad">
-        <table className="bc-table">
-          <thead><tr><th>Trade</th><th className="num">Base rate</th><th className="num">Fringe</th><th className="num">Loaded rate</th><th>Source</th></tr></thead>
-          <tbody>
-            {rows.map((r, i) => {
-              // Loaded rate is derived from base × (1 + fringe), so it counts
-              // as changed if either input changed.
-              const loadedChanged = r.overridden && (r.rateChanged || r.fringeChanged);
-              const orange = { color: "var(--orange-500)", fontWeight: 600 };
-              return (
-                <tr key={i}>
-                  <td><div className="item-title">{r.trade}</div></td>
-                  <td className="num"><span className="cell-display editable" style={r.rateChanged ? orange : null}>${r.rate.toFixed(2)}</span></td>
-                  <td className="num"><span className="cell-display editable" style={r.fringeChanged ? orange : null}>{(r.fringe * 100).toFixed(0)}%</span></td>
-                  <td className="num"><b style={loadedChanged ? { color: "var(--orange-500)" } : null}>${(r.rate * (1 + r.fringe)).toFixed(2)}</b></td>
-                  <td>
-                    {r.overridden ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                        <span className="badge b-info" style={{ background: "rgba(232,70,0,0.10)", color: "var(--orange-500)", alignSelf: "flex-start" }}>Project override</span>
-                        {r.editedBy && (
-                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--bc-muted)" }}>
-                            by {r.editedBy}{r.editedAt ? ` · ${r.editedAt}` : ""}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>Global · {r.region}</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+          <div className="card no-pad" style={{ marginTop: 16 }}>
+            <div className="card-h">
+              <Icon name={activeType === "labor" ? "engineering" : "inventory_2"} style={{ color: "var(--orange-500)" }} />
+              <h3>{activeType === "labor" ? "Trades & rates" : "Materials & rates"}</h3>
+              {usingUpload && <span className="rates-source-pill"><Icon name="cloud_done" size={11} />From upload</span>}
+              <div className="right">
+                <button className="btn-ghost"><Icon name="add" size={14} />Add {activeType === "labor" ? "trade" : "material"}</button>
+                <button className="btn-ghost"><Icon name="history" size={14} />History</button>
+              </div>
+            </div>
+            <table className="bc-table">
+              <thead><tr>
+                <th>{activeType === "labor" ? "Trade" : "Material"}</th>
+                <th className="num">Base rate</th>
+                <th className="num">Fringe</th>
+                <th className="num">Loaded rate</th>
+                {activeType === "labor" && !laborUpload && <th>Source</th>}
+              </tr></thead>
+              <tbody>
+                {rows.map((r, i) => {
+                  const loadedChanged = r.overridden && (r.rateChanged || r.fringeChanged);
+                  const orange = { color: "var(--orange-500)", fontWeight: 600 };
+                  return (
+                    <tr key={i}>
+                      <td><div className="item-title">{r.trade}</div></td>
+                      <td className="num"><span className="cell-display editable" style={r.rateChanged ? orange : null}>{fmtRate(r.rate)}</span></td>
+                      <td className="num"><span className="cell-display editable" style={r.fringeChanged ? orange : null}>{(r.fringe * 100).toFixed(0)}%</span></td>
+                      <td className="num"><b style={loadedChanged ? { color: "var(--orange-500)" } : null}>{fmtRate(r.rate * (1 + r.fringe))}</b></td>
+                      {activeType === "labor" && !laborUpload && (
+                        <td>
+                          {r.overridden ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                              <span className="badge b-info" style={{ background: "rgba(232,70,0,0.10)", color: "var(--orange-500)", alignSelf: "flex-start" }}>Project override</span>
+                              {r.editedBy && (
+                                <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--bc-muted)" }}>
+                                  by {r.editedBy}{r.editedAt ? ` · ${r.editedAt}` : ""}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>Global · {r.region}</span>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-      {/* Info note — below the table */}
-      <div className="labor-prompt-title" style={{ marginTop: 16 }}>
-        <Icon name="info" size={16} style={{ color: "#0074E8" }} />
-        Project rates default to your global PDX metro rates. Any edits here override the global value for this project only.
+          {activeType === "labor" && !laborUpload && (
+            <div className="labor-prompt-title" style={{ marginTop: 16 }}>
+              <Icon name="info" size={16} style={{ color: "#0074E8" }} />
+              Labor rates default to your company's PDX metro rates. Edits or an uploaded sheet override the global value for this project only.
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// Small header shared between the new-project and populated states of
+// ProjectLaborTab — title + Labor/Materials toggle on the right.
+function ProjectRatesHeader({ activeType, setActiveType }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+      <div>
+        <h2 className="page-h2" style={{ margin: 0, fontSize: 18 }}>
+          Project {activeType === "labor" ? "labor" : "material"} rates
+        </h2>
+        <p className="page-sub" style={{ marginTop: 4 }}>
+          {activeType === "labor"
+            ? "Trade wage rates + fringe used by every skill run on this project. Upload a sheet to override defaults."
+            : "Unit-cost material rates + delivery/tax markup used on this project's estimates. Upload to populate."}
+        </p>
+      </div>
+      <div className="seg rates-toggle" role="tablist" aria-label="Rate type">
+        <button role="tab" aria-selected={activeType === "labor"} className={activeType === "labor" ? "active" : ""} onClick={() => setActiveType("labor")}>
+          <Icon name="engineering" size={14} />Labor rates
+        </button>
+        <button role="tab" aria-selected={activeType === "materials"} className={activeType === "materials" ? "active" : ""} onClick={() => setActiveType("materials")}>
+          <Icon name="inventory_2" size={14} />Material rates
+        </button>
       </div>
     </div>
   );
@@ -1065,6 +2225,7 @@ function ProjectHistoryTab({ project, onOpenTab }) {
     name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
     name === "Bid Level Analysis" ? "compare_arrows" :
     name === "Clarifications & Potential RFIs" ? "rule" :
+    name === "Trade Scoping" ? "groups" :
     "auto_awesome";
   const shortName = (name) =>
     name === "Rough Order of Magnitude (ROM) Estimate" ? "ROM Estimate" :
@@ -1074,6 +2235,7 @@ function ProjectHistoryTab({ project, onOpenTab }) {
     name === "Rough Order of Magnitude (ROM) Estimate" ? "estimation" :
     name === "Bid Level Analysis" ? "bid" :
     name === "Clarifications & Potential RFIs" ? "rfc" :
+    name === "Trade Scoping" ? "trades" :
     null;
   const resultSummary = (r) => {
     if (!r.ai) return "N/A";
@@ -1351,4 +2513,4 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
 
 }
 
-Object.assign(window, { ProjectHomeScreen, FilesScreen });
+Object.assign(window, { ProjectHomeScreen, FilesScreen, FileStatusBadge });

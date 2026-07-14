@@ -11,10 +11,11 @@ const { useState: useS, useEffect: useE, useMemo: useM, useRef: useR } = React;
 //   5. Thank-you message → onComplete → fresh-user Home
 // =====================================================
 function FUXOnboarding({ user, onComplete }) {
-  const PHASES = ["video", "welcome", "intro", "q1", "q2", "q3", "q4", "thanks"];
+  const PHASES = ["video", "welcome", "intro", "q1", "q2", "q3", "q4", "q5", "thanks"];
   const [phase, setPhase] = useS("video");
   const [videoEnding, setVideoEnding] = useS(false);
-  const [answers, setAnswers] = useS({ q1: [], q2: [], q3: [], q4: null });
+  const [answers, setAnswers] = useS({ q1: [], q2: [], q3: [], q4: null, q5: null });
+  const [otherDivisionFormat, setOtherDivisionFormat] = useS("");
 
   const firstName = (user && user.name) ? user.name.split(" ")[0] : "there";
   const company = (user && user.company) || "your company";
@@ -22,7 +23,7 @@ function FUXOnboarding({ user, onComplete }) {
   const advance = () => {
     const i = PHASES.indexOf(phase);
     if (i < PHASES.length - 1) setPhase(PHASES[i + 1]);
-    else onComplete && onComplete();
+    else finish();
   };
 
   // Auto-advance timers for welcome/intro/thanks
@@ -35,7 +36,7 @@ function FUXOnboarding({ user, onComplete }) {
       // Hold for the full 4000ms .fux-fade keyframe (0 → 1 → 0) so the
       // thank-you message has time to fade OUT before we unmount and
       // hand off to the Home screen.
-      const t = setTimeout(() => onComplete && onComplete(), 4000);
+      const t = setTimeout(() => finish(), 4000);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,6 +106,17 @@ function FUXOnboarding({ user, onComplete }) {
         { id: "new", label: "Brand new to me" },
       ],
     },
+    q5: {
+      title: "Which Division formatting do you use?",
+      hint: "We'll organize takeoffs, estimates, and reports using this format throughout the platform.",
+      multi: false,
+      options: [
+        { id: "masterformat", label: "MasterFormat",  icon: "format_list_numbered" },
+        { id: "uniformat",    label: "Uniformat",      icon: "category" },
+        { id: "omniclass",    label: "Omniclass",      icon: "schema" },
+        { id: "other",        label: "Other",          icon: "edit" },
+      ],
+    },
   };
 
   const onPick = (qid, optId) => {
@@ -122,7 +134,22 @@ function FUXOnboarding({ user, onComplete }) {
   const canContinue = (qid) => {
     const q = questions[qid];
     const val = answers[qid];
-    return q.multi ? Array.isArray(val) && val.length > 0 : !!val;
+    if (q.multi) return Array.isArray(val) && val.length > 0;
+    // q5 "Other" requires the user to type in their format name before continuing.
+    if (qid === "q5" && val === "other") return otherDivisionFormat.trim().length > 0;
+    return !!val;
+  };
+
+  // Wrap onComplete so we pass the captured answers (specifically the
+  // chosen Division format) back to the App level for global use.
+  const finish = () => {
+    if (!onComplete) return;
+    const result = {
+      ...answers,
+      divisionFormat: answers.q5 || "masterformat",
+      divisionFormatOther: answers.q5 === "other" ? otherDivisionFormat.trim() : "",
+    };
+    onComplete(result);
   };
 
   const isQuestionPhase = phase.startsWith("q");
@@ -159,7 +186,7 @@ function FUXOnboarding({ user, onComplete }) {
         return (
           <div key={"fux-" + phase} className="fux-stage fux-fade-in">
             <div className="fux-q">
-              <div className="fux-q-progress">Question {Number(phase.slice(1))} of 4</div>
+              <div className="fux-q-progress">Question {Number(phase.slice(1))} of 5</div>
               <h2 className="fux-q-title">{q.title}</h2>
               <div className="fux-q-hint">{q.hint}</div>
               <div className="fux-q-options">
@@ -181,12 +208,26 @@ function FUXOnboarding({ user, onComplete }) {
                   );
                 })}
               </div>
+              {phase === "q5" && answers.q5 === "other" && (
+                <div className="fux-q-other">
+                  <label className="fux-q-other-label" htmlFor="fux-other-format">Specify your formatting</label>
+                  <input
+                    id="fux-other-format"
+                    type="text"
+                    className="fux-q-other-input"
+                    autoFocus
+                    placeholder="e.g. CSI MasterSpec, custom CSI-13, internal coding…"
+                    value={otherDivisionFormat}
+                    onChange={(e) => setOtherDivisionFormat(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="fux-q-foot">
                 <button
                   className="btn-primary fux-q-next"
                   disabled={!canContinue(phase)}
                   onClick={advance}>
-                  {phase === "q4" ? "Finish" : "Continue"}
+                  {phase === "q5" ? "Finish" : "Continue"}
                   <Icon name="arrow_forward" size={16} />
                 </button>
               </div>
@@ -420,11 +461,13 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
     name === "Rough Order of Magnitude (ROM) Estimate" ? "calculate" :
     name === "Bid Level Analysis" ? "compare_arrows" :
     name === "Clarifications & Potential RFIs" ? "rule" :
+    name === "Trade Scoping" ? "groups" :
     "auto_awesome";
   const skillToTab = (name) =>
     name === "Rough Order of Magnitude (ROM) Estimate" ? "estimation" :
     name === "Bid Level Analysis" ? "bid" :
     name === "Clarifications & Potential RFIs" ? "rfc" :
+    name === "Trade Scoping" ? "trades" :
     null;
 
   // Resolve pinned IDs into renderable cards (capped at 4)
@@ -438,6 +481,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
         estimation: { icon: "calculate", eyebrow: "Skill result · Estimation", value: (proj && proj.estimate) || "N/A", delta: "+2.3% vs v2", theme: "orange" },
         rfc: { icon: "rule", eyebrow: "Skill result · Clarifications", value: "23 issues", delta: "3 critical", theme: "orange" },
         bid: { icon: "compare_arrows", eyebrow: "Skill result · Bid Level Analysis", value: "$384.7k", delta: "−$74k vs ROM", theme: "tiffany" },
+        trades: { icon: "groups", eyebrow: "Skill result · Trade Scoping", value: "13 trades", delta: "10 high-confidence", theme: "raisin" },
       }[skillId];
       if (proj && meta) pinnedCards.push({ pinId, kind: "skill", proj, skillId, meta });
     } else if (typeof pinId === "string" && pinId.startsWith("drawing:")) {
@@ -462,9 +506,9 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
       <div className="col-detail">
         <FUXOnboarding
           user={user}
-          onComplete={() => {
+          onComplete={(answers) => {
             setFuxDone(true);
-            onFuxFullyComplete && onFuxFullyComplete();
+            onFuxFullyComplete && onFuxFullyComplete(answers);
           }}
         />
       </div>

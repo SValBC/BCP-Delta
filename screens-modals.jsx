@@ -716,6 +716,39 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
   const moveFile = (fileId, newTradeId) => {
     setAssignments(prev => ({ ...prev, [fileId]: newTradeId }));
   };
+
+  // Drag/drop state — track which file is being dragged and which trade
+  // card is the current hover target so we can highlight the drop zone.
+  const [dragFileId, setDragFileId] = React.useState(null);
+  const [dropTargetTradeId, setDropTargetTradeId] = React.useState(null);
+  const handleDragStart = (fileId) => (e) => {
+    setDragFileId(fileId);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", fileId); } catch (_) {}
+  };
+  const handleDragEnd = () => {
+    setDragFileId(null);
+    setDropTargetTradeId(null);
+  };
+  const handleTradeDragOver = (tradeId) => (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dropTargetTradeId !== tradeId) setDropTargetTradeId(tradeId);
+  };
+  const handleTradeDragLeave = (e) => {
+    // Only clear when the pointer leaves the trade card entirely (not just
+    // when crossing into a child element of the same card).
+    if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget)) {
+      setDropTargetTradeId(prev => prev);
+    }
+  };
+  const handleTradeDrop = (tradeId) => (e) => {
+    e.preventDefault();
+    const fileId = (e.dataTransfer && e.dataTransfer.getData("text/plain")) || dragFileId;
+    if (fileId) moveFile(fileId, tradeId);
+    setDragFileId(null);
+    setDropTargetTradeId(null);
+  };
   const toggleTrade = (tradeId) => {
     setSelected(prev => {
       const next = new Set(prev);
@@ -758,7 +791,7 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
           <div>
             <div className="modal-eyebrow"><Icon name="compare_arrows" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Bid Level Analysis</div>
             <h2>Configure your bid run</h2>
-            <p>Cody auto-categorized your uploaded bid files into the trades below. Move any file to a different trade if it's mis-categorized, then choose which trade(s) to run.</p>
+            <p>Cody auto-categorized your uploaded bid files into the trades below. Drag any file by its handle to a different trade if it's mis-categorized, then choose which trade(s) to run.</p>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
         </div>
@@ -795,8 +828,19 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
                 const files = filesForTrade(t.id);
                 const isSelected = selected.has(t.id);
                 const isEmpty = files.length === 0;
+                const isDropTarget = dropTargetTradeId === t.id;
                 return (
-                  <div key={t.id} className={"bid-run-trade " + (isSelected ? "is-selected " : "") + (isEmpty ? "is-empty" : "")}>
+                  <div
+                    key={t.id}
+                    className={
+                      "bid-run-trade "
+                      + (isSelected ? "is-selected " : "")
+                      + (isEmpty ? "is-empty " : "")
+                      + (isDropTarget ? "is-drop-target" : "")
+                    }
+                    onDragOver={handleTradeDragOver(t.id)}
+                    onDragLeave={handleTradeDragLeave}
+                    onDrop={handleTradeDrop(t.id)}>
                     <label className="bid-run-trade-h">
                       <input type="checkbox"
                              checked={isSelected}
@@ -822,8 +866,14 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
                       <div className="bid-run-file-list">
                         {files.map(f => {
                           const ft = ftypeFor(f.name);
+                          const dragging = dragFileId === f.id;
                           return (
-                            <div key={f.id} className="bid-run-file">
+                            <div
+                              key={f.id}
+                              className={"bid-run-file " + (dragging ? "is-dragging" : "")}
+                              draggable
+                              onDragStart={handleDragStart(f.id)}
+                              onDragEnd={handleDragEnd}>
                               <span className={"files-ftype-icon files-ftype-" + ft.tone}>
                                 <Icon name={ft.icon} size={16} />
                               </span>
@@ -833,19 +883,21 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
                                   {ft.label} · {f.size} · {f.uploaded} · {f.uploadedBy}
                                 </div>
                               </div>
-                              <div className="bid-run-file-move">
-                                <label className="bid-run-move-lbl">Trade</label>
-                                <select className="bid-run-move-select"
-                                        value={assignments[f.id] || t.id}
-                                        onChange={(e) => moveFile(f.id, e.target.value)}>
-                                  {baseTrades.map(tt => (
-                                    <option key={tt.id} value={tt.id}>Div {tt.division}: {tt.name}</option>
-                                  ))}
-                                </select>
-                              </div>
+                              <span
+                                className="bid-run-file-handle"
+                                title="Drag to move this file to another trade"
+                                aria-label="Drag handle">
+                                <Icon name="drag_indicator" size={18} />
+                              </span>
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                    {isDropTarget && (
+                      <div className="bid-run-drop-hint" aria-hidden="true">
+                        <Icon name="south_west" size={14} />
+                        Drop to move to <b>Div {t.division}: {t.name}</b>
                       </div>
                     )}
                   </div>
@@ -878,4 +930,249 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
   );
 }
 
-Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, ConnectLogo, RunBidAnalysisModal });
+// =====================================================
+// ROM PRE-RUN MODAL
+// Lets the user choose which CSI divisions the ROM Estimate should
+// cover. All divisions are selected by default; de-selecting one
+// excludes it from the run so the skill finishes faster. The default
+// division list comes from the project's existing estimation data
+// (when available) so the modal reflects the actual project scope.
+// =====================================================
+function RunRomEstimateModal({ open, onClose, onConfirm, project }) {
+  if (!open || !project) return null;
+
+  // Full MasterFormat division catalog — this modal runs BEFORE Cody
+  // analyzes the files, so we can't know which divisions are "in scope".
+  // Show every division the platform supports and let the user deselect
+  // the ones they want to skip.
+  const ALL_DIVISIONS = React.useMemo(() => ([
+    { code: "01", name: "General Requirements" },
+    { code: "02", name: "Existing Conditions" },
+    { code: "03", name: "Concrete" },
+    { code: "04", name: "Masonry" },
+    { code: "05", name: "Metals" },
+    { code: "06", name: "Wood, Plastics & Composites" },
+    { code: "07", name: "Thermal & Moisture Protection" },
+    { code: "08", name: "Openings" },
+    { code: "09", name: "Finishes" },
+    { code: "10", name: "Specialties" },
+    { code: "11", name: "Equipment" },
+    { code: "12", name: "Furnishings" },
+    { code: "13", name: "Special Construction" },
+    { code: "14", name: "Conveying Equipment" },
+    { code: "21", name: "Fire Suppression" },
+    { code: "22", name: "Plumbing" },
+    { code: "23", name: "HVAC" },
+    { code: "25", name: "Integrated Automation" },
+    { code: "26", name: "Electrical" },
+    { code: "27", name: "Communications" },
+    { code: "28", name: "Electronic Safety & Security" },
+    { code: "31", name: "Earthwork" },
+    { code: "32", name: "Exterior Improvements" },
+    { code: "33", name: "Utilities" },
+    { code: "34", name: "Transportation" },
+    { code: "35", name: "Waterway & Marine Construction" },
+    { code: "40", name: "Process Interconnections" },
+    { code: "41", name: "Material Processing Equipment" },
+    { code: "42", name: "Process Heating & Cooling" },
+    { code: "43", name: "Process Gas & Liquid Handling" },
+    { code: "44", name: "Pollution Control Equipment" },
+    { code: "45", name: "Industry-Specific Manufacturing" },
+    { code: "46", name: "Water & Wastewater Equipment" },
+    { code: "48", name: "Electrical Power Generation" },
+  ]), []);
+  const divisions = ALL_DIVISIONS;
+
+  // Selection state — every division selected by default.
+  const [selected, setSelected] = React.useState(() => new Set(divisions.map(d => d.code)));
+  React.useEffect(() => {
+    if (open) setSelected(new Set(divisions.map(d => d.code)));
+  }, [open, project && project.id]);
+
+  const toggle = (code) => setSelected(prev => {
+    const next = new Set(prev);
+    if (next.has(code)) next.delete(code); else next.add(code);
+    return next;
+  });
+  const selectAll = () => setSelected(new Set(divisions.map(d => d.code)));
+  const clearAll = () => setSelected(new Set());
+
+  const selectedCount = selected.size;
+  const totalCount = divisions.length;
+  // Coarse runtime estimate: ~45 seconds per division of base + project size.
+  // Pure prototype heuristic — communicates the speed/scope trade clearly.
+  const estimatedMin = Math.max(2, Math.round(selectedCount * 0.8));
+  const canRun = selectedCount > 0;
+
+  const handleRun = () => {
+    if (!canRun) return;
+    onConfirm && onConfirm({
+      projectId: project.id,
+      divisions: Array.from(selected),
+    });
+  };
+
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell rom-run-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow"><Icon name="calculate" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Pre-run configuration · ROM Estimate</div>
+            <h2>Configure your ROM</h2>
+            <p>
+              All MasterFormat divisions are included by default. Deselect any you'd like to skip, fewer divisions means a faster run.
+            </p>
+          </div>
+          <button className="modal-close" onClick={onClose} title="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        <div className="rom-run-meta">
+          <div>
+            <b style={{ color: "var(--orange-500)" }}>{selectedCount}</b> of {totalCount} divisions selected
+          </div>
+          <div className="rom-run-meta-spacer" />
+          <div style={{ color: "var(--bc-muted)" }}>
+            Estimated runtime: <b style={{ color: "var(--raisin-800)" }}>~{estimatedMin} min</b>
+          </div>
+          <div className="rom-run-meta-actions">
+            <button className="btn-ghost" onClick={selectAll} disabled={selectedCount === totalCount}>
+              <Icon name="done_all" size={14} />Select all
+            </button>
+            <button className="btn-ghost" onClick={clearAll} disabled={selectedCount === 0}>
+              <Icon name="remove_done" size={14} />Clear all
+            </button>
+          </div>
+        </div>
+
+        <div className="rom-run-grid">
+          {divisions.map(d => {
+            const isOn = selected.has(d.code);
+            return (
+              <label key={d.code}
+                     className={"rom-run-div " + (isOn ? "is-on" : "")}>
+                <input
+                  type="checkbox"
+                  checked={isOn}
+                  onChange={() => toggle(d.code)}
+                  aria-label={`Include Division ${d.code} ${d.name}`}
+                />
+                <div className="rom-run-div-body">
+                  <div className="rom-run-div-h">
+                    <span className="rom-run-div-code">Div {d.code}</span>
+                  </div>
+                  <div className="rom-run-div-name">{d.name}</div>
+                </div>
+                <Icon
+                  name={isOn ? "check_box" : "check_box_outline_blank"}
+                  size={18}
+                  className="rom-run-div-check"
+                />
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="rom-run-foot">
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button className="btn-primary" onClick={handleRun} disabled={!canRun}>
+            <Icon name="play_arrow" size={14} />Run ROM on {selectedCount} division{selectedCount === 1 ? "" : "s"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================
+// PUSH TO MASTER MODAL
+// Summarizes the current edit event (list of pending changes) and asks
+// the user to submit for admin approval. Even admins see this — the
+// intent is a deliberate "I want this in Master" moment before any
+// change hits the canonical version.
+// =====================================================
+function PushToMasterModal({ open, onClose, onSubmit, project, changes, user }) {
+  if (!open || !project) return null;
+  const list = changes || [];
+  const [note, setNote] = React.useState("");
+  React.useEffect(() => { if (open) setNote(""); }, [open, project && project.id]);
+
+  const iconFor = (kind) =>
+    kind === "takeoff"      ? "straighten" :
+    kind === "skill_run"    ? "auto_awesome" :
+    kind === "file_upload"  ? "upload_file" :
+    kind === "labor_rate"   ? "engineering" :
+    kind === "project_meta" ? "edit" :
+    kind === "revision"     ? "history" :
+    "edit_note";
+
+  const handleSubmit = () => {
+    const bundle = list.map(c => ({ ...c, note: note || undefined }));
+    onSubmit && onSubmit(bundle);
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell push-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow"><Icon name="publish" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Push to Master</div>
+            <h2>{list.length} change{list.length === 1 ? "" : "s"} pending approval</h2>
+            <p>
+              These changes are currently only visible in your draft of <b>{project.name}</b>. Submitting sends them to an admin for review — nothing hits the Master version until they approve.
+            </p>
+          </div>
+          <button className="modal-close" onClick={onClose} title="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        <div className="push-modal-body">
+          {list.length === 0 ? (
+            <div className="push-modal-empty">
+              <Icon name="check_circle" size={22} style={{ color: "var(--tiffany-400)" }} />
+              <div>No pending changes on this project yet.</div>
+            </div>
+          ) : (
+            <ul className="push-modal-list">
+              {list.map((c, i) => (
+                <li key={i}>
+                  <Icon name={iconFor(c.kind)} size={16} />
+                  <div className="push-modal-list-body">
+                    <div className="push-modal-list-label">{c.label}</div>
+                    {c.detail && <div className="push-modal-list-detail">{c.detail}</div>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="push-modal-note">
+            <label>Note for the reviewer <span className="push-modal-optional">(optional)</span></label>
+            <textarea
+              placeholder="Add context for the admin — what's changing and why."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+        </div>
+
+        <div className="push-modal-foot">
+          <div className="push-modal-foot-meta">
+            <Icon name="info" size={13} />
+            {user && user.role === "admin"
+              ? <>You're an admin — another admin will approve, or you can self-approve from the Company → Approvals queue.</>
+              : <>An admin will review and approve or deny your submission.</>}
+          </div>
+          <div className="push-modal-foot-actions">
+            <button className="btn" onClick={onClose}>Cancel</button>
+            <button className="btn-primary" onClick={handleSubmit} disabled={list.length === 0}>
+              <Icon name="publish" size={14} />Submit for approval
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, ConnectLogo, RunBidAnalysisModal, RunRomEstimateModal, PushToMasterModal });
