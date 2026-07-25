@@ -36,6 +36,31 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
   const drawings = window.BC_DATA.drawings || [];
   // Project Home sub-tabs: overview | files | takeoffs | drawings | labor | history
   const [homeTab, setHomeTab] = uS2("overview");
+
+  // First-visit walkthrough for Project Home. Fires once per user via
+  // localStorage — a project name is interpolated into step 1 so the
+  // tooltip greets them by project.
+  const PROJECT_HOME_TOUR_STEPS = [
+    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+      title: "Welcome to Project Home",
+      desc: "This is your command center for " + (project && project.name ? project.name : "this project") + " — everything Cody knows about it lives on the tabs below." },
+    { id: "subtabs", selector: "[data-tour-id=\"project-subtabs\"]", placement: "below",
+      title: "Six tabs organize this project",
+      desc: "Overview (Cody's brief + recent activity), Files (uploads by revision), Takeoffs (structured quantities), Drawings (sheets + master floorplan overlays), Project Rates (labor + material rates), and Skills History (every run)." },
+    { id: "cody", selector: "[data-tour-id=\"project-cody-brief\"]", placement: "below",
+      title: "Cody's daily brief",
+      desc: "At the top of every project, Cody surfaces what's changed since you were last here. Come back to this daily — it's the fastest way to catch up on team activity." },
+    { id: "runskill", selector: "[data-tour-id=\"project-run-skill\"]", placement: "below",
+      title: "Run a Skill on this project",
+      desc: "Kick off any of the four Skills on this project from these cards. Results start as your private draft — Push to Master to make them visible to the team." },
+    { id: "bell", selector: ".taskbar-notify-btn", placement: "left",
+      title: "Notifications + the Clipboard",
+      desc: "The bell shows who else is editing this project and what's waiting for approval. The Clipboard on the right is now scoped to this project — Skills, files, and activity all filtered to what matters here.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [projectHomeTourActive, completeProjectHomeTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_project_home", !!project && !project.isNew)
+    : [false, () => {}];
   // Listen for cross-tree sub-tab requests (e.g. the Clipboard's "View
   // all skill runs" link, which sits in the right panel and can't reach
   // setHomeTab directly through React props).
@@ -222,7 +247,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         </div>
 
         {/* PROJECT HOME SUB-TABS */}
-        <div className="report-tabs" style={{ marginBottom: 4 }}>
+        <div className="report-tabs" style={{ marginBottom: 4 }} data-tour-id="project-subtabs">
           <button className={"report-tab " + (homeTab === "overview" ? "active" : "")} onClick={() => setHomeTab("overview")}>
             <Icon name="dashboard" size={14} />Overview
           </button>
@@ -256,7 +281,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         {/* CODY'S BRIEF — AI-generated, top of screen, dismissible.
             Hidden for newly created projects (no activity to summarize yet). */}
         {!project.isNew && (
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 16 }} data-tour-id="project-cody-brief">
         <CodyMessage
           eyebrow="Cody's brief · since yesterday at 4:42 PM"
           title="Here's what's changed since you were last here"
@@ -448,7 +473,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         })()}
 
         <div className="section-h" style={{ marginTop: 64 }}><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 16 }}>
+        <div data-tour-id="project-run-skill" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 16 }}>
           {[
           { id: "estimation", title: "Rough Order of Magnitude (ROM) Estimate", icon: "calculate", desc: "Delivers end-to-end estimation capabilities, from initial quantity takeoffs through materials selection, labor calculations, and scheduling to produce comprehensive project estimates. Integrates all estimating phases into a single, cohesive workflow for maximum efficiency.", lastRun: null, success: false },
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
@@ -711,6 +736,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         </>}
 
       </div>
+      {projectHomeTourActive && window.CoachmarkTour && (
+        <window.CoachmarkTour steps={PROJECT_HOME_TOUR_STEPS} onComplete={completeProjectHomeTour} />
+      )}
     </div>);
 
 }

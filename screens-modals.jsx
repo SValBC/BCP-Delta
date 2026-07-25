@@ -26,6 +26,22 @@ function NewProjectModal({ open, onClose, onCreate }) {
     // eslint-disable-next-line
   }, [files, scopeMode, open]);
 
+  const NEW_PROJECT_TOUR_STEPS = [
+    { id: "shell", selector: "[data-tour-id=\"newproj-shell\"]", placement: "right",
+      title: "Set up a new project",
+      desc: "This is where every BuildCrew project starts. Cody handles the heavy lifting — you upload documents, and it fills in the rest." },
+    { id: "upload", selector: "[data-tour-id=\"newproj-upload\"]", placement: "below",
+      title: "Documents are the only required input",
+      desc: "Drop plans, specs, or an owner narrative. Cody detects the project name, type, and address automatically — no manual data entry." },
+    { id: "scope", selector: "[data-tour-id=\"newproj-scope\"]", placement: "above",
+      title: "Cody drafts the scope",
+      desc: "Once documents are uploaded, Cody drafts a short project scope in the background. Prefer to write it yourself? Switch modes here. This runs Skills more accurately when docs are sparse.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [newProjTourActive, completeNewProjTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_new_project", open)
+    : [false, () => {}];
+
   if (!open) return null;
 
   const handleGenerate = () => {
@@ -68,7 +84,7 @@ function NewProjectModal({ open, onClose, onCreate }) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-shell" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-shell" data-tour-id="newproj-shell" onClick={(e) => e.stopPropagation()}>
         <div className="modal-h">
           <div>
             <div className="modal-eyebrow">New project</div>
@@ -82,7 +98,7 @@ function NewProjectModal({ open, onClose, onCreate }) {
           {/* documents — primary input; everything else is derived */}
           <div className="form-row">
             <label>Upload project documents</label>
-            <div className="upload-mini upload-mini-lg" onClick={handleFakeUpload}>
+            <div className="upload-mini upload-mini-lg" data-tour-id="newproj-upload" onClick={handleFakeUpload}>
               {files.length === 0 ? (
                 <>
                   <Icon name="cloud_upload" size={36} />
@@ -146,7 +162,7 @@ function NewProjectModal({ open, onClose, onCreate }) {
                 </div>
               </span>
             </div>
-            <div className="scope-box">
+            <div className="scope-box" data-tour-id="newproj-scope">
               <div className="scope-radios">
                 <label className={"scope-radio " + (scopeMode === "ai" ? "is-checked" : "")}>
                   <input
@@ -207,6 +223,9 @@ function NewProjectModal({ open, onClose, onCreate }) {
             <Icon name="add" size={16} />{canCreate ? "Create project" : "Upload documents to continue"}
           </button>
         </div>
+        {newProjTourActive && window.CoachmarkTour && (
+          <window.CoachmarkTour steps={NEW_PROJECT_TOUR_STEPS} onComplete={completeNewProjTour} />
+        )}
       </div>
     </div>
   );
@@ -677,6 +696,22 @@ function AddConnectionModal({ open, onClose, connections, onToggleConnection }) 
 //   • Confirm to kick off the standard skill-run animation back on Project Home
 // =====================================================
 function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
+  const BID_CFG_TOUR_STEPS = [
+    { id: "shell", selector: "[data-tour-id=\"bidcfg-shell\"]", placement: "right",
+      title: "Configure your bid run",
+      desc: "Before Bid Level Analysis runs, Cody groups your uploaded bid files by trade. Confirm the groupings and pick which trades to level." },
+    { id: "toolbar", selector: "[data-tour-id=\"bidcfg-toolbar\"]", placement: "below",
+      title: "What Cody detected",
+      desc: "The pill on the left shows how many bid files and trades Cody found. Use Select all / Clear on the right to move fast when you're running everything at once." },
+    { id: "trades", selector: "[data-tour-id=\"bidcfg-trades\"]", placement: "above",
+      title: "Drag files if a bid got mis-categorized",
+      desc: "Each card is a trade. Check to include it in the run. If a bid ended up in the wrong trade, drag it by the handle to the correct card. Selected trades run in parallel.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [bidCfgTourActive, completeBidCfgTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_bid_config", open && !!project)
+    : [false, () => {}];
+
   if (!open || !project) return null;
 
   const baseTrades = (bidConfig && bidConfig.trades) || [];
@@ -786,7 +821,7 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-shell bid-run-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-shell bid-run-modal" data-tour-id="bidcfg-shell" onClick={(e) => e.stopPropagation()}>
         <div className="modal-h">
           <div>
             <div className="modal-eyebrow"><Icon name="compare_arrows" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Bid Level Analysis</div>
@@ -797,7 +832,7 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
         </div>
 
         {!emptyProject && (
-          <div className="bid-run-toolbar">
+          <div className="bid-run-toolbar" data-tour-id="bidcfg-toolbar">
             <div className="bid-run-toolbar-meta">
               <span className="bid-run-pill"><Icon name="auto_awesome" size={12} className="cody-mark" />{totalFiles} bid file{totalFiles === 1 ? "" : "s"} · {totalTrades} trades detected</span>
               <span className="bid-run-toolbar-hint">Project: <b>{project.name}</b></span>
@@ -823,7 +858,7 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
               <div className="bid-run-empty-sub">Upload bid forms from your subcontractors to this project and Cody will auto-organize them by trade.</div>
             </div>
           ) : (
-            <div className="bid-run-tradelist">
+            <div className="bid-run-tradelist" data-tour-id="bidcfg-trades">
               {baseTrades.map(t => {
                 const files = filesForTrade(t.id);
                 const isSelected = selected.has(t.id);
@@ -925,6 +960,9 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
             </button>
           </div>
         </div>
+        {bidCfgTourActive && window.CoachmarkTour && (
+          <window.CoachmarkTour steps={BID_CFG_TOUR_STEPS} onComplete={completeBidCfgTour} />
+        )}
       </div>
     </div>
   );

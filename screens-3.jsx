@@ -234,6 +234,26 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
     setEditingCell(null);
   };
 
+  // First-visit walkthrough for the ROM Estimate skill result.
+  const ROM_TOUR_STEPS = [
+    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+      title: "Your ROM Estimate is ready",
+      desc: "Cody just built a Rough Order of Magnitude estimate for " + (project && project.name ? project.name : "this project") + " using the drawings and specs on the Files tab. Numbers here are your private draft until you Push to Master." },
+    { id: "tabs", selector: "[data-tour-id=\"rom-tabs\"]", placement: "below",
+      title: "Three views on one estimate",
+      desc: "Overview shows the top-line story, Detailed Analysis lets you drill into every division and line item, and Files Analyzed lists exactly which drawings + specs Cody read." },
+    { id: "kpis", selector: "[data-tour-id=\"rom-kpis\"]", placement: "below",
+      title: "The four numbers to know",
+      desc: "Total, Labor, Cost per SF, and Materials — each is editable in Edit mode. The donut on the right shows the Labor vs Materials split at a glance." },
+    { id: "flag", selector: "[data-tour-id=\"rom-cody-flag\"]", placement: "above",
+      title: "Cody's flags",
+      desc: "Whenever a division sits outside Cody's benchmark range, you'll see a flag here explaining why — click Walk me through it to see the underlying line items.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [romTourActive, completeRomTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_rom", !isLoading)
+    : [false, () => {}];
+
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Rough Order of Magnitude (ROM) Estimate", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
@@ -324,7 +344,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         </div>
 
         {/* REPORT TABS */}
-        <div className="report-tabs" style={{ marginTop: 20 }}>
+        <div className="report-tabs" data-tour-id="rom-tabs" style={{ marginTop: 20 }}>
           <button className={"report-tab " + (reportTab === "overview" ? "active" : "")} onClick={() => setReportTab("overview")}>
             <Icon name="dashboard" size={14} />Overview
           </button>
@@ -341,7 +361,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         {reportTab === "overview" && <>
 
         {/* SUMMARY */}
-        <div className="summary-row" style={{ marginTop: 20 }}>
+        <div className="summary-row" data-tour-id="rom-kpis" style={{ marginTop: 20 }}>
           <div className="kpi-strip" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             <div className="kpi">
               <Icon className="bg" name="payments" />
@@ -404,7 +424,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
         </div>
 
         {/* Cody's flag — below the KPI strip */}
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 20 }} data-tour-id="rom-cody-flag">
           <CodyMessage
             eyebrow="Cody flagged something"
             title={
@@ -1001,6 +1021,9 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
           </div>
         )}
       </div>
+      {romTourActive && window.CoachmarkTour && (
+        <window.CoachmarkTour steps={ROM_TOUR_STEPS} onComplete={completeRomTour} />
+      )}
     </div>
   );
 }
@@ -1069,6 +1092,25 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
 
   const filesAnalyzed = (window.BC_DATA.files || []).filter(f => f.indexed);
 
+  const RFC_TOUR_STEPS = [
+    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+      title: "Clarifications & Potential RFIs",
+      desc: "Cody scanned every drawing and spec for " + (project && project.name ? project.name : "this project") + " and pulled out anything that needs clarification before you can price it confidently." },
+    { id: "tabs", selector: "[data-tour-id=\"rfc-tabs\"]", placement: "below",
+      title: "Two views",
+      desc: "Overview shows the four KPIs and the priority kanban. Files Analyzed lists exactly which drawings + specs contributed each finding." },
+    { id: "board", selector: "[data-tour-id=\"rfc-board\"]", placement: "above",
+      title: "Drag to prioritize",
+      desc: "Each card is a potential RFI. Drag between Critical / Medium / Low / N/A to prioritize, click a card to edit, or check it off once resolved." },
+    { id: "draft", selector: "[data-tour-id=\"rfc-draft-emails\"]", placement: "left",
+      title: "Turn cards into RFI emails",
+      desc: "When you're ready, Draft RFI emails compiles every unresolved card into pre-written RFIs you can send straight from BuildCrew.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [rfcTourActive, completeRfcTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_rfc", !isLoading)
+    : [false, () => {}];
+
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Clarifications & Potential RFIs", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
@@ -1088,7 +1130,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
         actions={
           <>
             <PinButton pinId={"skill:" + project.id + "/rfc"} pinnedSet={pinnedSet} onPin={onPin} />
-            <button className="btn"><Icon name="email" size={16} />Draft RFI emails</button>
+            <button className="btn" data-tour-id="rfc-draft-emails"><Icon name="email" size={16} />Draft RFI emails</button>
             <ShareDropdown options={[
               { label: "Email", icon: "email", onClick: () => {} },
               { label: "Download as PDF", icon: "picture_as_pdf", onClick: () => {} },
@@ -1125,7 +1167,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
         </div>
 
         {/* REPORT TABS */}
-        <div className="report-tabs" style={{ marginBottom: 16 }}>
+        <div className="report-tabs" data-tour-id="rfc-tabs" style={{ marginBottom: 16 }}>
           <button className={"report-tab " + (rfcTab === "overview" ? "active" : "")} onClick={() => setRfcTab("overview")}>
             <Icon name="dashboard" size={14} />Overview
           </button>
@@ -1184,7 +1226,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
                   </div>
                 </div>
               </div>
-              <div className="rfc-board" key="rfc-overview">
+              <div className="rfc-board" data-tour-id="rfc-board" key="rfc-overview">
             {cols.map(c => {
               const list = issues
                 .filter(i => i.priority === c.id)
@@ -1342,6 +1384,9 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
           </div>
         </div>
       )}
+      {rfcTourActive && window.CoachmarkTour && (
+        <window.CoachmarkTour steps={RFC_TOUR_STEPS} onComplete={completeRfcTour} />
+      )}
     </div>
   );
 }
@@ -1418,6 +1463,25 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
 
   const filesAnalyzed = (window.BC_DATA.files || []).filter(f => f.indexed);
 
+  const BID_TOUR_STEPS = [
+    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+      title: "Your Bid Level Analysis",
+      desc: "Cody normalized every subcontractor's bid for " + (project && project.name ? project.name : "this project") + " onto a common line-item scope so you can see who's actually cheapest apples-to-apples." },
+    { id: "trade", selector: "[data-tour-id=\"bid-trade-picker\"]", placement: "below",
+      title: "Switch between trades",
+      desc: "Every trade you leveled sits behind this dropdown. Each trade has its own scope, its own bids, and its own recommended winner." },
+    { id: "kpis", selector: "[data-tour-id=\"bid-kpis\"]", placement: "below",
+      title: "The four numbers per trade",
+      desc: "Winning bid, spread across bidders, average, and savings vs. average. If spread is high, the scope is probably ambiguous — check the Clarifications skill." },
+    { id: "matrix", selector: "[data-tour-id=\"bid-matrix\"]", placement: "above",
+      title: "Side-by-side leveling matrix",
+      desc: "Every row is a line item; every column is a bidder. Cody's pick is highlighted, exclusions are shown as \"OUT,\" and Detailed Analysis lets you drill into each bidder's story.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [bidTourActive, completeBidTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_bid", !isLoading)
+    : [false, () => {}];
+
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Bid Level Analysis", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
@@ -1462,7 +1526,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
         </div>
 
         {/* REPORT TABS */}
-        <div className="report-tabs" style={{ marginBottom: 16 }}>
+        <div className="report-tabs" data-tour-id="bid-tabs" style={{ marginBottom: 16 }}>
           <button className={"report-tab " + (bidTab === "overview" ? "active" : "")} onClick={() => setBidTab("overview")}>
             <Icon name="dashboard" size={14} />Overview
           </button>
@@ -1476,6 +1540,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
         </div>
 
       {bidTab === "overview" && <>
+        <div data-tour-id="bid-trade-picker">
         <TradeDropdown
           trades={trades}
           activeTradeId={activeTradeId}
@@ -1485,8 +1550,9 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
           tradeRef={tradeRef}
           activeTrade={trade}
         />
+        </div>
 
-        <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
+        <div className="kpi-grid" data-tour-id="bid-kpis" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
           <div className="kpi">
             <Icon className="bg" name="emoji_events" />
             <div className="label">
@@ -1532,7 +1598,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
           </div>
         </div>
 
-        <div className="card no-pad">
+        <div className="card no-pad" data-tour-id="bid-matrix">
           <div className="card-h">
             <Icon name="compare_arrows" style={{ color: "var(--orange-500)" }} />
             <h3>{trade.division}: {trade.name} · side-by-side</h3>
@@ -1862,6 +1928,9 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
         </div>
       )}
       </div>
+      {bidTourActive && window.CoachmarkTour && (
+        <window.CoachmarkTour steps={BID_TOUR_STEPS} onComplete={completeBidTour} />
+      )}
     </div>
   );
 }
@@ -1969,6 +2038,25 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
     return <span className="badge" style={{ fontSize: 9 }}>{level}</span>;
   };
 
+  const TS_TOUR_STEPS = [
+    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+      title: "Your Trade Scoping report",
+      desc: "Cody read every drawing and spec for " + (project && project.name ? project.name : "this project") + " and drafted a scope for every trade it identified — ready to send out for bids." },
+    { id: "kpis", selector: "[data-tour-id=\"ts-kpis\"]", placement: "below",
+      title: "The four numbers at the top",
+      desc: "Trades identified, how many Cody is high-confidence on, how many you've already invited, and the total scope line items across all drafts." },
+    { id: "filters", selector: "[data-tour-id=\"ts-filters\"]", placement: "below",
+      title: "Filter + search",
+      desc: "Filter by Cody's confidence tier or search across trade names, CSI codes, and scope text — great for slicing to just the trades you're ready to send." },
+    { id: "table", selector: "[data-tour-id=\"ts-table\"]", placement: "above",
+      title: "Select trades, then act on them",
+      desc: "Check the trades you want, then use Download PDF / Copy text / Invite to bid at the top. Click any row to expand the full drafted scope.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" },
+  ];
+  const [tsTourActive, completeTsTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_trade_scoping", !isLoading)
+    : [false, () => {}];
+
   if (isLoading) return (
     <div className="col-detail">
       <Taskbar crumbs={[{ label: "Projects" }, { useSwitcher: true }, { label: "Trade Scoping", bold: true }]} onAskAI={onAskAI} switcher={projectSwitcher} />
@@ -2038,7 +2126,7 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
         </div>
 
         {/* KPI strip */}
-        <div className="summary-row" style={{ marginTop: 20 }}>
+        <div className="summary-row" data-tour-id="ts-kpis" style={{ marginTop: 20 }}>
           <div className="kpi-strip" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
             <div className="kpi">
               <Icon className="bg" name="groups" />
@@ -2068,7 +2156,7 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
         </div>
 
         {/* Filter row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+        <div data-tour-id="ts-filters" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
           <div className="chip-group">
             <button className={"chip " + (confFilter === "all" ? "active" : "")} onClick={() => setConfFilter("all")}>All confidence<span className="chip-count">{allTrades.length}</span></button>
             <button className={"chip " + (confFilter === "high" ? "active" : "")} onClick={() => setConfFilter("high")}>High<span className="chip-count">{allTrades.filter(t => t.confidence === "high").length}</span></button>
@@ -2112,7 +2200,7 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
         )}
 
         {/* Trade table */}
-        <div className="card no-pad" style={{ marginTop: 12 }}>
+        <div className="card no-pad" data-tour-id="ts-table" style={{ marginTop: 12 }}>
           <table className="bc-table trade-scope-table">
             <thead>
               <tr>
@@ -2203,6 +2291,9 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
           </table>
         </div>
       </div>
+      {tsTourActive && window.CoachmarkTour && (
+        <window.CoachmarkTour steps={TS_TOUR_STEPS} onComplete={completeTsTour} />
+      )}
     </div>
   );
 }

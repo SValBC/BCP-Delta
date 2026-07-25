@@ -252,14 +252,29 @@ function FUXOnboarding({ user, onComplete }) {
 // the side nav, theme switcher, Home content, Ask Cody, and the
 // Create-first-project CTA.
 // =====================================================
+// Home-screen coachmark tour — the 5-step FUX walkthrough that fires
+// after the initial onboarding sequence completes. Wraps the generic
+// CoachmarkTour with the Home-specific steps.
+const HOME_TOUR_STEPS = [
+  { id: "skills", selector: ".col-nav [data-nav-id=\"skills\"]", placement: "right", title: "Skills are the core of BuildCrew", desc: "Skills are the AI-powered tools that do the heavy lifting on every project: ROM estimates, bid analysis, RFI clarifications, and more. Open them from the Skills tab here, or run them straight from any project's Home screen.", skillsAnim: true },
+  { id: "theme",  selector: ".col-nav .theme-cycle",           placement: "right",  title: "Theme switcher",       desc: "Click to cycle through Light, Hybrid, and Dark. Choose whichever matches your mood." },
+  { id: "home",   selector: ".col-detail",                     placement: "center", title: "Your Home screen",     desc: "Personalized just for you. As you start working, your Recent projects, Pinned items, and Recent skill runs will surface here so the info that matters most is always one click away.", wireframe: true },
+  { id: "cody",   selector: ".ai-rail-collapsed, .ai-panel",   placement: "left",   title: "Ask Cody",             desc: "Your AI assistant. Drag-drop files, ask follow-up questions, or kick off a guided skill run from here.", codyImage: true },
+  { id: "create", selector: ".greet-content .ai-pill",         placement: "below",  title: "Create your first project", desc: "Ready to get started? I'll help you along the way. Uploading your project files, running Skills, and reviewing the results.", isFinal: true, finalLabel: "Create my project", finalIcon: "add" },
+];
 function FUXCoachmarks({ onComplete, onNewProject }) {
-  const STEPS = [
-    { id: "skills", selector: ".col-nav [data-nav-id=\"skills\"]", placement: "right", title: "Skills are the core of BuildCrew", desc: "Skills are the AI-powered tools that do the heavy lifting on every project: ROM estimates, bid analysis, RFI clarifications, and more. Open them from the Skills tab here, or run them straight from any project's Home screen.", skillsAnim: true },
-    { id: "theme",  selector: ".col-nav .theme-cycle",           placement: "right",  title: "Theme switcher",       desc: "Click to cycle through Light, Hybrid, and Dark. Pick whichever reads best for your screen." },
-    { id: "home",   selector: ".col-detail .canvas",             placement: "center", title: "Your Home screen",     desc: "Personalized just for you. As you start working, your Recent projects, Pinned items, and Recent skill runs will surface here so the info that matters most is always one click away.", wireframe: true },
-    { id: "cody",   selector: ".ai-rail-collapsed, .ai-panel",   placement: "left",   title: "Ask Cody",             desc: "Your AI assistant. Drag-drop files, ask follow-up questions, or kick off a guided skill run from here." },
-    { id: "create", selector: ".greet-content .ai-pill",         placement: "below",  title: "Create your first project", desc: "Ready to get started? Drop in your plans and Cody will index them. Or skip for now and come back any time.", isFinal: true },
-  ];
+  return <CoachmarkTour steps={HOME_TOUR_STEPS} onComplete={onComplete} onFinalAction={onNewProject} />;
+}
+
+// =====================================================
+// COACHMARK TOUR — generic first-visit walkthrough engine
+// =====================================================
+// Renders a spotlight + tooltip walkthrough for any set of steps. Same
+// visual language as the Home FUX tour, but decoupled from Home. Each
+// step: { id, selector, placement, title, desc, isFinal?, finalLabel?,
+// finalIcon?, skillsAnim?, wireframe?, codyImage? }.
+function CoachmarkTour({ steps, onComplete, onFinalAction }) {
+  const STEPS = steps || [];
   const [step, setStep] = useS(0);
   const [targetRect, setTargetRect] = useS(null);
   const cur = STEPS[step];
@@ -299,10 +314,11 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
     if (step < STEPS.length - 1) setStep(step + 1);
     else onComplete && onComplete();
   };
+  const goBack = () => { if (step > 0) setStep(step - 1); };
   const skip = () => onComplete && onComplete();
-  const startNewProject = () => {
+  const doFinalAction = () => {
     onComplete && onComplete();
-    onNewProject && onNewProject();
+    onFinalAction && onFinalAction();
   };
 
   if (!cur) return null;
@@ -359,10 +375,16 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
       ) : (
         <div className="fux-coach-backdrop" />
       )}
+      {(hasTarget || cur.placement === "center") && (
       <div className={"fux-coach-tip fux-coach-" + activePlacement} style={tooltipStyle}>
         <div className="fux-coach-progress">Step {step + 1} of {STEPS.length}</div>
         <h3 className="fux-coach-title">{cur.title}</h3>
         <p className="fux-coach-desc">{cur.desc}</p>
+        {cur.codyImage && (
+          <div className="fux-coach-cody" aria-hidden="true">
+            <img src="design-system/cody-tooltip.png" alt="" onError={(e) => { e.currentTarget.src = "design-system/cody.png"; }} />
+          </div>
+        )}
         {cur.skillsAnim && (
           <div className="fux-coach-skills" aria-hidden="true">
             <div className="fux-coach-skill-pill" style={{ animationDelay: "0s" }}>
@@ -371,15 +393,15 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
             </div>
             <div className="fux-coach-skill-pill" style={{ animationDelay: "0.45s" }}>
               <Icon name="compare_arrows" size={12} />
-              <span>Bid Analysis</span>
+              <span>Bid Leveling</span>
             </div>
             <div className="fux-coach-skill-pill" style={{ animationDelay: "0.9s" }}>
               <Icon name="rule" size={12} />
-              <span>Clarifications</span>
+              <span>Clarifications/RFIs</span>
             </div>
             <div className="fux-coach-skill-pill" style={{ animationDelay: "1.35s" }}>
-              <Icon name="auto_awesome" size={12} />
-              <span>Daily Report</span>
+              <Icon name="groups" size={12} />
+              <span>Trade Scoping</span>
             </div>
           </div>
         )}
@@ -416,17 +438,25 @@ function FUXCoachmarks({ onComplete, onNewProject }) {
           <button className="btn-ghost fux-coach-skip" onClick={skip}>
             {cur.isFinal ? "Maybe later" : "Skip tour"}
           </button>
-          {cur.isFinal ? (
-            <button className="btn-primary" onClick={startNewProject}>
-              <Icon name="add" size={14} />Create my project
-            </button>
-          ) : (
-            <button className="btn-primary" onClick={advance}>
-              Next<Icon name="arrow_forward" size={14} />
-            </button>
-          )}
+          <div className="fux-coach-foot-nav">
+            {step > 0 && (
+              <button className="btn-ghost fux-coach-back" onClick={goBack}>
+                <Icon name="arrow_back" size={14} />Back
+              </button>
+            )}
+            {cur.isFinal ? (
+              <button className="btn-primary" onClick={doFinalAction}>
+                <Icon name={cur.finalIcon || "check"} size={14} />{cur.finalLabel || "Got it"}
+              </button>
+            ) : (
+              <button className="btn-primary" onClick={advance}>
+                Next<Icon name="arrow_forward" size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
+      )}
     </div>
   );
   return ReactDOM.createPortal(overlay, document.body);
@@ -963,4 +993,26 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
 
 }
 
-Object.assign(window, { HomeScreen, ProjectsScreen });
+// Shared first-visit tour hook — reads/writes localStorage so each user
+// only sees each tour once. `enabled` gates whether the tour is even
+// eligible (e.g. wait for the FUX to finish, or only fire when a
+// specific project is loaded). Returns [active, complete] — pass
+// `active` as the render gate and call `complete()` on skip/finish.
+function useFirstVisitTour(storageKey, enabled) {
+  const [active, setActive] = useS(false);
+  useE(() => {
+    if (!enabled) return;
+    try {
+      if (localStorage.getItem(storageKey)) return;
+    } catch (e) { /* localStorage blocked — still show the tour */ }
+    const t = setTimeout(() => setActive(true), 800);
+    return () => clearTimeout(t);
+  }, [enabled, storageKey]);
+  const complete = () => {
+    try { localStorage.setItem(storageKey, "1"); } catch (e) {}
+    setActive(false);
+  };
+  return [active, complete];
+}
+
+Object.assign(window, { HomeScreen, ProjectsScreen, CoachmarkTour, useFirstVisitTour });

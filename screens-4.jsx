@@ -500,6 +500,31 @@ function CompanyScreen({ ctx, onAskAI, onOpenProject, projects, approvals, onRes
   ];
   const [tab, setTab] = uS4((ctx && ctx.tab) || "projects");
 
+  // First-visit walkthrough — fires once per user (localStorage-gated).
+  const COMPANY_TOUR_STEPS = [
+    { id: "header", selector: "[data-tour-id=\"company-header\"]", placement: "below",
+      title: "Your company workspace",
+      desc: "This is your Acme Builders workspace. Everything at the company level lives here — every project, every team member, and the standards they all share." },
+    { id: "tabs", selector: "[data-tour-id=\"company-tabs\"]", placement: "below",
+      title: "Six views into your company",
+      desc: "Projects shows every job across the whole team, Members is your roster, Approvals is where admins review Push-to-Master requests, Project Rates holds your labor + material rate sheets, Analytics rolls up KPIs across all projects, and Settings covers company-wide config." },
+    { id: "invite", selector: "[data-tour-id=\"company-invite\"]", placement: "below",
+      title: "Invite the team",
+      desc: "Growing the team is one click. Invite by email and pick their role — Admin, Collaborator, or Viewer — right in the invitation." },
+    ...(isAdmin ? [{ id: "approvals", selector: "[data-tour-tab=\"approvals\"]", placement: "below",
+      title: "The Approvals queue",
+      desc: "This is where you'll spend time keeping the Master version stable. Every teammate's Push-to-Master lands here for review before it hits any project's canonical version.",
+      isFinal: true, finalLabel: "Got it", finalIcon: "check" }] : [
+        { id: "done-nonadmin", selector: "[data-tour-id=\"company-tabs\"]", placement: "below",
+          title: "You're set",
+          desc: "Head into any tab to start exploring your company workspace.",
+          isFinal: true, finalLabel: "Got it", finalIcon: "check" }
+      ]),
+  ];
+  const [companyTourActive, completeCompanyTour] = window.useFirstVisitTour
+    ? window.useFirstVisitTour("bc_tour_seen_company", true)
+    : [false, () => {}];
+
   // ---- Members tab state ----
   const [memberQuery, setMemberQuery] = uS4("");
   const [memberRoleFilter, setMemberRoleFilter] = uS4("all");
@@ -559,7 +584,7 @@ function CompanyScreen({ ctx, onAskAI, onOpenProject, projects, approvals, onRes
       />
       <div className="canvas">
         {/* Company header */}
-        <div className="company-header">
+        <div className="company-header" data-tour-id="company-header">
           <div className="company-avatar">
             <Icon name="domain" size={22} />
           </div>
@@ -573,14 +598,15 @@ function CompanyScreen({ ctx, onAskAI, onOpenProject, projects, approvals, onRes
             </div>
           </div>
           <div className="company-header-actions">
-            <button className="btn"><Icon name="mail" size={14} />Invite member</button>
+            <button className="btn" data-tour-id="company-invite"><Icon name="mail" size={14} />Invite member</button>
           </div>
         </div>
 
         {/* Tab strip */}
-        <div className="report-tabs" style={{ marginTop: 24 }}>
+        <div className="report-tabs" style={{ marginTop: 24 }} data-tour-id="company-tabs">
           {tabs.map(t => (
             <button key={t.id}
+                    data-tour-tab={t.id}
                     className={"report-tab " + (tab === t.id ? "active" : "")}
                     onClick={() => setTab(t.id)}>
               <Icon name={t.icon} size={14} />{t.label}
@@ -894,6 +920,9 @@ function CompanyScreen({ ctx, onAskAI, onOpenProject, projects, approvals, onRes
           </div>
         )}
       </div>
+      {companyTourActive && window.CoachmarkTour && (
+        <window.CoachmarkTour steps={COMPANY_TOUR_STEPS} onComplete={completeCompanyTour} />
+      )}
     </div>
   );
 }

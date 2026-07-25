@@ -1404,6 +1404,36 @@ function Clipboard({ context, onOpenProject, onOpenProjectTabInNewTab, onConfigu
 }
 
 // =====================================================
+// CODY AVATAR — high-fidelity animated mascot
+// Renders the same 3D-rendered CODY video used in the greet card, with
+// the reference-sheet PNG as the poster/fallback for the first frame
+// (and any browser that blocks autoplay). The `mood` prop is left as a
+// soft interface hook — right now every mood uses the same clip, so
+// future mood-specific variants can slot in per-key without touching
+// call sites.
+// =====================================================
+function CodyAvatar({ size = 140, mood = "idle", label = "Cody the AI assistant" }) {
+  // Same asset for all moods for now — swap here when per-mood clips
+  // are produced (e.g. cody-thinking.mp4, cody-happy.mp4).
+  const src = "animated/cody-greet.mp4";
+  const poster = "design-system/cody.png";
+  return (
+    <div className="cody-avatar" role="img" aria-label={label} style={{ width: size, height: size }} data-mood={mood}>
+      <video
+        className="cody-avatar-video"
+        src={src}
+        poster={poster}
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+// =====================================================
 // AI ASSISTANT — Docked right rail (collapsible)
 // =====================================================
 function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, onOpenProject, onOpenProjectTabInNewTab, onStartSkillRun, onConfigureBid, onConfigureRom }) {
@@ -1788,9 +1818,10 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
            onDrop={onBodyDrop}>
         {isEmpty && (
           <>
-            <div className="ai-greeting">
-              <CodyMark size={16} className="ai-greeting-sparkle" />
-              <div className="ai-greeting-text">
+            <div className="ai-greeting-hero">
+              <CodyAvatar size={140} mood="idle" />
+              <div className="ai-greeting-hero-text">
+                <div className="ai-greeting-hero-name">Hi, I'm Cody.</div>
                 <p>If you have a task for me or anything that you'd like for me to take a look at, just shoot me a question or drag and drop your file to start!</p>
               </div>
             </div>
@@ -2060,4 +2091,4 @@ function makeAIReply(t, context) {
 }
 
 // expose globals
-Object.assign(window, { Icon, Sparkle, CodyMark, PinButton, ContextMenu, ShareDropdown, OverflowMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, ProjectActivityPopover, formatMoney, fullMoney, DrawingThumb });
+Object.assign(window, { Icon, Sparkle, CodyMark, CodyAvatar, PinButton, ContextMenu, ShareDropdown, OverflowMenu, EditModeBar, EditableText, NavRail, ListColumn, Taskbar, AIAssistant, CodyMessage, ProjectActivityPopover, formatMoney, fullMoney, DrawingThumb });

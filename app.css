@@ -6617,6 +6617,61 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
 .ai-panel-head.ask-cody .icon-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
 /* Greeting (empty state) */
+/* ============================================================
+   CODY AVATAR — 3D-rendered mascot video
+   ============================================================
+   Renders the same cody-greet.mp4 clip used in the Home greet card.
+   Contained in a fixed-size box with rounded corners + a soft drop
+   shadow. Video fills the box via object-fit: contain so any aspect
+   ratio works. A subtle float animation lives on the container, not
+   the video, so the clip's own motion isn't distorted. */
+.cody-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  overflow: hidden;
+  animation: codyAvatarHover 4.5s ease-in-out infinite;
+  filter: drop-shadow(0 14px 28px rgba(15, 18, 32, 0.22));
+}
+.cody-avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+@keyframes codyAvatarHover {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* Ask Cody empty-state hero — big centered avatar above the greeting. */
+.ai-greeting-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px 20px 8px;
+}
+.ai-greeting-hero-text { max-width: 320px; }
+.ai-greeting-hero-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--raisin-800);
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+.ai-greeting-hero-text p {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(39, 38, 53, 0.72);
+  margin: 0;
+}
+:is([data-theme="dark"], [data-theme="hybrid"]) .ai-greeting-hero-name { color: #fff; }
+:is([data-theme="dark"], [data-theme="hybrid"]) .ai-greeting-hero-text p { color: rgba(255, 255, 255, 0.75); }
+
 .ai-greeting {
   display: flex; gap: 12px; align-items: flex-start;
   padding: 4px 0 0;
@@ -6949,7 +7004,9 @@ table.bc-table .item-sku { font-family: var(--font-data); color: rgba(39,38,53,0
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.20);
   transition: background 120ms, transform 120ms;
-  z-index: 5;
+  /* Sits above the FUX coachmark overlay (9000) so its always visible
+     during Step 3 when the whole detail column is spotlit. */
+  z-index: 9100;
 }
 .nav-collapse-btn:hover { background: var(--orange-500); border-color: var(--orange-500); color: #fff; }
 /* Chevron rotates 180° as the panel collapses — adds a subtle mechanical
@@ -8270,10 +8327,54 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
   justify-content: space-between;
   gap: 10px;
 }
+.fux-coach-foot-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .fux-coach-foot .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.fux-coach-back {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(39, 38, 53, 0.65);
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 160ms, color 160ms;
+}
+.fux-coach-back:hover { background: rgba(15, 18, 32, 0.05); color: var(--raisin-800); }
+.fux-coach-back .mi { font-size: 14px !important; }
+
+/* Cody portrait shown in the Ask Cody step of the tour. Uses the same
+   PNG the AI panel uses so the character stays consistent; falls back
+   to design-system/cody.png if design-system/cody-tooltip.png isn't
+   present (see onError handler in the JSX). */
+.fux-coach-cody {
+  margin: 4px auto 14px;
+  width: 132px;
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(232, 70, 0, 0.06), rgba(232, 70, 0, 0.02));
+  overflow: hidden;
+}
+.fux-coach-cody img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 8px 16px rgba(15, 18, 32, 0.20));
 }
 .fux-coach-skip {
   font-size: 12px;
