@@ -43,7 +43,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
   // Cody's brief is hidden until there's activity to summarize, so we
   // drop that step from the tour.
   const PROJECT_HOME_TOUR_STEPS = [
-    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+    { id: "welcome", placement: "center",
       title: "Welcome to Project Home",
       desc: "This is your command center for " + (project && project.name ? project.name : "this project") + " — everything Cody knows about it lives on the tabs below." },
     { id: "subtabs", selector: "[data-tour-id=\"project-subtabs\"]", placement: "below",

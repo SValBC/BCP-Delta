@@ -236,7 +236,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
 
   // First-visit walkthrough for the ROM Estimate skill result.
   const ROM_TOUR_STEPS = [
-    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+    { id: "welcome", placement: "center",
       title: "Your ROM Estimate is ready",
       desc: "Cody just built a Rough Order of Magnitude estimate for " + (project && project.name ? project.name : "this project") + " using the drawings and specs on the Files tab. Numbers here are your private draft until you Push to Master." },
     { id: "tabs", selector: "[data-tour-id=\"rom-tabs\"]", placement: "below",
@@ -1093,7 +1093,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
   const filesAnalyzed = (window.BC_DATA.files || []).filter(f => f.indexed);
 
   const RFC_TOUR_STEPS = [
-    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+    { id: "welcome", placement: "center",
       title: "Clarifications & Potential RFIs",
       desc: "Cody scanned every drawing and spec for " + (project && project.name ? project.name : "this project") + " and pulled out anything that needs clarification before you can price it confidently." },
     { id: "tabs", selector: "[data-tour-id=\"rfc-tabs\"]", placement: "below",
@@ -1464,7 +1464,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
   const filesAnalyzed = (window.BC_DATA.files || []).filter(f => f.indexed);
 
   const BID_TOUR_STEPS = [
-    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+    { id: "welcome", placement: "center",
       title: "Your Bid Level Analysis",
       desc: "Cody normalized every subcontractor's bid for " + (project && project.name ? project.name : "this project") + " onto a common line-item scope so you can see who's actually cheapest apples-to-apples." },
     { id: "trade", selector: "[data-tour-id=\"bid-trade-picker\"]", placement: "below",
@@ -2039,7 +2039,7 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
   };
 
   const TS_TOUR_STEPS = [
-    { id: "header", selector: ".col-detail .page-h1", placement: "below",
+    { id: "welcome", placement: "center",
       title: "Your Trade Scoping report",
       desc: "Cody read every drawing and spec for " + (project && project.name ? project.name : "this project") + " and drafted a scope for every trade it identified — ready to send out for bids." },
     { id: "kpis", selector: "[data-tour-id=\"ts-kpis\"]", placement: "below",
