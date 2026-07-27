@@ -145,7 +145,6 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             <ShareDropdown options={[
               { label: "Email", icon: "email", onClick: () => {} },
             ]} />
-            <button className="btn-primary" onClick={() => onOpenTab("skills")}><Icon name="play_arrow" size={16} />Run a skill</button>
           </>
         }
         onAskAI={onAskAI}
