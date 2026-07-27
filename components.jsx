@@ -1786,7 +1786,7 @@ function AIAssistant({ open, onClose, onOpen, context, projects, pendingAction, 
   const isEmpty = messages.length === 0 && !working;
 
   return (
-    <div className={"ai-panel " + (panelTab === "clipboard" ? "is-clipboard" : "")}>
+    <div className={"ai-panel " + (panelTab === "clipboard" ? "is-clipboard" : "")} data-tour-id="clipboard-panel">
       <div className="ai-resize-handle" ref={resizeRef} title="Drag to resize" />
       <div className="ai-panel-head ask-cody">
         <div className="ai-panel-tabs" role="tablist">

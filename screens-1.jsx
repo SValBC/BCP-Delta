@@ -294,6 +294,13 @@ function CoachmarkTour({ steps, onComplete, onFinalAction }) {
         if (el && el.offsetParent !== null) { target = el; break; }
       }
     }
+    // Scroll the target into view — center vertically so the tooltip
+    // (which sits above or below the spotlight) also fits without clipping.
+    // Uses instant scroll so the tooltip can position immediately after,
+    // without racing a smooth-scroll animation.
+    if (target && typeof target.scrollIntoView === "function" && cur.placement !== "center") {
+      target.scrollIntoView({ block: "center", behavior: "auto" });
+    }
     const measure = () => {
       if (target) setTargetRect(target.getBoundingClientRect());
       else setTargetRect(null);
