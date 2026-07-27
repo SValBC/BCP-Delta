@@ -467,14 +467,30 @@ function CoachmarkTour({ steps, onComplete, onFinalAction }) {
 // =====================================================
 function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOpenProjectInNewTab, onOpenDrawing, onAskAI, onNewProject, onOpenDailyReport, onCtxMenu, onAskCodyPrompt, onStartCreateProjectFlow, onStartAddFilesFlow, onStartRomEstimateFlow, freshMode, user, onFuxFullyComplete }) {
   const [greetPrompt, setGreetPrompt] = useS("");
-  // FUX onboarding sequence — shown once per fresh-mode session.
-  const [fuxDone, setFuxDone] = useS(false);
+  // FUX onboarding sequence — shown once per fresh-mode session. Persisted in
+  // localStorage so switching away from and back to the Home tab doesn't
+  // re-trigger the whole onboarding.
+  const [fuxDone, setFuxDone] = useS(() => {
+    try { return localStorage.getItem("bc_fux_done") === "1"; } catch (e) { return false; }
+  });
+  const markFuxDone = (answers) => {
+    try { localStorage.setItem("bc_fux_done", "1"); } catch (e) {}
+    setFuxDone(true);
+    onFuxFullyComplete && onFuxFullyComplete(answers);
+  };
   // After FUX completes, a guided coachmark tour highlights key UI elements
   // (side nav, theme switcher, Home sections, Ask Cody, Create-project CTA).
   // The tour is delayed slightly so the post-FUX fade-in finishes first,
   // then the user advances at their own pace.
   const [coachmarksActive, setCoachmarksActive] = useS(false);
-  const [coachmarksDone, setCoachmarksDone] = useS(false);
+  const [coachmarksDone, setCoachmarksDone] = useS(() => {
+    try { return localStorage.getItem("bc_fux_coachmarks_done") === "1"; } catch (e) { return false; }
+  });
+  const markCoachmarksDone = () => {
+    try { localStorage.setItem("bc_fux_coachmarks_done", "1"); } catch (e) {}
+    setCoachmarksActive(false);
+    setCoachmarksDone(true);
+  };
   useE(() => {
     if (freshMode && fuxDone && !coachmarksDone && !coachmarksActive) {
       const t = setTimeout(() => setCoachmarksActive(true), 900);
@@ -536,10 +552,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
       <div className="col-detail">
         <FUXOnboarding
           user={user}
-          onComplete={(answers) => {
-            setFuxDone(true);
-            onFuxFullyComplete && onFuxFullyComplete(answers);
-          }}
+          onComplete={markFuxDone}
         />
       </div>
     );
@@ -774,7 +787,7 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
       </div>
       {coachmarksActive && !coachmarksDone && (
         <FUXCoachmarks
-          onComplete={() => { setCoachmarksActive(false); setCoachmarksDone(true); }}
+          onComplete={markCoachmarksDone}
           onNewProject={onNewProject}
         />
       )}

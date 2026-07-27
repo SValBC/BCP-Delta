@@ -39,7 +39,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
 
   // First-visit walkthrough for Project Home. Fires once per user via
   // localStorage — a project name is interpolated into step 1 so the
-  // tooltip greets them by project.
+  // tooltip greets them by project. On a just-created project (`isNew`),
+  // Cody's brief is hidden until there's activity to summarize, so we
+  // drop that step from the tour.
   const PROJECT_HOME_TOUR_STEPS = [
     { id: "header", selector: ".col-detail .page-h1", placement: "below",
       title: "Welcome to Project Home",
@@ -47,9 +49,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
     { id: "subtabs", selector: "[data-tour-id=\"project-subtabs\"]", placement: "below",
       title: "Six tabs organize this project",
       desc: "Overview (Cody's brief + recent activity), Files (uploads by revision), Takeoffs (structured quantities), Drawings (sheets + master floorplan overlays), Project Rates (labor + material rates), and Skills History (every run)." },
-    { id: "cody", selector: "[data-tour-id=\"project-cody-brief\"]", placement: "below",
+    ...(project && !project.isNew ? [{ id: "cody", selector: "[data-tour-id=\"project-cody-brief\"]", placement: "below",
       title: "Cody's daily brief",
-      desc: "At the top of every project, Cody surfaces what's changed since you were last here. Come back to this daily — it's the fastest way to catch up on team activity." },
+      desc: "At the top of every project, Cody surfaces what's changed since you were last here. Come back to this daily — it's the fastest way to catch up on team activity." }] : []),
     { id: "runskill", selector: "[data-tour-id=\"project-run-skill\"]", placement: "below",
       title: "Run a Skill on this project",
       desc: "Kick off any of the four Skills on this project from these cards. Results start as your private draft — Push to Master to make them visible to the team." },
@@ -59,7 +61,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [projectHomeTourActive, completeProjectHomeTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_project_home", !!project && !project.isNew)
+    ? window.useFirstVisitTour("bc_tour_seen_project_home", !!project)
     : [false, () => {}];
   // Listen for cross-tree sub-tab requests (e.g. the Clipboard's "View
   // all skill runs" link, which sits in the right panel and can't reach
