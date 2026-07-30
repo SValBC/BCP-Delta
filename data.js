@@ -287,22 +287,6 @@ window.BC_DATA = {
   // Skills available
   skills: [
     {
-      id: "estimation",
-      name: "Rough Order of Magnitude (ROM) Estimate",
-      desc: "ROM cost estimate by CSI division and labor vs materials.",
-      icon: "calculate",
-      duration: "~12 min",
-      runs: 4
-    },
-    {
-      id: "bid-leveling",
-      name: "Bid Level Analysis",
-      desc: "Compare subcontractor bids and surface the best fit by division.",
-      icon: "compare_arrows",
-      duration: "~8 min",
-      runs: 2
-    },
-    {
       id: "rfc",
       name: "Clarifications & Potential RFIs",
       desc: "Detect inconsistencies and missing detail across documents.",
@@ -317,6 +301,22 @@ window.BC_DATA = {
       icon: "groups",
       duration: "~4 min",
       runs: 3
+    },
+    {
+      id: "bid-leveling",
+      name: "Bid Level Analysis",
+      desc: "Compare subcontractor bids and surface the best fit by division.",
+      icon: "compare_arrows",
+      duration: "~8 min",
+      runs: 2
+    },
+    {
+      id: "estimation",
+      name: "Rough Order of Magnitude (ROM) Estimate",
+      desc: "ROM cost estimate by CSI division and labor vs materials.",
+      icon: "calculate",
+      duration: "~12 min",
+      runs: 4
     }
   ],
 
