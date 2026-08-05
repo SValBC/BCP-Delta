@@ -251,7 +251,7 @@ function EstimationScreen({ project, onAskAI, viz, projectSwitcher, onOpenDrawin
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [romTourActive, completeRomTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_rom", !isLoading)
+    ? window.useFirstVisitTour("bc_tour_seen_rom", !isLoading && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
   if (isLoading) return (
@@ -1108,7 +1108,7 @@ function RFCScreen({ project, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [rfcTourActive, completeRfcTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_rfc", !isLoading)
+    ? window.useFirstVisitTour("bc_tour_seen_rfc", !isLoading && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
   if (isLoading) return (
@@ -1479,7 +1479,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [bidTourActive, completeBidTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_bid", !isLoading)
+    ? window.useFirstVisitTour("bc_tour_seen_bid", !isLoading && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
   if (isLoading) return (
@@ -2054,7 +2054,7 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [tsTourActive, completeTsTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_trade_scoping", !isLoading)
+    ? window.useFirstVisitTour("bc_tour_seen_trade_scoping", !isLoading && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
   if (isLoading) return (

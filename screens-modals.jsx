@@ -39,7 +39,7 @@ function NewProjectModal({ open, onClose, onCreate }) {
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [newProjTourActive, completeNewProjTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_new_project", open)
+    ? window.useFirstVisitTour("bc_tour_seen_new_project", open && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
   if (!open) return null;
@@ -709,11 +709,13 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [bidCfgTourActive, completeBidCfgTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_bid_config", open && !!project)
+    ? window.useFirstVisitTour("bc_tour_seen_bid_config", open && !!project && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
-  if (!open || !project) return null;
-
+  // ALL hooks must run on every render regardless of `open` / `project` — the
+  // early return that used to sit here got moved BELOW so React sees a stable
+  // hook order. `open=false` and `project=undefined` are handled by defaulting
+  // baseTrades/baseFiles to [] and returning null at the very end.
   const baseTrades = (bidConfig && bidConfig.trades) || [];
   const baseFiles  = (bidConfig && bidConfig.files)  || [];
 
@@ -736,7 +738,7 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
 
   // Reset state when modal reopens for a different project
   React.useEffect(() => {
-    if (open) {
+    if (open && project) {
       setAssignments(initialAssignments);
       const initial = new Set();
       baseTrades.forEach(t => {
@@ -818,6 +820,10 @@ function RunBidAnalysisModal({ open, onClose, onConfirm, project, bidConfig }) {
   };
 
   const emptyProject = totalFiles === 0;
+
+  // Render nothing when closed / no project — all hooks above have already
+  // run in a stable order so React's hook accounting stays consistent.
+  if (!open || !project) return null;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>

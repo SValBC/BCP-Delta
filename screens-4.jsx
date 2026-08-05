@@ -522,7 +522,7 @@ function CompanyScreen({ ctx, onAskAI, onOpenProject, projects, approvals, onRes
       ]),
   ];
   const [companyTourActive, completeCompanyTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_company", true)
+    ? window.useFirstVisitTour("bc_tour_seen_company", !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
 
   // ---- Members tab state ----

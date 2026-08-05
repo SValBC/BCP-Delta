@@ -1013,6 +1013,16 @@ function ProjectsScreen({ ctx, projects, onOpen, onOpenInNewTab, pinnedSet, onPi
 
 }
 
+// True only in the fresh-user demo (?demo=fresh). Product-tour surfaces
+// gate their `useFirstVisitTour` calls on this so a returning user never
+// sees the guided walkthroughs on Company, Project Home, Skill Results,
+// or the Bid Leveling / Create Project modals.
+function isFreshDemoMode() {
+  try {
+    return /(\?|&)demo=fresh\b/i.test((typeof window !== "undefined" && window.location && window.location.search) || "");
+  } catch (e) { return false; }
+}
+
 // Shared first-visit tour hook — reads/writes localStorage so each user
 // only sees each tour once. `enabled` gates whether the tour is even
 // eligible (e.g. wait for the FUX to finish, or only fire when a
@@ -1035,4 +1045,4 @@ function useFirstVisitTour(storageKey, enabled) {
   return [active, complete];
 }
 
-Object.assign(window, { HomeScreen, ProjectsScreen, CoachmarkTour, useFirstVisitTour });
+Object.assign(window, { HomeScreen, ProjectsScreen, CoachmarkTour, useFirstVisitTour, isFreshDemoMode });

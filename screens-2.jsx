@@ -64,7 +64,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
       isFinal: true, finalLabel: "Got it", finalIcon: "check" },
   ];
   const [projectHomeTourActive, completeProjectHomeTour] = window.useFirstVisitTour
-    ? window.useFirstVisitTour("bc_tour_seen_project_home", !!project)
+    ? window.useFirstVisitTour("bc_tour_seen_project_home", !!project && !!(window.isFreshDemoMode && window.isFreshDemoMode()))
     : [false, () => {}];
   // Listen for cross-tree sub-tab requests (e.g. the Clipboard's "View
   // all skill runs" link, which sits in the right panel and can't reach
