@@ -8528,3 +8528,244 @@ body[data-theme="light"] .col-nav.is-collapsed .nav-item {
 
 /* Make room for the taller ticker so canvas content doesn't hide under it */
 .canvas { padding-bottom: 76px; }
+
+/* ============================================================
+   BID TRACKER — Project Home tab that tracks subcontractor bids
+   per trade (populated from Trade Scoping's Invite to Bid flow,
+   or added manually).
+   ============================================================ */
+.bid-tracker { padding-top: 4px; }
+.bid-tracker-h {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 24px; margin: 12px 0 20px;
+}
+.bid-tracker-h .page-h1 { color: var(--bc-strong); }
+.bid-tracker-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+.bid-tracker-empty {
+  border: 1.5px dashed rgba(39,38,53,0.20);
+  border-radius: 14px;
+  padding: 32px 24px; text-align: center;
+  color: var(--bc-muted);
+}
+.bid-tracker-empty .mi { color: var(--orange-500); opacity: 0.85; }
+.bid-tracker-empty-h {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 16px;
+  color: var(--bc-strong);
+  margin: 12px 0 6px;
+}
+.bid-tracker-empty p { max-width: 480px; margin: 0 auto; font-size: 13px; }
+
+.bid-tracker-add-inline {
+  border: 1px solid rgba(39,38,53,0.08);
+  border-radius: 12px; padding: 16px 20px;
+  background: #fff;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(15,14,30,0.04);
+}
+.bid-tracker-add-h {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.bid-tracker-add-h b { font-family: var(--font-display); font-size: 14px; }
+.bid-tracker-add-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 12px 16px;
+}
+.bid-tracker-add-grid label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--bc-muted);
+}
+.bid-tracker-add-grid input,
+.bid-tracker-add-grid select {
+  font-family: var(--font-ui); font-size: 13px;
+  padding: 8px 10px; border-radius: 8px;
+  border: 1px solid rgba(39,38,53,0.14);
+  background: #fff; color: var(--bc-strong);
+  text-transform: none; letter-spacing: normal; font-weight: 500;
+}
+.bid-tracker-add-grid input:focus,
+.bid-tracker-add-grid select:focus { outline: none; border-color: var(--orange-500); }
+.bid-tracker-add-foot {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 14px;
+}
+
+.bid-trade-section {
+  border: 1px solid rgba(39,38,53,0.08);
+  border-radius: 14px;
+  background: #fff;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.bid-trade-h {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; padding: 14px 20px;
+  border-bottom: 1px solid rgba(39,38,53,0.06);
+  background: rgba(39,38,53,0.02);
+}
+.bid-trade-title { display: flex; align-items: baseline; gap: 12px; }
+.bid-trade-title b { font-family: var(--font-display); font-size: 15px; color: var(--bc-strong); }
+.bid-trade-div {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 2px 8px; border-radius: 999px;
+  background: rgba(232,70,0,0.10); color: var(--orange-500);
+  text-transform: uppercase;
+}
+.bid-trade-tally {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.bid-tally-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(39,38,53,0.05);
+  color: var(--bc-muted);
+}
+.bid-tally-chip b { font-weight: 800; color: var(--bc-strong); }
+.bid-tally-chip.is-won    { background: rgba(72,193,181,0.16); color: #17514b; }
+.bid-tally-chip.is-won b  { color: #17514b; }
+.bid-tally-chip.is-needed { background: rgba(255,189,21,0.18); color: #8a5d00; }
+.bid-tally-chip.is-complete { background: rgba(72,193,181,0.16); color: #17514b; }
+.bid-tally-edit {
+  border: none; background: transparent; cursor: pointer;
+  color: currentColor; padding: 0 0 0 4px; opacity: 0.6;
+  display: inline-flex; align-items: center;
+}
+.bid-tally-edit:hover { opacity: 1; }
+
+.bid-trade-empty {
+  padding: 16px 20px; font-size: 13px; color: var(--bc-muted);
+  display: flex; justify-content: space-between; align-items: center;
+}
+table.bid-tracker-table { border-bottom: none; }
+table.bid-tracker-table tbody td { padding: 10px 12px; vertical-align: middle; }
+table.bid-tracker-table tbody td:first-child { padding-left: 20px; }
+table.bid-tracker-table tbody td:last-child { padding-right: 20px; }
+.bid-inline-input {
+  width: 100%; padding: 6px 8px;
+  border: 1px solid transparent; border-radius: 6px;
+  background: transparent; color: var(--bc-strong);
+  font-family: var(--font-ui); font-size: 13px;
+}
+.bid-inline-input::placeholder { color: rgba(39,38,53,0.35); }
+.bid-inline-input:hover { background: rgba(39,38,53,0.03); }
+.bid-inline-input:focus {
+  outline: none; background: #fff;
+  border-color: var(--orange-500);
+}
+.bid-status-select {
+  border: none; background: rgba(39,38,53,0.05);
+  padding: 4px 10px; padding-right: 22px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 12px) calc(50% - 1px), calc(100% - 8px) calc(50% - 1px);
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+.bid-status-select:focus { outline: 1px solid var(--orange-500); }
+.bid-row-delete {
+  border: none; background: transparent; cursor: pointer;
+  padding: 4px; border-radius: 6px; color: var(--bc-muted);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.bid-row-delete:hover { background: rgba(168,25,13,0.10); color: var(--danger); }
+
+/* ============================================================
+   INVITE TO BID MODAL — one section per selected trade with
+   editable email + company rows.
+   ============================================================ */
+.invite-to-bid-modal { max-width: 720px; }
+.invite-body { gap: 20px; }
+.invite-trade {
+  border: 1px solid rgba(39,38,53,0.08);
+  border-radius: 12px; padding: 16px 18px 12px;
+  background: rgba(39,38,53,0.015);
+}
+.invite-trade-h {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; gap: 16px;
+}
+.invite-trade-title { display: flex; align-items: baseline; gap: 10px; }
+.invite-trade-title b { font-family: var(--font-display); font-size: 14px; color: var(--bc-strong); }
+.invite-trade-div {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 2px 8px; border-radius: 999px;
+  background: rgba(232,70,0,0.10); color: var(--orange-500);
+  text-transform: uppercase;
+}
+.invite-trade-meta { display: flex; align-items: center; gap: 12px; }
+.invite-suggested {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: var(--bc-muted);
+}
+.invite-suggested input {
+  width: 48px; padding: 4px 6px;
+  border: 1px solid rgba(39,38,53,0.14); border-radius: 6px;
+  font-family: var(--font-ui); font-size: 13px; text-align: center;
+  color: var(--bc-strong);
+}
+.invite-suggested input:focus { outline: none; border-color: var(--orange-500); }
+.invite-status { font-size: 11px; color: var(--bc-muted); font-weight: 500; }
+
+.invite-rows { display: flex; flex-direction: column; gap: 6px; }
+.invite-row {
+  display: grid; grid-template-columns: 24px 1fr 1fr 28px;
+  gap: 8px; align-items: center;
+}
+.invite-row-num {
+  font-size: 11px; font-weight: 700; color: var(--bc-muted);
+  text-align: center;
+}
+.invite-row input {
+  padding: 8px 10px; border: 1px solid rgba(39,38,53,0.14);
+  border-radius: 8px; background: #fff;
+  font-family: var(--font-ui); font-size: 13px;
+  color: var(--bc-strong);
+}
+.invite-row input:focus { outline: none; border-color: var(--orange-500); }
+.invite-row-remove {
+  border: none; background: transparent; cursor: pointer;
+  padding: 4px; border-radius: 6px; color: var(--bc-muted);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.invite-row-remove:hover { background: rgba(168,25,13,0.10); color: var(--danger); }
+.invite-add-row { align-self: flex-start; margin-top: 4px; font-size: 12px; }
+
+.invite-foot-meta {
+  flex: 1; text-align: left;
+  font-size: 12px; color: var(--bc-muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.invite-foot-actions { display: flex; gap: 10px; }
+
+/* Dark-mode overrides for the Bid Tracker + Invite modal. */
+[data-theme="dark"] .bid-tracker-empty { border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.6); }
+[data-theme="dark"] .bid-tracker-empty-h { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .bid-tracker-add-inline { background: #23222e; border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .bid-tracker-add-grid input,
+[data-theme="dark"] .bid-tracker-add-grid select {
+  background: #181821; color: rgba(255,255,255,0.92);
+  border-color: rgba(255,255,255,0.14);
+}
+[data-theme="dark"] .bid-trade-section { background: #23222e; border-color: rgba(255,255,255,0.10); }
+[data-theme="dark"] .bid-trade-h { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .bid-trade-title b { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .bid-tally-chip { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.65); }
+[data-theme="dark"] .bid-tally-chip b { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .bid-inline-input { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .bid-inline-input:focus { background: #181821; }
+[data-theme="dark"] .invite-trade { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .invite-trade-title b { color: rgba(255,255,255,0.92); }
+[data-theme="dark"] .invite-row input,
+[data-theme="dark"] .invite-suggested input {
+  background: #181821; color: rgba(255,255,255,0.92);
+  border-color: rgba(255,255,255,0.14);
+}
+[data-theme="dark"] .bid-status-select { background: rgba(255,255,255,0.06); }

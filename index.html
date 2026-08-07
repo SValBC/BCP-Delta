@@ -25,15 +25,15 @@
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
   <!-- Data + components — ?v= is a cache-buster; bump when JSX changes and the browser stubbornly serves the old compile -->
-  <script src="data.js?v=11"></script>
-  <script type="text/babel" src="components.jsx?v=11"></script>
-  <script type="text/babel" src="screens-1.jsx?v=11"></script>
-  <script type="text/babel" src="screens-2.jsx?v=11"></script>
-  <script type="text/babel" src="screens-3.jsx?v=11"></script>
-  <script type="text/babel" src="screens-4.jsx?v=11"></script>
-  <script type="text/babel" src="screens-modals.jsx?v=11"></script>
-  <script type="text/babel" src="screens-tabs.jsx?v=11"></script>
-  <script type="text/babel" src="tweaks-panel.jsx?v=11"></script>
+  <script src="data.js?v=12"></script>
+  <script type="text/babel" src="components.jsx?v=12"></script>
+  <script type="text/babel" src="screens-1.jsx?v=12"></script>
+  <script type="text/babel" src="screens-2.jsx?v=12"></script>
+  <script type="text/babel" src="screens-3.jsx?v=12"></script>
+  <script type="text/babel" src="screens-4.jsx?v=12"></script>
+  <script type="text/babel" src="screens-modals.jsx?v=12"></script>
+  <script type="text/babel" src="screens-tabs.jsx?v=12"></script>
+  <script type="text/babel" src="tweaks-panel.jsx?v=12"></script>
 
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
@@ -208,6 +208,62 @@
       // Per-project files (used by the Files workspace screen). Wrapped in state so
       // deletions update the UI immediately.
       const [filesByProject, setFilesByProject] = useState(data.filesByProject || {});
+
+      // Per-project bid tracker rows. Populated by the "Invite to Bid" flow from
+      // Trade Scoping and by manual entries on the Project Home Bid Tracker tab.
+      // Shape: { [projectId]: [{ id, tradeId, tradeName, division, subName, subEmail, status, note, source }] }
+      const [bidsByProject, setBidsByProject] = useState(data.bidsByProject || {});
+      // Per-project override of the trade-scoping-suggested sub count.
+      // Shape: { [projectId]: { [tradeId]: number } }
+      const [suggestedSubsByProject, setSuggestedSubsByProject] = useState(data.suggestedSubsByProject || {});
+
+      const addBid = (projectId, entry) => {
+        const id = "bid-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1000);
+        setBidsByProject(prev => ({
+          ...prev,
+          [projectId]: [...(prev[projectId] || []), { id, status: "invited", note: "", ...entry }]
+        }));
+      };
+      const updateBid = (projectId, bidId, patch) => {
+        setBidsByProject(prev => ({
+          ...prev,
+          [projectId]: (prev[projectId] || []).map(b => b.id === bidId ? { ...b, ...patch } : b)
+        }));
+      };
+      const deleteBid = (projectId, bidId) => {
+        setBidsByProject(prev => ({
+          ...prev,
+          [projectId]: (prev[projectId] || []).filter(b => b.id !== bidId)
+        }));
+      };
+      const updateSuggestedCount = (projectId, tradeId, count) => {
+        setSuggestedSubsByProject(prev => ({
+          ...prev,
+          [projectId]: { ...(prev[projectId] || {}), [tradeId]: Math.max(0, count) }
+        }));
+      };
+      // Bulk-create bid rows when the user submits the Invite to Bid modal from
+      // Trade Scoping (or the Bid Tracker's "Invite more" button).
+      const submitInviteToBid = (projectId, entries) => {
+        setBidsByProject(prev => ({
+          ...prev,
+          [projectId]: [
+            ...(prev[projectId] || []),
+            ...entries.map(e => ({
+              id: "bid-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 10000),
+              status: "invited",
+              note: "",
+              source: "trade-scoping",
+              ...e
+            }))
+          ]
+        }));
+      };
+
+      // Invite to Bid modal state — trades preselected on entry
+      const [inviteToBidState, setInviteToBidState] = useState({ open: false, projectId: null, trades: [] });
+      const openInviteToBid = (projectId, trades) => setInviteToBidState({ open: true, projectId, trades });
+      const closeInviteToBid = () => setInviteToBidState({ open: false, projectId: null, trades: [] });
 
       // Per-project bid configuration (used by the Bid Level Analysis pre-run modal).
       const bidConfigByProject = data.bidConfig || {};
@@ -729,13 +785,13 @@
             onOpenInTab={openProjectInNewTab}
           />
         );
-        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onOpenTabInNewTab={(t) => openProject(p.id, { tab: t, force: true })} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} onCtxMenu={openCtxMenu} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} divisionFormat={t.divisionFormat || "masterformat"} divisionFormatOther={t.divisionFormatOther || ""} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
+        if (tab === "overview") detail = <ProjectHomeScreen project={p} onOpenTab={openProjectTab} onOpenTabInNewTab={(t) => openProject(p.id, { tab: t, force: true })} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} skillRuns={skillRuns} skillCompletions={skillCompletions} onStartSkillRun={startSkillRunCard} onStopSkillRun={stopSkillRunCard} onConfigureBid={openBidRunModal} onCtxMenu={openCtxMenu} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} divisionFormat={t.divisionFormat || "masterformat"} divisionFormatOther={t.divisionFormatOther || ""} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} bidsByProject={bidsByProject} suggestedSubsByProject={suggestedSubsByProject} onAddBid={addBid} onUpdateBid={updateBid} onDeleteBid={deleteBid} onOpenInviteToBid={openInviteToBid} onUpdateSuggestedCount={updateSuggestedCount} />;
         else if (tab === "files") detail = <FilesScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} />;
         else if (tab === "skills") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
         else if (tab === "estimation") detail = <EstimationScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/estimation"]} loadProgress={(skillRuns[p.id + "/estimation"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "estimation")} onStop={() => stopSkillRunCard(p.id, "estimation")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
         else if (tab === "rfc") detail = <RFCScreen project={p} onAskAI={onAskAI} onOpenDrawing={openDrawing} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/rfc"]} loadProgress={(skillRuns[p.id + "/rfc"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "rfc")} onStop={() => stopSkillRunCard(p.id, "rfc")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
         else if (tab === "bid") detail = <BidLevelingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/bid"]} loadProgress={(skillRuns[p.id + "/bid"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "bid")} onStop={() => stopSkillRunCard(p.id, "bid")} editMode={editMode} setEditMode={setEditMode} edits={edits} recordEdit={recordEdit} revertEdits={revertEdits} editCount={editCount} onPushGlobal={() => setShowPushGlobal(true)} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
-        else if (tab === "trades") detail = <TradeScopingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/trades"]} loadProgress={(skillRuns[p.id + "/trades"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "trades")} onStop={() => stopSkillRunCard(p.id, "trades")} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} />;
+        else if (tab === "trades") detail = <TradeScopingScreen project={p} onAskAI={onAskAI} projectSwitcher={projectSwitcher} pinnedSet={pinned} onPin={onPin} isLoading={!!skillRuns[p.id + "/trades"]} loadProgress={(skillRuns[p.id + "/trades"] || {}).progress || 0} onRerun={() => startSkillRunCard(p.id, "trades")} onStop={() => stopSkillRunCard(p.id, "trades")} hasPendingEdits={hasPendingEdits} onPushToMaster={openPushToMaster} onOpenNotifications={openActivityPopover} notificationCount={((data.projectActivity && data.projectActivity[p.id]) || []).filter(a => a.kind === "editing").length + approvals.filter(a => a.status === "pending" && a.projectId === p.id).length} onOpenInviteToBid={openInviteToBid} />;
         else if (tab === "reports") detail = <ReportsScreen ctx={ctx} onAskAI={onAskAI} projectSwitcher={projectSwitcher} />;
         else if (tab === "schedule") detail = <SkillRunScreen project={p} ctx={ctx} setCtx={updateActiveTab} onAskAI={onAskAI} onRunSkill={runSkill} projectSwitcher={projectSwitcher} />;
       }
@@ -910,6 +966,17 @@
             onClose={() => { setShowRomRunModal(false); skillConfirmRef.current = null; }}
             onConfirm={confirmRomRun}
             project={projects.find(p => p.id === romRunProjectId)}
+          />
+
+          <InviteToBidModal
+            open={inviteToBidState.open}
+            onClose={closeInviteToBid}
+            project={projects.find(p => p.id === inviteToBidState.projectId)}
+            trades={inviteToBidState.trades}
+            currentBids={inviteToBidState.projectId ? (bidsByProject[inviteToBidState.projectId] || []) : []}
+            suggestedCounts={inviteToBidState.projectId ? (suggestedSubsByProject[inviteToBidState.projectId] || {}) : {}}
+            onUpdateSuggestedCount={updateSuggestedCount}
+            onSubmit={(entries) => { submitInviteToBid(inviteToBidState.projectId, entries); closeInviteToBid(); }}
           />
 
           <PushToMasterModal

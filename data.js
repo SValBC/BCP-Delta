@@ -1074,5 +1074,36 @@ window.BC_DATA = {
     { trade: "Plumber, JIW",          rate: 88,  fringe: 0.61, region: "PDX metro" },
     { trade: "Sheet Metal, JIW",      rate: 78,  fringe: 0.58, region: "PDX metro" },
     { trade: "Laborer, Group 1",      rate: 48,  fringe: 0.48, region: "PDX metro" }
-  ]
+  ],
+
+  // Per-project bid tracker rows — subs invited on each trade, plus their
+  // current status. Trade ids match those in `tradeScoping.trades`. This
+  // is the seed for the Bid Tracker tab on Recreational Wellness; other
+  // projects start empty and get populated when the user invites subs.
+  bidsByProject: {
+    "rec-wellness": [
+      // Div 08 · Doors, Frames & Hardware — matches the user's example:
+      // 3 suggested, 2 invited (one received, one still out), so 3 more needed
+      // to actually hit the target after any wins.
+      { id: "bid-seed-01", tradeId: "div-08", tradeName: "Doors, Frames & Hardware", division: "08", subName: "Northgate Door & Hardware", subEmail: "quotes@northgate-dh.com", status: "received", note: "Full package — includes hollow metal frames.", source: "trade-scoping" },
+      { id: "bid-seed-02", tradeId: "div-08", tradeName: "Doors, Frames & Hardware", division: "08", subName: "Pacific Openings LLC", subEmail: "estimating@pacificopenings.com", status: "invited", note: "Referred by Mike on the last aquatic center project.", source: "trade-scoping" },
+      // Div 26 · Electrical — Stark Electric was the Bid Leveling winner
+      // (see runs r5), so their row is already Won and the losing bidders
+      // are marked Denied.
+      { id: "bid-seed-03", tradeId: "div-26", tradeName: "Electrical", division: "26", subName: "Stark Electric Inc.", subEmail: "sales@stark-electric.com", status: "won", note: "Bid Leveling winner — $502.4k, awarded 5/2.", source: "trade-scoping" },
+      { id: "bid-seed-04", tradeId: "div-26", tradeName: "Electrical", division: "26", subName: "Circuit Craft Co.", subEmail: "bids@circuitcraft.co", status: "denied", note: "10% over Stark, missed panel schedule for lobby.", source: "trade-scoping" },
+      { id: "bid-seed-05", tradeId: "div-26", tradeName: "Electrical", division: "26", subName: "Voltage One", subEmail: "estimating@voltageone.com", status: "denied", note: "", source: "trade-scoping" },
+      // Div 22 · Plumbing — ThermalTech won (see runs r6). Bid Leveling's
+      // winner + a couple of others already priced.
+      { id: "bid-seed-06", tradeId: "div-22", tradeName: "Plumbing", division: "22", subName: "ThermalTech Solutions", subEmail: "team@thermaltech.com", status: "won", note: "Handles both pool package and domestic side.", source: "trade-scoping" },
+      { id: "bid-seed-07", tradeId: "div-22", tradeName: "Plumbing", division: "22", subName: "Cascade Plumbing", subEmail: "bids@cascadeplumbing.com", status: "denied", note: "", source: "trade-scoping" },
+      // Div 03 · Concrete — invitations still out, none received yet.
+      { id: "bid-seed-08", tradeId: "div-03", tradeName: "Concrete", division: "03", subName: "Ironbound Concrete", subEmail: "estimating@ironbound.com", status: "invited", note: "", source: "trade-scoping" },
+      { id: "bid-seed-09", tradeId: "div-03", tradeName: "Concrete", division: "03", subName: "West Coast Slab", subEmail: "info@wcslab.com", status: "invited", note: "Needs geotech before pricing foundation.", source: "trade-scoping" },
+    ]
+  },
+  // Optional per-project override of Trade Scoping's suggested sub count.
+  // Empty by default — the Bid Tracker falls back to `trade.subs` from
+  // `tradeScoping.trades` when a trade isn't listed here.
+  suggestedSubsByProject: {}
 };

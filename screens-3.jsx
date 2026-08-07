@@ -1941,7 +1941,7 @@ function BidLevelingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin
 // Users can multi-select trades and Download PDF / Invite to Bid / Copy
 // text — the core "get bids out the door" workflow.
 // =====================================================
-function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
+function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPin, isLoading, loadProgress, onRerun, onStop, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount, onOpenInviteToBid }) {
   const data = (window.BC_DATA && window.BC_DATA.tradeScoping) || { trades: [] };
   const allTrades = data.trades || [];
 
@@ -2019,6 +2019,23 @@ function TradeScopingScreen({ project, onAskAI, projectSwitcher, pinnedSet, onPi
     }
   };
   const handleInvite = () => {
+    if (selected.size === 0) return;
+    const tradesToInvite = allTrades.filter(t => selected.has(t.id));
+    if (onOpenInviteToBid && project) {
+      // Open the Invite to Bid modal — actual "invited" state is set when
+      // the modal submits. We optimistically flag the trades locally so the
+      // Trade Scoping table's "Invited" badge updates right away.
+      onOpenInviteToBid(project.id, tradesToInvite);
+      setInvitedIds(prev => {
+        const next = new Set(prev);
+        for (const id of selected) next.add(id);
+        return next;
+      });
+      clearSelection();
+      return;
+    }
+    // Fallback for older callers: keep the flash-based behavior so the
+    // button doesn't feel dead when the modal isn't wired up.
     setInvitedIds(prev => {
       const next = new Set(prev);
       for (const id of selected) next.add(id);

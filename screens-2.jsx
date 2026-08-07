@@ -32,9 +32,9 @@ function FileStatusBadge({ status }) {
 // =====================================================
 // PROJECT HOME (workspace overview when project opened)
 // =====================================================
-function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, onCtxMenu, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal, divisionFormat, divisionFormatOther, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount }) {
+function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onOpenDrawing, projectSwitcher, pinnedSet, onPin, skillRuns, skillCompletions, onStartSkillRun, onStopSkillRun, onConfigureBid, onCtxMenu, editMode, setEditMode, edits, recordEdit, revertEdits, editCount, onPushGlobal, divisionFormat, divisionFormatOther, hasPendingEdits, onPushToMaster, onOpenNotifications, notificationCount, bidsByProject, suggestedSubsByProject, onAddBid, onUpdateBid, onDeleteBid, onOpenInviteToBid, onUpdateSuggestedCount }) {
   const drawings = window.BC_DATA.drawings || [];
-  // Project Home sub-tabs: overview | files | takeoffs | drawings | labor | history
+  // Project Home sub-tabs: overview | files | drawings | takeoffs | bids | labor | history
   const [homeTab, setHomeTab] = uS2("overview");
 
   // First-visit walkthrough for Project Home. Fires once per user via
@@ -258,13 +258,17 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           <button className={"report-tab " + (homeTab === "files" ? "active" : "")} onClick={() => setHomeTab("files")}>
             <Icon name="folder_copy" size={14} />Files
           </button>
+          <button className={"report-tab " + (homeTab === "drawings" ? "active" : "")} onClick={() => setHomeTab("drawings")}>
+            <Icon name="architecture" size={14} />Drawings
+            <span className="report-tab-count">{((window.BC_DATA && window.BC_DATA.drawings) || []).length}</span>
+          </button>
           <button className={"report-tab " + (homeTab === "takeoffs" ? "active" : "")} onClick={() => setHomeTab("takeoffs")}>
             <Icon name="straighten" size={14} />Takeoffs
             <span className="report-tab-count">{(((window.BC_DATA && window.BC_DATA.takeoffsByProject) || {})[project.id] || []).length}</span>
           </button>
-          <button className={"report-tab " + (homeTab === "drawings" ? "active" : "")} onClick={() => setHomeTab("drawings")}>
-            <Icon name="architecture" size={14} />Drawings
-            <span className="report-tab-count">{((window.BC_DATA && window.BC_DATA.drawings) || []).length}</span>
+          <button className={"report-tab " + (homeTab === "bids" ? "active" : "")} onClick={() => setHomeTab("bids")}>
+            <Icon name="handshake" size={14} />Bid Tracker
+            <span className="report-tab-count">{((bidsByProject && bidsByProject[project.id]) || []).length}</span>
           </button>
           <button className={"report-tab " + (homeTab === "labor" ? "active" : "")} onClick={() => setHomeTab("labor")}>
             <Icon name="engineering" size={14} />Project Rates
@@ -276,8 +280,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         </div>
 
         {homeTab === "files" && <ProjectFilesTab project={project} onOpenDrawing={onOpenDrawing} />}
-        {homeTab === "takeoffs" && <ProjectTakeoffsTab project={project} onOpenDrawing={onOpenDrawing} divisionFormat={divisionFormat} divisionFormatOther={divisionFormatOther} />}
         {homeTab === "drawings" && <ProjectDrawingsTab project={project} onOpenDrawing={onOpenDrawing} />}
+        {homeTab === "takeoffs" && <ProjectTakeoffsTab project={project} onOpenDrawing={onOpenDrawing} divisionFormat={divisionFormat} divisionFormatOther={divisionFormatOther} />}
+        {homeTab === "bids" && <ProjectBidTrackerTab project={project} bids={(bidsByProject && bidsByProject[project.id]) || []} suggestedCounts={(suggestedSubsByProject && suggestedSubsByProject[project.id]) || {}} onAddBid={onAddBid} onUpdateBid={onUpdateBid} onDeleteBid={onDeleteBid} onInviteMore={onOpenInviteToBid} onUpdateSuggestedCount={onUpdateSuggestedCount} />}
         {homeTab === "labor" && <ProjectLaborTab project={project} />}
         {homeTab === "history" && <ProjectHistoryTab project={project} onOpenTab={onOpenTab} />}
 
@@ -2545,4 +2550,269 @@ function FilesScreen({ project, onAskAI, onOpenDrawing, projectSwitcher }) {
 
 }
 
-Object.assign(window, { ProjectHomeScreen, FilesScreen, FileStatusBadge });
+// =====================================================
+// PROJECT HOME — BID TRACKER TAB
+// Tracks subcontractor bids for the project. Populated by the "Invite to Bid"
+// flow on Trade Scoping, and by manual entries here. Each trade section
+// shows a tally (suggested / invited / received / won) and its individual
+// sub rows, each with an editable status, note, name, and email.
+// =====================================================
+const BID_STATUS_META = {
+  invited:  { label: "Invited to bid", cls: "b-warn",  icon: "outgoing_mail" },
+  received: { label: "Bid received",   cls: "b-med",   icon: "mark_email_read" },
+  won:      { label: "Won",             cls: "b-done", icon: "check_circle" },
+  denied:   { label: "Denied",          cls: "b-high", icon: "block" },
+};
+// Very small heuristic to guess a company name from an email address —
+// takes the domain (before the first dot), strips common separators, and
+// title-cases each word so `sales@stark-electric.com` becomes "Stark Electric".
+const companyFromEmail = (email) => {
+  if (!email || typeof email !== "string" || !email.includes("@")) return "";
+  const domain = email.split("@")[1] || "";
+  const base = (domain.split(".")[0] || "").replace(/[_-]+/g, " ").trim();
+  if (!base) return "";
+  return base.split(" ").filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+};
+
+function ProjectBidTrackerTab({ project, bids, suggestedCounts, onAddBid, onUpdateBid, onDeleteBid, onInviteMore, onUpdateSuggestedCount }) {
+  // The trade catalog for this project comes from the Trade Scoping skill run.
+  // We fall back to what's referenced by existing bids so a project that
+  // hasn't run Trade Scoping (or has trades manually added) still renders
+  // useful sections.
+  const scopingData = (window.BC_DATA && window.BC_DATA.tradeScoping) || { trades: [] };
+  const scopingTrades = scopingData.trades || [];
+  // Merge: every trade referenced by an existing bid + every trade Cody
+  // identified. De-dupe by trade id. Order Cody's list first so newly-added
+  // trades from Trade Scoping stay visible in one predictable order.
+  const tradeMap = new Map();
+  scopingTrades.forEach(t => tradeMap.set(t.id, { id: t.id, name: t.name, division: t.division, suggested: t.subs || 3 }));
+  bids.forEach(b => {
+    if (!tradeMap.has(b.tradeId)) {
+      tradeMap.set(b.tradeId, { id: b.tradeId, name: b.tradeName || "Custom trade", division: b.division || "—", suggested: 3 });
+    }
+  });
+  const trades = Array.from(tradeMap.values());
+
+  // Effective suggested count, honoring per-project overrides.
+  const suggestedFor = (tradeId) => {
+    if (suggestedCounts && typeof suggestedCounts[tradeId] === "number") return suggestedCounts[tradeId];
+    const t = tradeMap.get(tradeId);
+    return (t && t.suggested) || 3;
+  };
+  const tallyFor = (tradeId) => {
+    const rows = bids.filter(b => b.tradeId === tradeId);
+    const invited = rows.length; // every row implies at least an invitation
+    const received = rows.filter(b => b.status === "received" || b.status === "won").length;
+    const won = rows.filter(b => b.status === "won").length;
+    const denied = rows.filter(b => b.status === "denied").length;
+    const suggested = suggestedFor(tradeId);
+    const needed = Math.max(0, suggested - won);
+    return { suggested, invited, received, won, denied, needed };
+  };
+
+  const [manualOpen, setManualOpen] = uS2(false);
+  const [manualForm, setManualForm] = uS2({ tradeId: (trades[0] && trades[0].id) || "", subName: "", subEmail: "", note: "", status: "invited" });
+  uE2(() => {
+    if (manualOpen && trades.length > 0 && !manualForm.tradeId) {
+      setManualForm(f => ({ ...f, tradeId: trades[0].id }));
+    }
+  }, [manualOpen, trades.length]);
+
+  const submitManual = () => {
+    if (!manualForm.tradeId || !manualForm.subName.trim()) return;
+    const trade = tradeMap.get(manualForm.tradeId);
+    onAddBid && onAddBid(project.id, {
+      tradeId: manualForm.tradeId,
+      tradeName: trade ? trade.name : "Custom trade",
+      division: trade ? trade.division : "—",
+      subName: manualForm.subName.trim(),
+      subEmail: manualForm.subEmail.trim(),
+      note: manualForm.note.trim(),
+      status: manualForm.status || "invited",
+      source: "manual",
+    });
+    setManualForm({ tradeId: manualForm.tradeId, subName: "", subEmail: "", note: "", status: "invited" });
+    setManualOpen(false);
+  };
+
+  // Global tally across all trades (for the header pill row).
+  const globalTally = trades.reduce((acc, t) => {
+    const tally = tallyFor(t.id);
+    acc.suggested += tally.suggested;
+    acc.invited   += tally.invited;
+    acc.received  += tally.received;
+    acc.won       += tally.won;
+    acc.needed    += tally.needed;
+    return acc;
+  }, { suggested: 0, invited: 0, received: 0, won: 0, needed: 0 });
+
+  const hasAny = bids.length > 0 || scopingTrades.length > 0;
+
+  return (
+    <div className="bid-tracker">
+      <div className="bid-tracker-h">
+        <div>
+          <h2 className="page-h1" style={{ fontSize: 22, marginBottom: 4 }}>Bid Tracker</h2>
+          <p className="page-sub" style={{ marginTop: 0 }}>
+            {hasAny
+              ? `${bids.length} subcontractor${bids.length === 1 ? "" : "s"} across ${trades.length} trade${trades.length === 1 ? "" : "s"} · ${globalTally.won} won · ${globalTally.needed} more needed`
+              : "Run the Trade Scoping skill to auto-populate trades, or add subcontractors manually."}
+          </p>
+        </div>
+        <div className="bid-tracker-actions">
+          {scopingTrades.length > 0 && (
+            <button className="btn" onClick={() => onInviteMore && onInviteMore(project.id, scopingTrades)}>
+              <Icon name="mark_email_read" size={14} />Invite to bid
+            </button>
+          )}
+          <button className="btn-primary" onClick={() => setManualOpen(true)}>
+            <Icon name="add" size={14} />Add bid
+          </button>
+        </div>
+      </div>
+
+      {!hasAny && (
+        <div className="bid-tracker-empty">
+          <Icon name="handshake" size={40} />
+          <div className="bid-tracker-empty-h">No bids to track yet</div>
+          <p>The Bid Tracker fills up when you run the Trade Scoping skill and invite subs to bid, or when you add subs manually.</p>
+        </div>
+      )}
+
+      {manualOpen && (
+        <div className="bid-tracker-add-inline">
+          <div className="bid-tracker-add-h">
+            <b>Add subcontractor bid</b>
+            <button className="btn-ghost" onClick={() => setManualOpen(false)}><Icon name="close" size={14} /></button>
+          </div>
+          <div className="bid-tracker-add-grid">
+            <label>
+              <span>Trade</span>
+              <select value={manualForm.tradeId} onChange={(e) => setManualForm(f => ({ ...f, tradeId: e.target.value }))}>
+                {trades.map(t => <option key={t.id} value={t.id}>Div {t.division} · {t.name}</option>)}
+                {trades.length === 0 && <option value="">No trades available — run Trade Scoping first</option>}
+              </select>
+            </label>
+            <label>
+              <span>Subcontractor name</span>
+              <input type="text" placeholder="e.g. Stark Electric Inc." value={manualForm.subName} onChange={(e) => setManualForm(f => ({ ...f, subName: e.target.value }))} />
+            </label>
+            <label>
+              <span>Email <span style={{ color: "var(--bc-muted)", fontWeight: 400 }}>optional</span></span>
+              <input type="email" placeholder="sales@stark-electric.com" value={manualForm.subEmail} onChange={(e) => setManualForm(f => {
+                const next = { ...f, subEmail: e.target.value };
+                if (!next.subName.trim()) next.subName = companyFromEmail(e.target.value);
+                return next;
+              })} />
+            </label>
+            <label>
+              <span>Status</span>
+              <select value={manualForm.status} onChange={(e) => setManualForm(f => ({ ...f, status: e.target.value }))}>
+                {Object.keys(BID_STATUS_META).map(k => <option key={k} value={k}>{BID_STATUS_META[k].label}</option>)}
+              </select>
+            </label>
+            <label style={{ gridColumn: "1 / -1" }}>
+              <span>Note <span style={{ color: "var(--bc-muted)", fontWeight: 400 }}>optional</span></span>
+              <input type="text" placeholder="What this sub is responsible for, referral source, etc." value={manualForm.note} onChange={(e) => setManualForm(f => ({ ...f, note: e.target.value }))} />
+            </label>
+          </div>
+          <div className="bid-tracker-add-foot">
+            <button className="btn" onClick={() => setManualOpen(false)}>Cancel</button>
+            <button className="btn-primary" onClick={submitManual} disabled={!manualForm.tradeId || !manualForm.subName.trim()}>
+              <Icon name="add" size={14} />Add bid
+            </button>
+          </div>
+        </div>
+      )}
+
+      {trades.map(trade => {
+        const tally = tallyFor(trade.id);
+        const rows = bids.filter(b => b.tradeId === trade.id);
+        return (
+          <section className="bid-trade-section" key={trade.id}>
+            <div className="bid-trade-h">
+              <div className="bid-trade-title">
+                <span className="bid-trade-div">Div {trade.division}</span>
+                <b>{trade.name}</b>
+              </div>
+              <div className="bid-trade-tally">
+                <span className="bid-tally-chip">
+                  <b>{tally.suggested}</b> suggested
+                  <button className="bid-tally-edit" title="Adjust suggested sub count"
+                    onClick={() => {
+                      const next = window.prompt(`How many subs should we aim for on ${trade.name}?`, String(tally.suggested));
+                      const parsed = parseInt(next, 10);
+                      if (!isNaN(parsed) && parsed >= 0) onUpdateSuggestedCount && onUpdateSuggestedCount(project.id, trade.id, parsed);
+                    }}>
+                    <Icon name="edit" size={11} />
+                  </button>
+                </span>
+                <span className="bid-tally-chip">{tally.invited} invited</span>
+                <span className="bid-tally-chip">{tally.received} received</span>
+                <span className="bid-tally-chip is-won">{tally.won} won</span>
+                {tally.needed > 0 ? (
+                  <span className="bid-tally-chip is-needed">{tally.needed} more sub{tally.needed === 1 ? "" : "s"} needed</span>
+                ) : (
+                  <span className="bid-tally-chip is-complete"><Icon name="check" size={12} />Target hit</span>
+                )}
+              </div>
+            </div>
+
+            {rows.length === 0 ? (
+              <div className="bid-trade-empty">
+                No subs invited yet.
+                <button className="btn-ghost" onClick={() => onInviteMore && onInviteMore(project.id, [trade])}>
+                  <Icon name="mark_email_read" size={13} />Invite subs
+                </button>
+              </div>
+            ) : (
+              <table className="bc-table bid-tracker-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "26%" }}>Subcontractor</th>
+                    <th style={{ width: "22%" }}>Email</th>
+                    <th style={{ width: "16%" }}>Status</th>
+                    <th>Note</th>
+                    <th style={{ width: 60 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map(bid => (
+                    <tr key={bid.id}>
+                      <td>
+                        <input type="text" className="bid-inline-input" value={bid.subName || ""} placeholder="Subcontractor name"
+                          onChange={(e) => onUpdateBid && onUpdateBid(project.id, bid.id, { subName: e.target.value })} />
+                      </td>
+                      <td>
+                        <input type="email" className="bid-inline-input" value={bid.subEmail || ""} placeholder="—"
+                          onChange={(e) => onUpdateBid && onUpdateBid(project.id, bid.id, { subEmail: e.target.value })} />
+                      </td>
+                      <td>
+                        <select className={"bid-status-select badge " + (BID_STATUS_META[bid.status] || BID_STATUS_META.invited).cls}
+                          value={bid.status || "invited"}
+                          onChange={(e) => onUpdateBid && onUpdateBid(project.id, bid.id, { status: e.target.value })}>
+                          {Object.keys(BID_STATUS_META).map(k => <option key={k} value={k}>{BID_STATUS_META[k].label}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" className="bid-inline-input" value={bid.note || ""} placeholder="Add a note…"
+                          onChange={(e) => onUpdateBid && onUpdateBid(project.id, bid.id, { note: e.target.value })} />
+                      </td>
+                      <td className="center">
+                        <button className="bid-row-delete" title="Remove bid" onClick={() => onDeleteBid && onDeleteBid(project.id, bid.id)}>
+                          <Icon name="close" size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+Object.assign(window, { ProjectHomeScreen, FilesScreen, FileStatusBadge, ProjectBidTrackerTab });

@@ -1219,4 +1219,177 @@ function PushToMasterModal({ open, onClose, onSubmit, project, changes, user }) 
   );
 }
 
-Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, ConnectLogo, RunBidAnalysisModal, RunRomEstimateModal, PushToMasterModal });
+// =====================================================
+// INVITE TO BID MODAL
+// Opens from Trade Scoping (or the Bid Tracker's "Invite to bid" button)
+// and collects a subcontractor entry per row for each trade the user
+// selected. The user types an email address, and we take a best-effort
+// guess at the company name from the email domain (they can override).
+// Submit populates the project's Bid Tracker with `invited` rows.
+// =====================================================
+const emailToCompanyName = (email) => {
+  if (!email || typeof email !== "string" || !email.includes("@")) return "";
+  const domain = email.split("@")[1] || "";
+  const base = (domain.split(".")[0] || "").replace(/[_-]+/g, " ").trim();
+  if (!base) return "";
+  return base.split(" ").filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+};
+
+function InviteToBidModal({ open, onClose, onSubmit, project, trades, currentBids, suggestedCounts, onUpdateSuggestedCount }) {
+  // Per-trade rows keyed by trade id: [{ name, email }, ...].
+  // Sized initially to (suggested count - already-invited count) so the
+  // user only enters the deltas needed to reach the suggestion.
+  const [rowsByTrade, setRowsByTrade] = uSM({});
+
+  uEM(() => {
+    if (!open) return;
+    const next = {};
+    (trades || []).forEach(t => {
+      const suggested = (suggestedCounts && typeof suggestedCounts[t.id] === "number") ? suggestedCounts[t.id] : (t.subs || 3);
+      const alreadyInvited = (currentBids || []).filter(b => b.tradeId === t.id).length;
+      const seed = Math.max(1, suggested - alreadyInvited);
+      next[t.id] = Array.from({ length: seed }, () => ({ name: "", email: "" }));
+    });
+    setRowsByTrade(next);
+  }, [open, trades && trades.map(t => t.id).join(",")]);
+
+  if (!open || !trades || trades.length === 0) return null;
+
+  const setRow = (tradeId, idx, patch) => {
+    setRowsByTrade(prev => {
+      const rows = (prev[tradeId] || []).map((r, i) => {
+        if (i !== idx) return r;
+        const merged = { ...r, ...patch };
+        // Auto-fill name from email domain if the name is still empty.
+        if ("email" in patch && !merged.name) merged.name = emailToCompanyName(patch.email);
+        return merged;
+      });
+      return { ...prev, [tradeId]: rows };
+    });
+  };
+  const addRow = (tradeId) => {
+    setRowsByTrade(prev => ({ ...prev, [tradeId]: [...(prev[tradeId] || []), { name: "", email: "" }] }));
+  };
+  const removeRow = (tradeId, idx) => {
+    setRowsByTrade(prev => {
+      const rows = (prev[tradeId] || []).filter((_, i) => i !== idx);
+      return { ...prev, [tradeId]: rows.length > 0 ? rows : [{ name: "", email: "" }] };
+    });
+  };
+
+  // Count only rows that have at least a name OR an email — empty rows are
+  // just placeholders and shouldn't be sent.
+  const totalFilledRows = Object.values(rowsByTrade).reduce((acc, rows) => {
+    return acc + rows.filter(r => (r.name || "").trim() || (r.email || "").trim()).length;
+  }, 0);
+  const canSend = totalFilledRows > 0;
+
+  const submit = () => {
+    const entries = [];
+    trades.forEach(t => {
+      (rowsByTrade[t.id] || []).forEach(r => {
+        const nameTrim = (r.name || "").trim();
+        const emailTrim = (r.email || "").trim();
+        if (!nameTrim && !emailTrim) return;
+        entries.push({
+          tradeId: t.id,
+          tradeName: t.name,
+          division: t.division,
+          subName: nameTrim || emailToCompanyName(emailTrim),
+          subEmail: emailTrim,
+        });
+      });
+    });
+    if (entries.length === 0) return;
+    onSubmit && onSubmit(entries);
+  };
+
+  const suggestedFor = (tradeId, fallback) => {
+    if (suggestedCounts && typeof suggestedCounts[tradeId] === "number") return suggestedCounts[tradeId];
+    return fallback || 3;
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-shell invite-to-bid-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-h">
+          <div>
+            <div className="modal-eyebrow"><Icon name="mark_email_read" size={12} style={{ marginRight: 8, verticalAlign: "-2px" }} />Invite to bid</div>
+            <h2>Invite subcontractors on {trades.length} trade{trades.length === 1 ? "" : "s"}</h2>
+            <p>Enter an email for each sub you want to reach out to. Cody will guess the company name from the address — edit it if it's off. Everything you submit lands on the Bid Tracker tab.</p>
+          </div>
+          <button className="modal-close" onClick={onClose} aria-label="Close"><Icon name="close" size={18} /></button>
+        </div>
+
+        <div className="modal-body invite-body">
+          {trades.map(t => {
+            const rows = rowsByTrade[t.id] || [];
+            const suggested = suggestedFor(t.id, t.subs);
+            const alreadyInvited = (currentBids || []).filter(b => b.tradeId === t.id).length;
+            const filledCount = rows.filter(r => (r.name || "").trim() || (r.email || "").trim()).length;
+            return (
+              <section key={t.id} className="invite-trade">
+                <div className="invite-trade-h">
+                  <div className="invite-trade-title">
+                    <span className="invite-trade-div">Div {t.division}</span>
+                    <b>{t.name}</b>
+                  </div>
+                  <div className="invite-trade-meta">
+                    <label className="invite-suggested">
+                      <span>Target subs</span>
+                      <input type="number" min="0" max="20" value={suggested}
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value, 10);
+                          if (!isNaN(parsed) && parsed >= 0 && onUpdateSuggestedCount && project) {
+                            onUpdateSuggestedCount(project.id, t.id, parsed);
+                          }
+                        }} />
+                    </label>
+                    <span className="invite-status">
+                      {alreadyInvited > 0 ? `${alreadyInvited} already invited · ` : ""}
+                      {filledCount} new
+                    </span>
+                  </div>
+                </div>
+                <div className="invite-rows">
+                  {rows.map((r, idx) => (
+                    <div className="invite-row" key={idx}>
+                      <div className="invite-row-num">{idx + 1}</div>
+                      <input type="email" placeholder="sub@company.com" value={r.email}
+                        onChange={(e) => setRow(t.id, idx, { email: e.target.value })} />
+                      <input type="text" placeholder="Company name" value={r.name}
+                        onChange={(e) => setRow(t.id, idx, { name: e.target.value })} />
+                      <button className="invite-row-remove" title="Remove row" onClick={() => removeRow(t.id, idx)}>
+                        <Icon name="close" size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button className="btn-ghost invite-add-row" onClick={() => addRow(t.id)}>
+                    <Icon name="add" size={14} />Add another
+                  </button>
+                </div>
+              </section>
+            );
+          })}
+        </div>
+
+        <div className="modal-foot">
+          <div className="invite-foot-meta">
+            <Icon name="info" size={13} style={{ opacity: 0.6 }} />
+            {canSend
+              ? `${totalFilledRows} bid invitation${totalFilledRows === 1 ? "" : "s"} will be sent`
+              : "Add at least one email or company name to send invitations"}
+          </div>
+          <div className="invite-foot-actions">
+            <button className="btn" onClick={onClose}>Cancel</button>
+            <button className="btn-primary" onClick={submit} disabled={!canSend}>
+              <Icon name="send" size={14} />Send {totalFilledRows > 0 ? totalFilledRows : ""} invitation{totalFilledRows === 1 ? "" : "s"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NewProjectModal, DailyReportModal, PushGlobalModal, DeleteFileModal, AddConnectionModal, ConnectLogo, RunBidAnalysisModal, RunRomEstimateModal, PushToMasterModal, InviteToBidModal });
