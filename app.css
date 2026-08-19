@@ -85,12 +85,49 @@
   border: 1px solid var(--v3-border-rail);
   box-shadow: -4px 0 20px rgba(39, 38, 53, 0.25);
 }
-/* Legacy tab bar sits above the canvas in Hybrid mode — dark bar with
-   only the active tab visually attached to the canvas below. */
+/* Tab bar in Hybrid — dark ground with only the active tab attached to the
+   canvas below. Nav-toggle button lives at the left of the strip. */
 [data-theme="hybrid"] .tabbar {
   background: var(--v3-outer-bg);
   border-bottom: none;
+  height: 48px;
+  padding: 8px 12px 0;
 }
+[data-theme="hybrid"] .tabbar .tab {
+  border-radius: 4px 4px 0 0;
+  height: 32px;
+  min-width: 150px;
+  background: var(--v3-tab-inactive-bg);
+  color: rgba(253, 253, 253, 0.75);
+  font-size: 12px;
+}
+[data-theme="hybrid"] .tabbar .tab.active {
+  background: var(--v3-off-white);
+  color: var(--v3-dark-raisin);
+}
+.tabbar-nav-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(253, 253, 253, 0.75);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 4px;
+  transition: background 120ms, color 120ms;
+}
+.tabbar-nav-toggle:hover {
+  background: rgba(253, 253, 253, 0.06);
+  color: var(--v3-off-white);
+}
+[data-theme="light"] .tabbar-nav-toggle { color: rgba(39, 38, 53, 0.6); }
+[data-theme="light"] .tabbar-nav-toggle:hover { background: rgba(39, 38, 53, 0.06); color: var(--v3-dark-raisin); }
 
 /* ---------- HOME SCREEN — v3 ---------------------------------- */
 .home-v3 {
@@ -114,20 +151,23 @@
   min-height: 208px;
 }
 .home-v3-greet-cody {
-  width: 149px;
+  width: 180px;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
+  align-self: stretch;
 }
+/* Fit the full robot inside the greet card — use contain so no part of Cody
+   is cropped by the container. Bottom-aligned so his feet sit on the
+   greet card's base for a grounded look. */
 .home-v3-greet-cody video,
 .home-v3-greet-cody img {
   position: absolute;
-  top: 28px;
-  left: calc(50% + 20.5px);
-  transform: translateX(-50%);
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
+  inset: 8px 0 0 0;
+  width: 100%;
+  height: calc(100% - 8px);
+  object-fit: contain;
+  object-position: center bottom;
 }
 .home-v3-greet-content {
   flex: 1;

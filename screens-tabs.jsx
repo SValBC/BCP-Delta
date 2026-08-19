@@ -4,10 +4,19 @@ const { useState: useT, useEffect: useTE, useRef: useTR, useMemo: useTM } = Reac
 // =====================================================
 // TAB BAR — top of detail column
 // =====================================================
-function TabBar({ tabs, activeId, onActivate, onClose, onNewTab }) {
+function TabBar({ tabs, activeId, onActivate, onClose, onNewTab, onToggleNav, navCollapsed }) {
   if (!tabs || tabs.length === 0) return null;
   return (
     <div className="tabbar">
+      {onToggleNav && (
+        <button
+          className="tabbar-nav-toggle"
+          onClick={onToggleNav}
+          aria-label={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+          <Icon name={navCollapsed ? "menu_open" : "menu"} size={18} />
+        </button>
+      )}
       <div className="tabbar-scroll">
         {tabs.map(tab => (
           <div
