@@ -498,15 +498,8 @@ function NavRail({ screen, setScreen, setScreenInNewTab, user, onToggleTheme, th
         )}
       </div>
 
-      {/* Toggle button — collapses/expands the nav rail. The chevron rotates
-          180° instead of swapping glyphs so the motion stays continuous. */}
-      {onToggleCollapsed && (
-        <button className="nav-collapse-btn"
-                onClick={onToggleCollapsed}
-                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          <Icon name="chevron_left" size={16} style={collapsed ? { transform: "rotate(180deg)" } : undefined} />
-        </button>
-      )}
+      {/* Collapse control moved into the TabBar (top-left of the canvas) to
+          match the Figma layout. The rail no longer renders its own toggle. */}
 
       <div className="nav-section">Workspace</div>
       {items.map(it => (

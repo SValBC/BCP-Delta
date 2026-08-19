@@ -14,7 +14,7 @@ function TabBar({ tabs, activeId, onActivate, onClose, onNewTab, onToggleNav, na
           onClick={onToggleNav}
           aria-label={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          <Icon name={navCollapsed ? "menu_open" : "menu"} size={18} />
+          <Icon name={navCollapsed ? "dock_to_left" : "left_panel_close"} size={20} />
         </button>
       )}
       <div className="tabbar-scroll">

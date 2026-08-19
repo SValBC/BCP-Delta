@@ -148,25 +148,27 @@
   display: flex;
   align-items: stretch;
   overflow: hidden;
-  min-height: 208px;
+  min-height: 240px;
 }
+/* 200x200 Cody sits in a 200px-wide slot on the left of the greet card. The
+   slot stretches to the card's full height; Cody is bottom-anchored so his
+   feet rest on the card's base regardless of card height. */
 .home-v3-greet-cody {
-  width: 180px;
+  width: 200px;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
   align-self: stretch;
 }
-/* Fit the full robot inside the greet card — use contain so no part of Cody
-   is cropped by the container. Bottom-aligned so his feet sit on the
-   greet card's base for a grounded look. */
 .home-v3-greet-cody video,
 .home-v3-greet-cody img {
   position: absolute;
-  inset: 8px 0 0 0;
-  width: 100%;
-  height: calc(100% - 8px);
-  object-fit: contain;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
   object-position: center bottom;
 }
 .home-v3-greet-content {
