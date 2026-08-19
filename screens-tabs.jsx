@@ -14,7 +14,13 @@ function TabBar({ tabs, activeId, onActivate, onClose, onNewTab, onToggleNav, na
           onClick={onToggleNav}
           aria-label={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
-          <Icon name={navCollapsed ? "dock_to_left" : "left_panel_close"} size={20} />
+          {/* Sidebar icon — inline SVG so it doesn't depend on a specific icon
+              font being loaded. Matches the Phosphor "SidebarSimple" glyph
+              used in the Figma design. */}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
+            <line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
         </button>
       )}
       <div className="tabbar-scroll">

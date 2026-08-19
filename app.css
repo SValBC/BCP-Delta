@@ -85,18 +85,18 @@
   border: 1px solid var(--v3-border-rail);
   box-shadow: -4px 0 20px rgba(39, 38, 53, 0.25);
 }
-/* Tab bar in Hybrid — the whole strip sits at the same y as the side panels
-   (no top padding), 32px tall so the tabs fill it and their bottom edge
-   connects directly to the canvas below. */
+/* Tab bar in Hybrid — 40px tall, top aligned with side panels (no top
+   padding on either), tabs anchored to the bottom edge so their bottom
+   connects directly to the canvas. */
 [data-theme="hybrid"] .tabbar {
   background: var(--v3-outer-bg);
   border-bottom: none;
-  height: 32px;
+  height: 40px;
   padding: 0 12px 0 0;
-  align-items: stretch;
+  align-items: flex-end;
   gap: 8px;
 }
-[data-theme="hybrid"] .tabbar-scroll { padding-top: 0; align-items: stretch; }
+[data-theme="hybrid"] .tabbar-scroll { padding-top: 0; align-items: flex-end; }
 [data-theme="hybrid"] .tabbar .tab {
   border-radius: 4px 4px 0 0;
   height: 32px;
@@ -109,10 +109,11 @@
   background: var(--v3-off-white);
   color: var(--v3-dark-raisin);
 }
-/* Sidebar collapse — 32x32 button flush with the tabbar's top and left
-   edges. Symmetric spacing: 8px .app-grid gap between the nav rail and the
-   button on the left, 8px tabbar gap between the button and the first tab
-   on the right, so the button is visually centered in the gap. */
+/* Sidebar collapse — 32x32 button pinned to the tabbar's top-left corner so
+   its top aligns with the panels. Symmetric spacing: 8px .app-grid gap
+   between the nav rail and the button on the left, 8px tabbar gap between
+   the button and the first tab on the right — visually centered in the
+   gutter between the nav rail and the first tab. */
 .tabbar-nav-toggle {
   background: none;
   border: none;
@@ -126,6 +127,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  align-self: flex-start;
   margin: 0;
   transition: background 120ms, color 120ms;
 }
@@ -154,11 +156,12 @@
   overflow: hidden;
   min-height: 240px;
 }
-/* 200x200 Cody sits in a 200px-wide slot on the left of the greet card. The
-   slot stretches to the card's full height; Cody is bottom-anchored so his
-   feet rest on the card's base regardless of card height. */
+/* Cody sits in a widened image slot on the left of the greet card. The
+   video is 1280x720 with Cody positioned right of frame-center, so the
+   slot needs to be wide enough (and object-position pulled left) to show
+   him whole. */
 .home-v3-greet-cody {
-  width: 200px;
+  width: 260px;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -167,13 +170,11 @@
 .home-v3-greet-cody video,
 .home-v3-greet-cody img {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  height: 200px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  object-position: center bottom;
+  object-position: 65% bottom;
 }
 .home-v3-greet-content {
   flex: 1;
