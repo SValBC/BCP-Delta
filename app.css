@@ -85,14 +85,18 @@
   border: 1px solid var(--v3-border-rail);
   box-shadow: -4px 0 20px rgba(39, 38, 53, 0.25);
 }
-/* Tab bar in Hybrid — dark ground with only the active tab attached to the
-   canvas below. Nav-toggle button lives at the left of the strip. */
+/* Tab bar in Hybrid — the whole strip sits at the same y as the side panels
+   (no top padding), 32px tall so the tabs fill it and their bottom edge
+   connects directly to the canvas below. */
 [data-theme="hybrid"] .tabbar {
   background: var(--v3-outer-bg);
   border-bottom: none;
-  height: 48px;
-  padding: 8px 12px 0;
+  height: 32px;
+  padding: 0 12px 0 0;
+  align-items: stretch;
+  gap: 8px;
 }
+[data-theme="hybrid"] .tabbar-scroll { padding-top: 0; align-items: stretch; }
 [data-theme="hybrid"] .tabbar .tab {
   border-radius: 4px 4px 0 0;
   height: 32px;
@@ -105,29 +109,29 @@
   background: var(--v3-off-white);
   color: var(--v3-dark-raisin);
 }
+/* Sidebar collapse — 32x32 button flush with the tabbar's top and left
+   edges. Symmetric spacing: 8px .app-grid gap between the nav rail and the
+   button on the left, 8px tabbar gap between the button and the first tab
+   on the right, so the button is visually centered in the gap. */
 .tabbar-nav-toggle {
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(253, 253, 253, 0.75);
+  color: #fdfdfd;
   width: 32px;
   height: 32px;
   padding: 0;
-  border-radius: 6px;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  align-self: flex-end;
-  margin-bottom: 4px;
+  margin: 0;
   transition: background 120ms, color 120ms;
 }
-.tabbar-nav-toggle:hover {
-  background: rgba(253, 253, 253, 0.06);
-  color: var(--v3-off-white);
-}
-[data-theme="light"] .tabbar-nav-toggle { color: rgba(39, 38, 53, 0.6); }
-[data-theme="light"] .tabbar-nav-toggle:hover { background: rgba(39, 38, 53, 0.06); color: var(--v3-dark-raisin); }
+.tabbar-nav-toggle:hover { background: rgba(253, 253, 253, 0.08); }
+[data-theme="light"] .tabbar-nav-toggle { color: var(--v3-dark-raisin); }
+[data-theme="light"] .tabbar-nav-toggle:hover { background: rgba(39, 38, 53, 0.06); }
 
 /* ---------- HOME SCREEN — v3 ---------------------------------- */
 .home-v3 {
