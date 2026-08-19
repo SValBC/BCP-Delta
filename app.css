@@ -110,30 +110,30 @@
   color: var(--v3-dark-raisin);
 }
 /* Sidebar collapse — 32x32 button pinned to the tabbar's top-left corner so
-   its top aligns with the panels. Symmetric spacing: 8px .app-grid gap
-   between the nav rail and the button on the left, 8px tabbar gap between
-   the button and the first tab on the right — visually centered in the
-   gutter between the nav rail and the first tab. */
+   its top aligns with the panels. Dark-raisin fill with a translucent white
+   stroke matches the rest of the rail chrome. Symmetric spacing: 8px .app-grid
+   gap on the left, 8px tabbar gap on the right — visually centered between
+   the nav rail and the first tab. */
 .tabbar-nav-toggle {
-  background: none;
-  border: none;
+  background: var(--v3-dark-raisin);
+  border: 1px solid rgba(253, 253, 253, 0.10);
   cursor: pointer;
   color: #fdfdfd;
   width: 32px;
   height: 32px;
   padding: 0;
-  border-radius: 0;
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   align-self: flex-start;
   margin: 0;
-  transition: background 120ms, color 120ms;
+  transition: background 120ms, color 120ms, border-color 120ms;
 }
-.tabbar-nav-toggle:hover { background: rgba(253, 253, 253, 0.08); }
-[data-theme="light"] .tabbar-nav-toggle { color: var(--v3-dark-raisin); }
-[data-theme="light"] .tabbar-nav-toggle:hover { background: rgba(39, 38, 53, 0.06); }
+.tabbar-nav-toggle:hover { background: #2f2e40; border-color: rgba(253, 253, 253, 0.18); }
+[data-theme="light"] .tabbar-nav-toggle { background: var(--v3-off-white); border-color: rgba(39, 38, 53, 0.10); color: var(--v3-dark-raisin); }
+[data-theme="light"] .tabbar-nav-toggle:hover { background: #f4f4f4; }
 
 /* ---------- HOME SCREEN — v3 ---------------------------------- */
 .home-v3 {
@@ -174,7 +174,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 65% bottom;
+  object-position: -30% bottom;
 }
 .home-v3-greet-content {
   flex: 1;
