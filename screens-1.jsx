@@ -569,228 +569,258 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
   // onboarding thank-you to the empty Home feels continuous, not a hard cut.
   const justFinishedFux = freshMode && fuxDone;
 
+  // Chip class + label from a project's `status` field. Falls back to
+  // "estimating" so unknown states still get a visible badge.
+  const chipClassForStatus = (s) =>
+    s === "draft" ? "v3-chip-draft" :
+    s === "done" ? "v3-chip-complete" :
+    s === "working" ? "v3-chip-estimating" :
+    "v3-chip-estimating";
+  const chipLabelForStatus = (p) => {
+    if (p.status === "draft") return "Draft";
+    if (p.status === "done") return "Complete";
+    if (p.status === "working") return "Estimating";
+    return p.statusLabel || "In progress";
+  };
+  const chipClassForRun = (r) =>
+    r.status === "done" ? "v3-chip-complete" :
+    r.status === "working" ? "v3-chip-progress" :
+    r.status === "failed" ? "v3-chip-failed" :
+    "v3-chip-progress";
+  const chipLabelForRun = (r) =>
+    r.status === "done" ? "Complete" :
+    r.status === "working" ? `${Math.round((r.progress || 0) * 100)}%` :
+    r.status === "failed" ? "Failed" :
+    r.status;
+
+  const todayFormatted = new Date().toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric"
+  }).toUpperCase();
+
+  const userFirstName = (user && user.name) ? user.name.split(" ")[0] : "there";
+
   return (
     <div className={"col-detail " + (justFinishedFux ? "fux-post-fade" : "")}>
       <Taskbar
         crumbs={[{ label: "Home", bold: true }]}
         onAskAI={onAskAI} />
 
-      <div className="canvas">
-        <div className="greet">
-          <div className="greet-content">
-            <div className="greet-eyebrow" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, marginBottom: 8 }}>
-              {isFresh ? "Welcome aboard" : "Tuesday morning · April 28"}
-            </div>
-            <h1>{isFresh ? "Welcome to BuildCrew, Victor." : "Welcome back, Victor."}</h1>
-            {isFresh && (
-              <p className="greet-intro" style={{ marginTop: 12, fontSize: 14, lineHeight: 1.55, maxWidth: 540 }}>
-                You're all set up. The fastest way to see what Cody can do is to start your first project. Drop in your plans and specs, and Cody will take it from there.
-              </p>
-            )}
-
-            {/* Inline Cody prompt bar — submitting routes the text into the Ask Cody panel */}
-            {!isFresh && (
-              <div className="greet-prompt" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
-                <CodyMark size={16} className="greet-prompt-spark" />
-                <input
-                  type="text"
-                  placeholder="Ask Cody anything, or pick a quick action below"
-                  value={greetPrompt}
-                  onChange={(e) => setGreetPrompt(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
-                />
-                <button
-                  className="greet-prompt-send"
-                  disabled={!greetPrompt.trim()}
-                  onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
-                  title="Send to Cody">
-                  <Icon name="arrow_forward" size={16} />
-                </button>
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 8, marginTop: isFresh ? 20 : 16, flexWrap: "wrap" }}>
-              {isFresh ? (
-                <button className="ai-pill" onClick={onNewProject}>
-                  <Icon name="add" size={14} style={{ color: "#fff" }} />Create your first project
-                </button>
-              ) : (
-                <>
-                  <button className="ai-pill" onClick={onOpenDailyReport || onAskAI}><Icon name="auto_awesome" size={14} style={{ color: "#fff" }} />Brief me on overnight</button>
-                  <button className="quick-pill" onClick={() => onNewProject && onNewProject()}>
-                    <Icon name="add" size={14} />Create new project
-                  </button>
-                  <button className="quick-pill" onClick={() => onStartRomEstimateFlow && onStartRomEstimateFlow()}>
-                    <Icon name="calculate" size={14} />Get a ROM estimate
-                  </button>
-                  <button className="quick-pill" onClick={() => onStartAddFilesFlow ? onStartAddFilesFlow() : onOpenProject("rec-wellness", { tab: "files" })}>
-                    <Icon name="upload_file" size={14} />Add files to an existing project
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-          <span className="robot">
+      <div className="canvas home-v3-canvas">
+       <div className="home-v3">
+        {/* GREETING — Cody image + welcome + Ask Cody + quick action pills */}
+        <div className="home-v3-greet">
+          <div className="home-v3-greet-cody" aria-hidden="true">
             <video
               src="animated/cody-greet.mp4"
               poster="design-system/cody.png"
               autoPlay
               muted
               playsInline
-              aria-hidden="true"
               onEnded={(e) => {
                 const v = e.currentTarget;
-                // Pause on the last frame, then replay after a 10s delay.
                 setTimeout(() => { try { v.currentTime = 0; v.play(); } catch (err) {} }, 10000);
               }}
             />
-          </span>
+          </div>
+          <div className="home-v3-greet-content">
+            <div>
+              <div className="home-v3-greet-eyebrow">{isFresh ? "Welcome aboard" : todayFormatted}</div>
+              <h1 className="home-v3-greet-title" style={{ marginTop: 8 }}>
+                {isFresh ? `Welcome to BuildCrew, ${userFirstName}.` : `Welcome back, ${userFirstName}!`}
+              </h1>
+            </div>
+
+            {/* Ask Cody bar — orange-outlined pill with sparkle + placeholder + send */}
+            {!isFresh && (
+              <div className="home-v3-ask-cody" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
+                <span className="home-v3-ask-cody-spark"><CodyMark size={16} /></span>
+                <input
+                  type="text"
+                  placeholder="Ask Cody anything or pick a quick action below."
+                  value={greetPrompt}
+                  onChange={(e) => setGreetPrompt(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
+                />
+                <button
+                  className="home-v3-ask-cody-btn"
+                  disabled={!greetPrompt.trim()}
+                  onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
+                  title="Send to Cody">
+                  <Icon name="arrow_forward" size={20} />
+                </button>
+              </div>
+            )}
+
+            {/* Quick actions — primary "Create a new project" is gradient, others outlined */}
+            <div className="home-v3-quick-actions">
+              {isFresh ? (
+                <button className="v3-quick-pill v3-quick-pill-primary" onClick={onNewProject}>
+                  <Icon name="add" size={12} />Create your first project
+                </button>
+              ) : (
+                <>
+                  <button className="v3-quick-pill v3-quick-pill-primary" onClick={onNewProject}>
+                    <Icon name="add" size={12} />Create a new project
+                  </button>
+                  <button className="v3-quick-pill" onClick={() => onStartRomEstimateFlow && onStartRomEstimateFlow()}>
+                    <Icon name="add" size={12} />Get ROM estimate
+                  </button>
+                  <button className="v3-quick-pill" onClick={() => onStartAddFilesFlow ? onStartAddFilesFlow() : onOpenProject("rec-wellness", { tab: "files" })}>
+                    <Icon name="add" size={12} />Add files to existing project
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* RECENT PROJECTS — card grid, 64px gap from the greeting */}
+        {/* RECENT PROJECTS — 3-across grid of project cards */}
         {!isFresh && (() => {
-          const recent = projects.filter(p => !p.archived).slice(0, 4);
+          const recent = projects.filter(p => !p.archived).slice(0, 3);
+          const totalCount = projects.filter(p => !p.archived).length;
           if (recent.length === 0) return null;
           return (
-            <>
-              <div className="section-h" style={{ marginTop: 64 }}>
-                <Icon name="folder_open" size={16} style={{ color: "var(--orange-500)" }} />
-                <h3>RECENT PROJECTS</h3>
+            <section className="home-v3-section">
+              <div className="home-v3-section-h">
+                <span className="home-v3-section-h-icon"><Icon name="folder" size={20} /></span>
+                <h3>Recent projects</h3>
+                {totalCount > recent.length && (
+                  <button className="home-v3-section-see-all" onClick={() => onOpenProjectInNewTab && onOpenProject && onOpenProject(null, { screen: "projects" })}>See all projects ({totalCount})</button>
+                )}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+              <div className="home-v3-projects">
                 {recent.map((p) => (
-                  <div key={p.id} className="pin-card" onClick={() => onOpenProject(p.id)}
+                  <div key={p.id} className="v3-project-card" onClick={() => onOpenProject(p.id)}
                        onContextMenu={(e) => onCtxMenu && onCtxMenu([
                          { label: "Open", icon: "open_in_browser", onClick: () => onOpenProject(p.id) },
                          { label: "Open in new tab", icon: "tab", onClick: () => onOpenProjectInNewTab && onOpenProjectInNewTab(p.id) },
                          { divider: true },
                          { label: pinnedSet.has(p.id) ? "Unpin" : "Pin", icon: "push_pin", onClick: () => onPin(p.id) },
                        ], e)}>
-                    <Icon className="bg" name={p.icon} />
-                    <span className="pin-kind">{p.kind}</span>
-                    <span className="pin-title">{p.name}</span>
-                    <span className="pin-meta">
-                      <Icon name="schedule" size={13} style={{ opacity: 0.55 }} />
-                      <span>Last viewed · {p.lastEdit}</span>
-                      <span style={{ marginLeft: "auto", fontWeight: 700, color: "var(--bc-strong)" }}>{p.estimate}</span>
-                    </span>
+                    <div className="v3-project-card-image"><Icon name={p.icon || "folder_open"} /></div>
+                    <div className="v3-project-card-body">
+                      <div className="v3-project-card-content">
+                        <div className="v3-project-card-topline">
+                          <span className={"v3-chip " + chipClassForStatus(p.status)}>{chipLabelForStatus(p)}</span>
+                          <button
+                            className={"v3-project-card-pin " + (pinnedSet.has(p.id) ? "is-pinned" : "")}
+                            onClick={(e) => { e.stopPropagation(); onPin(p.id); }}
+                            title={pinnedSet.has(p.id) ? "Unpin" : "Pin"}>
+                            <Icon name="push_pin" size={20} />
+                          </button>
+                        </div>
+                        <div className="v3-project-card-title-block">
+                          <span className="v3-project-card-kind">{p.kind}</span>
+                          <span className="v3-project-card-name">{p.name}</span>
+                        </div>
+                      </div>
+                      <div className="v3-project-card-footer">
+                        <div className="v3-project-card-value-block">
+                          <span className="v3-project-card-value-label">Contract value</span>
+                          <span className="v3-project-card-value">{p.estimate}</span>
+                        </div>
+                        <span className="v3-project-card-updated">Updated {p.lastEdit}</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-            </>
+            </section>
           );
         })()}
 
+        {/* PINNED — 4-across KPI cards */}
         {pinnedCards.length > 0 && (
-          <>
-            <div className="section-h" style={{ marginTop: 64 }}>
-              <Icon name="push_pin" size={16} style={{ color: "var(--orange-500)" }} />
+          <section className="home-v3-section">
+            <div className="home-v3-section-h">
+              <span className="home-v3-section-h-icon"><Icon name="push_pin" size={20} /></span>
               <h3>Pinned</h3>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${pinnedCards.length}, 1fr)`, gap: 16 }}>
-              {pinnedCards.map((c) => {
+            <div className="home-v3-pinned" style={{ gridTemplateColumns: `repeat(${Math.min(4, pinnedCards.length)}, 1fr)` }}>
+              {pinnedCards.slice(0, 4).map((c) => {
                 if (c.kind === "skill") {
-                  const isTiffany = c.meta.theme === "tiffany";
                   return (
-                    <div key={c.pinId} className="pin-card"
-                         style={isTiffany ? { background: "rgba(72,193,181,0.04)", border: "1px solid rgba(72,193,181,0.20)" } : { background: "rgba(232,70,0,0.04)", border: "1px solid rgba(232,70,0,0.20)" }}
-                         onClick={() => onOpenProject(c.proj.id, { tab: c.skillId })}
-                         onContextMenu={(e) => onCtxMenu && onCtxMenu([
-                           { label: "Open", icon: "open_in_browser", onClick: () => onOpenProject(c.proj.id, { tab: c.skillId }) },
-                           { divider: true },
-                           { label: "Unpin", icon: "push_pin", onClick: () => onPin(c.pinId) },
-                         ], e)}>
-                      <span className="pin-toggle" onClick={(e) => {e.stopPropagation();onPin(c.pinId);}}><Icon name="push_pin" /></span>
-                      <Icon className="bg" name={c.meta.icon} />
-                      <span className="pin-kind" style={{ color: isTiffany ? "var(--tiffany-400)" : "var(--orange-500)" }}>{c.meta.eyebrow}</span>
-                      <span className="pin-title">{c.proj.name}</span>
-                      <span className="pin-meta">
-                        <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 22, color: "var(--bc-strong)", letterSpacing: "-0.01em" }}>{c.meta.value}</span>
-                        <span style={{ marginLeft: "auto", color: isTiffany ? "var(--tiffany-400)" : "var(--orange-500)", fontWeight: 700 }}>{c.meta.delta}</span>
-                      </span>
+                    <div key={c.pinId} className="v3-kpi-card"
+                         onClick={() => onOpenProject(c.proj.id, { tab: c.skillId })}>
+                      <span className="v3-kpi-eyebrow">{c.meta.eyebrow}</span>
+                      <span className="v3-kpi-name">{c.proj.name}</span>
+                      <div className="v3-kpi-foot">
+                        <span className="v3-kpi-foot-label">{c.meta.delta}</span>
+                        <span className="v3-kpi-foot-value">{c.meta.value}</span>
+                      </div>
                     </div>
                   );
                 }
                 if (c.kind === "drawing") {
                   return (
-                    <div key={c.pinId} className="pin-card"
-                         style={{ background: "rgba(0,116,232,0.04)", border: "1px solid rgba(0,116,232,0.20)" }}
-                         onClick={() => onOpenDrawing && onOpenDrawing(c.drawing.id, c.proj.id)}
-                         onContextMenu={(e) => onCtxMenu && onCtxMenu([
-                           { label: "Open", icon: "open_in_browser", onClick: () => onOpenDrawing && onOpenDrawing(c.drawing.id, c.proj.id) },
-                           { divider: true },
-                           { label: "Unpin", icon: "push_pin", onClick: () => onPin(c.pinId) },
-                         ], e)}>
-                      <span className="pin-toggle" onClick={(e) => {e.stopPropagation();onPin(c.pinId);}}><Icon name="push_pin" /></span>
-                      <Icon className="bg" name="architecture" />
-                      <span className="pin-kind" style={{ color: "#0074E8" }}>Drawing · {c.drawing.trade}</span>
-                      <span className="pin-title">{c.drawing.id}: {c.drawing.title}</span>
-                      <span className="pin-meta">
-                        <Icon name="folder_open" size={13} style={{ opacity: 0.55, color: "#0074E8" }} />
-                        <span>{c.proj.name}</span>
-                        <span style={{ marginLeft: "auto", color: "#0074E8", fontWeight: 700 }}>{c.drawing.scale}</span>
-                      </span>
+                    <div key={c.pinId} className="v3-kpi-card"
+                         onClick={() => onOpenDrawing && onOpenDrawing(c.drawing.id, c.proj.id)}>
+                      <span className="v3-kpi-eyebrow">Drawing · {c.drawing.trade}</span>
+                      <span className="v3-kpi-name">{c.drawing.id}: {c.drawing.title}</span>
+                      <div className="v3-kpi-foot">
+                        <span className="v3-kpi-foot-label">{c.proj.name}</span>
+                        <span className="v3-kpi-foot-value">{c.drawing.scale}</span>
+                      </div>
                     </div>
                   );
                 }
-                // project
                 const p = c.p;
                 return (
-                  <div key={c.pinId} className="pin-card" onClick={() => onOpenProject(p.id)}
-                       onContextMenu={(e) => onCtxMenu && onCtxMenu([
-                         { label: "Open", icon: "open_in_browser", onClick: () => onOpenProject(p.id) },
-                         { label: "Open in new tab", icon: "tab", onClick: () => onOpenProjectInNewTab && onOpenProjectInNewTab(p.id) },
-                         { divider: true },
-                         { label: "Unpin", icon: "push_pin", onClick: () => onPin(p.id) },
-                       ], e)}>
-                    <span className="pin-toggle" onClick={(e) => {e.stopPropagation();onPin(p.id);}}><Icon name="push_pin" /></span>
-                    <Icon className="bg" name={p.icon} />
-                    <span className="pin-kind">{p.kind}</span>
-                    <span className="pin-title">{p.name}</span>
-                    <span className="pin-meta">
-                      <Icon name="schedule" size={13} style={{ opacity: 0.55 }} />
-                      <span>Last edit · {p.lastEdit}</span>
-                      <span style={{ marginLeft: "auto", fontWeight: 700, color: "var(--bc-strong)" }}>{p.estimate}</span>
-                    </span>
+                  <div key={c.pinId} className="v3-kpi-card" onClick={() => onOpenProject(p.id)}>
+                    <span className="v3-kpi-eyebrow">{p.kind}</span>
+                    <span className="v3-kpi-name">{p.name}</span>
+                    <div className="v3-kpi-foot">
+                      <span className="v3-kpi-foot-label">Last viewed {p.lastEdit}</span>
+                      <span className="v3-kpi-foot-value">{p.estimate}</span>
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </>
+          </section>
         )}
 
-        {/* RECENT SKILL RUNS — full width, 64px gap from previous section */}
-        {!isFresh && runs && runs.length > 0 && (<>
-        <div className="section-h" style={{ marginTop: 64 }}>
-          <Icon name="auto_awesome" size={16} style={{ color: "var(--orange-500)" }} />
-          <h3>RECENT SKILL RUNS</h3>
-        </div>
-        <div className="card no-pad">
-          <table className="bc-table">
-            <thead><tr><th>Skill</th><th>Project</th><th>Status</th><th>When</th><th className="num">Result</th></tr></thead>
-            <tbody>
-              {[...runs].sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || "")).map((r) =>
-              <tr key={r.id} style={{ cursor: "pointer" }} onClick={() => {
-                const tab = r.status === "done" ? skillToTab(r.skill) : null;
-                if (tab) onOpenProject(r.projectId, { tab });
-                else onOpenProject(r.projectId);
-              }}>
-                  <td><div className="item-title" style={{ display: "flex", alignItems: "center", gap: 12 }}><div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} /></div>{r.skill}</div></td>
-                  <td><div style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.project}</div></td>
-                  <td>{r.status === "done" ? <span className="badge b-done">Done</span> : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>}</td>
-                  <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
-                  <td className="num">
-                    {r.ai && r.ai.total && <b>{r.ai.total}</b>}
-                    {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
-                    {r.ai && r.ai.savings && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
-                    {!r.ai && "N/A"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        </>)}
+        {/* RECENT SKILL RUNS — 5-column table */}
+        {!isFresh && runs && runs.length > 0 && (
+          <section className="home-v3-section">
+            <div className="home-v3-section-h">
+              <span className="home-v3-section-h-icon"><Icon name="auto_awesome" size={20} /></span>
+              <h3>Recent skill runs</h3>
+            </div>
+            <div className="v3-runs-table">
+              <div className="v3-runs-header">
+                <div>Skill</div>
+                <div>Project</div>
+                <div>Status</div>
+                <div>When</div>
+                <div>Results</div>
+              </div>
+              {[...runs].sort((a, b) => (b.startedAt || "").localeCompare(a.startedAt || "")).map((r) => (
+                <div key={r.id} className="v3-runs-row" onClick={() => {
+                  const tab = r.status === "done" ? skillToTab(r.skill) : null;
+                  if (tab) onOpenProject(r.projectId, { tab });
+                  else onOpenProject(r.projectId);
+                }}>
+                  <div className="v3-runs-cell-skill">
+                    <div className="v3-runs-cell-skill-icon"><Icon name={skillIcon(r.skill)} size={12} /></div>
+                    <span className="v3-runs-cell-skill-name">{r.skill}</span>
+                  </div>
+                  <div className="v3-runs-cell-project">{r.project}</div>
+                  <div><span className={"v3-chip is-sm " + chipClassForRun(r)}>{chipLabelForRun(r)}</span></div>
+                  <div className="v3-runs-cell-when">{r.when}</div>
+                  <div className="v3-runs-cell-result">
+                    {r.ai && r.ai.total ? r.ai.total :
+                     r.ai && r.ai.issues != null ? `${r.ai.issues} issues` :
+                     r.ai && r.ai.savings ? <span style={{ color: "var(--v3-chip-complete-fg)" }}>−{r.ai.savings}</span> :
+                     r.ai && r.ai.winner ? (<><span>{r.ai.winner}</span><div className="v3-runs-cell-result-sub">{r.ai.bid}</div></>) :
+                     "—"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+       </div>
       </div>
       {coachmarksActive && !coachmarksDone && (
         <FUXCoachmarks
