@@ -537,22 +537,23 @@
   width: 100%;
 }
 /* Sticky group: header + sub-tabs pin to the top of the scroll area.
-   Adds 32px of top padding so there's breathing room from the taskbar,
-   then 24px of bottom padding to the first scrolling section. The
-   off-white background covers scrolling content behind the sticky. */
+   32px top padding gives breathing room from the taskbar; the off-white
+   background covers scrolling content behind the sticky. No bottom padding
+   — the gap to the first scrolling section is handled by the sibling
+   margin below. */
 .projhome-v3-sticky {
   position: sticky;
   top: 0;
   z-index: 5;
   background: var(--v3-off-white);
-  padding: 32px 0 24px;
+  padding: 32px 0 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-/* First scrolling section directly under sticky only needs 24px total gap
-   (already provided by sticky's bottom padding). Cancel the 48px gap. */
-.projhome-v3 > .projhome-v3-sticky + * { margin-top: -48px; }
+/* First scrolling section under sticky: 24px total gap (parent's 48px
+   flex-gap - 24px negative margin). */
+.projhome-v3 > .projhome-v3-sticky + * { margin-top: -24px; }
 
 /* Hybrid taskbar — 40px side padding to align with the canvas below */
 [data-theme="hybrid"] .taskbar { padding: 0 40px; }
