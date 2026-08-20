@@ -150,38 +150,37 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         onAskAI={onAskAI}
         switcher={projectSwitcher} />
       
-      <div className="canvas">
+      <div className="canvas projhome-v3-canvas">
+       <div className="projhome-v3">
         {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
-        <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
-          {/* LEFT — heading text (kind eyebrow · project name · address/stage) */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.10em", fontWeight: 700, color: "var(--bc-muted)", marginBottom: 8 }}>{project.kind}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <h2 className="page-h1" style={{ fontSize: 30, margin: 0 }}>
-                <EditableText
-                  editMode={editMode}
-                  editKey={"project:" + project.id + ":name"}
-                  original={project.name}
-                  value={edits && edits["project:" + project.id + ":name"] && edits["project:" + project.id + ":name"].value}
-                  onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Project name")}
-                />
-              </h2>
+        {/* PROJECT HEADER — kind eyebrow + big name + address (left) + revision selector (right) */}
+        <div className="projhome-v3-header">
+          <div className="projhome-v3-header-left">
+            <div className="projhome-v3-header-eyebrow">{project.kind}</div>
+            <h2 className="projhome-v3-header-title">
+              <EditableText
+                editMode={editMode}
+                editKey={"project:" + project.id + ":name"}
+                original={project.name}
+                value={edits && edits["project:" + project.id + ":name"] && edits["project:" + project.id + ":name"].value}
+                onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Project name")}
+              />
               {project.scope &&
-              <div className="scope-tip" tabIndex="0">
-                  <Icon name="info" size={18} style={{ color: "#007BA7", cursor: "help" }} />
-                  <div className="scope-pop">
-                    <div className="scope-pop-h">
-                      <CodyMark size={14} />
-                      <span>Project scope</span>
-                      <button className="scope-edit-btn" onClick={(e) => {e.stopPropagation();onAskAI && onAskAI();}}><Icon name="edit" size={11} />Edit</button>
-                    </div>
-                    <p>{project.scope}</p>
-                    <div className="scope-source">Generated from 14 documents · Cody · Apr 28</div>
+              <div className="scope-tip projhome-v3-header-title-info" tabIndex="0">
+                <Icon name="info" size={18} />
+                <div className="scope-pop">
+                  <div className="scope-pop-h">
+                    <CodyMark size={14} />
+                    <span>Project scope</span>
+                    <button className="scope-edit-btn" onClick={(e) => {e.stopPropagation();onAskAI && onAskAI();}}><Icon name="edit" size={11} />Edit</button>
                   </div>
+                  <p>{project.scope}</p>
+                  <div className="scope-source">Generated from 14 documents · Cody · Apr 28</div>
                 </div>
+              </div>
               }
-            </div>
-            <p className="page-sub" style={{ margin: 0 }}>
+            </h2>
+            <p className="projhome-v3-header-address">
               <EditableText
                 editMode={editMode}
                 editKey={"project:" + project.id + ":address"}
@@ -200,8 +199,8 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             </p>
           </div>
 
-          {/* RIGHT — status badge stacked above the revision selector, bottom-aligned with page-sub */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+          {/* RIGHT — status badge stacked above the revision selector */}
+          <div className="projhome-v3-header-right" style={{ flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
             {(project.status === "working" || project.status === "done") && (
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {project.status === "working" && <span className="badge b-working"><span className="dot" />{project.statusLabel}</span>}
@@ -251,31 +250,31 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         </div>
 
         {/* PROJECT HOME SUB-TABS */}
-        <div className="report-tabs" style={{ marginBottom: 4 }} data-tour-id="project-subtabs">
-          <button className={"report-tab " + (homeTab === "overview" ? "active" : "")} onClick={() => setHomeTab("overview")}>
+        <div className="projhome-v3-tabs" data-tour-id="project-subtabs">
+          <button className={"projhome-v3-tab " + (homeTab === "overview" ? "active" : "")} onClick={() => setHomeTab("overview")}>
             <Icon name="dashboard" size={14} />Overview
           </button>
-          <button className={"report-tab " + (homeTab === "files" ? "active" : "")} onClick={() => setHomeTab("files")}>
+          <button className={"projhome-v3-tab " + (homeTab === "files" ? "active" : "")} onClick={() => setHomeTab("files")}>
             <Icon name="folder_copy" size={14} />Files
           </button>
-          <button className={"report-tab " + (homeTab === "drawings" ? "active" : "")} onClick={() => setHomeTab("drawings")}>
+          <button className={"projhome-v3-tab " + (homeTab === "drawings" ? "active" : "")} onClick={() => setHomeTab("drawings")}>
             <Icon name="architecture" size={14} />Drawings
-            <span className="report-tab-count">{((window.BC_DATA && window.BC_DATA.drawings) || []).length}</span>
+            <span className="projhome-v3-tab-count">{((window.BC_DATA && window.BC_DATA.drawings) || []).length}</span>
           </button>
-          <button className={"report-tab " + (homeTab === "takeoffs" ? "active" : "")} onClick={() => setHomeTab("takeoffs")}>
+          <button className={"projhome-v3-tab " + (homeTab === "takeoffs" ? "active" : "")} onClick={() => setHomeTab("takeoffs")}>
             <Icon name="straighten" size={14} />Takeoffs
-            <span className="report-tab-count">{(((window.BC_DATA && window.BC_DATA.takeoffsByProject) || {})[project.id] || []).length}</span>
+            <span className="projhome-v3-tab-count">{(((window.BC_DATA && window.BC_DATA.takeoffsByProject) || {})[project.id] || []).length}</span>
           </button>
-          <button className={"report-tab " + (homeTab === "bids" ? "active" : "")} onClick={() => setHomeTab("bids")}>
+          <button className={"projhome-v3-tab " + (homeTab === "bids" ? "active" : "")} onClick={() => setHomeTab("bids")}>
             <Icon name="handshake" size={14} />Bid Tracker
-            <span className="report-tab-count">{((bidsByProject && bidsByProject[project.id]) || []).length}</span>
+            <span className="projhome-v3-tab-count">{((bidsByProject && bidsByProject[project.id]) || []).length}</span>
           </button>
-          <button className={"report-tab " + (homeTab === "labor" ? "active" : "")} onClick={() => setHomeTab("labor")}>
+          <button className={"projhome-v3-tab " + (homeTab === "labor" ? "active" : "")} onClick={() => setHomeTab("labor")}>
             <Icon name="engineering" size={14} />Project Rates
           </button>
-          <button className={"report-tab " + (homeTab === "history" ? "active" : "")} onClick={() => setHomeTab("history")}>
+          <button className={"projhome-v3-tab " + (homeTab === "history" ? "active" : "")} onClick={() => setHomeTab("history")}>
             <Icon name="history" size={14} />Skills History
-            <span className="report-tab-count">{((window.BC_DATA && window.BC_DATA.runs) || []).filter(r => r.projectId === project.id).length}</span>
+            <span className="projhome-v3-tab-count">{((window.BC_DATA && window.BC_DATA.runs) || []).filter(r => r.projectId === project.id).length}</span>
           </button>
         </div>
 
@@ -481,8 +480,11 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           );
         })()}
 
-        <div className="section-h" style={{ marginTop: 64 }}><Icon name="bolt" size={16} style={{ color: "var(--orange-500)" }} /><h3>Run a skill</h3></div>
-        <div data-tour-id="project-run-skill" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 16 }}>
+        <div className="projhome-v3-section-h">
+          <span className="projhome-v3-section-h-icon"><Icon name="auto_awesome" size={24} /></span>
+          <h3>Recommended skills to run</h3>
+        </div>
+        <div data-tour-id="project-run-skill" className="projhome-v3-skills is-three" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
           {[
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
           { id: "trades", title: "Trade Scoping", icon: "groups", desc: "Compiles every trade referenced across your uploaded documentation and drafts a scope of work for each, ready to attach to bid invitations. Feeds directly into the trade-invite workflow so bids go out the door faster.", lastRun: null, success: false },
@@ -518,67 +520,37 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 onStartSkillRun && onStartSkillRun(project.id, s.id);
               }
             };
+            // Color the icon square by skill for visual variety
+            const iconAccent = s.id === "estimation" ? "is-orange" :
+                               s.id === "bid" ? "" /* tiffany default */ :
+                               s.id === "rfc" ? "is-blue" :
+                               s.id === "trades" ? "is-raisin" : "";
+            const footLabel = running ? `Running · ${Math.round(progress)}%` :
+                              hasResults ? "View results" : "Click to run skill";
             return (
               <div key={s.id}
-                   className={"pin-card run-skill-card " + (running ? "is-running " : "") + (justCompleted ? "is-just-completed " : "") + (hasFreshCompletion && !justCompleted ? "is-completed" : "")}
-                   style={{ minHeight: 140 }}
+                   className={"v3-skill-card " + (running ? "is-running " : "") + (justCompleted ? "is-just-completed " : "")}
                    onClick={handleCardClick}>
-                {running && (
-                  <video
-                    className="run-skill-video"
-                    src="animated/skill-loading.mp4"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    aria-hidden="true"
-                  />
-                )}
-                {running && <span className="run-skill-bar" style={{ width: progress + "%" }} />}
-                {justCompleted && (
-                  <div className="run-skill-celebration">
-                    <Icon name="check_circle" size={56} />
-                  </div>
-                )}
-                <div style={{ display: "flex", gap: 12, alignItems: "center", position: "relative", zIndex: 1 }}>
-                  <div className="run-skill-icon-wrap" style={{ width: 32, height: 32, borderRadius: 8, background: running ? "rgba(232,70,0,0.08)" : "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icon name={s.icon} size={19} style={{ opacity: running ? 0.9 : 0.55, color: running ? "var(--orange-500)" : undefined }} />
-                  </div>
-                  <div className="pin-title" style={{ flex: 1, minWidth: 0 }}>{s.title}</div>
-                  {running && (
-                    <span style={{ fontFamily: "var(--font-data)", fontWeight: 700, fontSize: 13, color: "var(--raisin-800)", flexShrink: 0 }}>
-                      {Math.round(progress)}%
-                    </span>
-                  )}
-                </div>
-                {running ? (
-                  <>
-                    <div style={{ fontSize: 12, color: "var(--bc-strong)", lineHeight: 1.4, position: "relative", zIndex: 1 }}>
-                      <span className="run-skill-stage"><span className="dot" />{stage}</span>
+                <div className="v3-skill-card-body">
+                  <div className="v3-skill-card-head">
+                    <div className={"v3-skill-card-icon " + iconAccent}>
+                      <Icon name={s.icon} size={22} />
                     </div>
-                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, position: "relative", zIndex: 1 }}>
-                      <button className="run-skill-stop" onClick={(e) => { e.stopPropagation(); onStopSkillRun && onStopSkillRun(project.id, s.id); }} title="Stop run">
-                        <Icon name="stop" size={14} />Stop
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 12, color: "var(--bc-muted)", lineHeight: 1.4 }}>{s.desc}</div>
-                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: effectiveSuccess ? "var(--tiffany-400)" : "var(--orange-500)" }}>
-                        {effectiveSuccess && <Icon name="check_circle" size={14} style={{ color: "var(--tiffany-400)" }} />}
-                        <span>{hasResults ? "View results" : "Click to run"}</span>
-                        {hasResults && <Icon name="arrow_forward" size={12} />}
+                    <div className="v3-skill-card-title-block">
+                      <div className="v3-skill-card-title">{s.title}</div>
+                      <div className="v3-skill-card-sub">
+                        {running ? stage :
+                         effectiveLastRun ? `Last run · ${effectiveLastRun}` :
+                         "Ready to run"}
                       </div>
-                      {effectiveLastRun && (
-                        <span style={{ fontSize: 11, color: "var(--bc-muted)", fontWeight: 500 }}>
-                          Last run · {effectiveLastRun}
-                        </span>
-                      )}
                     </div>
-                  </>
-                )}
+                  </div>
+                  <div className="v3-skill-card-desc">{s.desc}</div>
+                </div>
+                <div className="v3-skill-card-foot">
+                  <span>{footLabel}</span>
+                  <Icon name="arrow_forward" size={20} />
+                </div>
               </div>
             );
           })}
@@ -744,6 +716,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         })()}
         </>}
 
+       </div>
       </div>
       {projectHomeTourActive && window.CoachmarkTour && (
         <window.CoachmarkTour steps={PROJECT_HOME_TOUR_STEPS} onComplete={completeProjectHomeTour} />
