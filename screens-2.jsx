@@ -131,18 +131,23 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
     <div className="col-detail">
       <Taskbar
         projectId={project.id}
-        hasPending={!!(hasPendingEdits && (hasPendingEdits[project.id] || []).length)}
-        onPushToMaster={onPushToMaster ? () => onPushToMaster(project.id) : undefined}
-        onOpenNotifications={onOpenNotifications ? () => onOpenNotifications(project.id) : undefined}
-        notificationCount={notificationCount}
         crumbs={[
         { label: "Projects" },
         { useSwitcher: true, bold: true }]
         }
         actions={
-          <button className="taskbar-share-btn" title="Share" onClick={() => {}}>
-            <Icon name="ios_share" size={20} />
-          </button>
+          <>
+            <button className="taskbar-icon-btn" title="Archive project" onClick={() => {}}>
+              <Icon name="archive" size={20} />
+            </button>
+            <button className="taskbar-icon-btn" title="Share" onClick={() => {}}>
+              <Icon name="ios_share" size={20} />
+            </button>
+            <button className="taskbar-icon-btn" title="Notifications" onClick={() => onOpenNotifications && onOpenNotifications(project.id)}>
+              <Icon name="notifications" size={20} />
+              {notificationCount > 0 && <span className="taskbar-notify-dot">{notificationCount}</span>}
+            </button>
+          </>
         }
         onAskAI={onAskAI}
         switcher={projectSwitcher} />
@@ -150,6 +155,8 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
       <div className="canvas projhome-v3-canvas">
        <div className="projhome-v3">
         {editMode && <EditModeBar editCount={editCount} onRevert={revertEdits} onPushGlobal={onPushGlobal} onExit={() => setEditMode(false)} />}
+        {/* STICKY GROUP — header + sub-tabs stay pinned as user scrolls the canvas */}
+        <div className="projhome-v3-sticky">
         {/* PROJECT HEADER — kind eyebrow + big name + address (left) + revision selector (right) */}
         <div className="projhome-v3-header">
           <div className="projhome-v3-header-left">
@@ -204,10 +211,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
 
           {/* RIGHT — status badge stacked above the revision selector */}
           <div className="projhome-v3-header-right" style={{ flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-            {(project.status === "working" || project.status === "done") && (
+            {project.status === "done" && (
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {project.status === "working" && <span className="badge b-working"><span className="dot" />{project.statusLabel}</span>}
-                {project.status === "done" && <span className="badge b-done">{project.statusLabel}</span>}
+                <span className="badge b-done">{project.statusLabel}</span>
               </div>
             )}
             {revisions.length > 0 && (
@@ -280,6 +286,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             <span className="projhome-v3-tab-count">{((window.BC_DATA && window.BC_DATA.runs) || []).filter(r => r.projectId === project.id).length}</span>
           </button>
         </div>
+        </div>{/* /projhome-v3-sticky */}
 
         {homeTab === "files" && <ProjectFilesTab project={project} onOpenDrawing={onOpenDrawing} />}
         {homeTab === "drawings" && <ProjectDrawingsTab project={project} onOpenDrawing={onOpenDrawing} />}
@@ -289,24 +296,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         {homeTab === "history" && <ProjectHistoryTab project={project} onOpenTab={onOpenTab} />}
 
         {homeTab === "overview" && <>
-        {/* CODY'S BRIEF — AI-generated, top of screen, dismissible.
-            Hidden for newly created projects (no activity to summarize yet). */}
-        {!project.isNew && (
-        <div style={{ marginTop: 16 }} data-tour-id="project-cody-brief">
-        <CodyMessage
-          eyebrow="Cody's brief · since yesterday at 4:42 PM"
-          title="Here's what's changed since you were last here"
-          pillLabel="Walk me through it"
-          onPill={onAskAI}
-          items={[
-          { kind: "platform", icon: "auto_awesome", title: "Estimation v3 created", body: <>I rebuilt the ROM after Sam uploaded <b>3 new mechanical sheets</b>. Total moved from $11.94M → <b>$12.21M</b> (+2.3%). Confidence rose to 91%.</>, when: "12 min ago" },
-          { kind: "alert", icon: "warning", title: "Division 09 carpet jumped 22%", body: <>A recent county code update doubled transport on <b>Shaw Haze</b>. I've already swapped the line item. Flag if you want to revert.</>, when: "1h ago" },
-          { kind: "alert", icon: "rule", title: "Drawing conflict on Lobby 101", body: <>Ceiling height differs between <b>A-101 (12'-0")</b> and <b>A-301 (11'-0")</b>. Logged as RFC-014, blocking the lighting takeoff.</>, when: "2h ago" },
-          { kind: "platform", icon: "upload_file", title: "3 drawings indexed", body: <>Sam uploaded M-201, M-202, M-203. I extracted <b>47 new takeoff items</b> and refreshed the mechanical sheet group.</>, when: "3h ago" },
-          { kind: "alert", icon: "help_outline", title: "Pool deck slip resistance missing", body: <>09 65 00 needs a <b>DCOF target</b> before this section goes out. I drafted clarification language. Review and send.</>, when: "Yesterday" }]
-          } />
-        </div>
-        )}
+        {/* Cody's brief removed for now — user request. */}
 
         {/* LABOR RATES PROMPT — dismissible, drag/drop the whole card, blue theme */}
         {!laborDismissed && (

@@ -525,12 +525,26 @@
 .projhome-v3 {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 32px 40px;
+  padding: 32px 40px 32px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 48px;
   width: 100%;
 }
+/* Sticky group: header + sub-tabs. Scrolling starts below the tabs. */
+.projhome-v3-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--v3-off-white);
+  padding: 32px 40px 0;
+  margin: -32px -40px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* First section after the sticky group only needs 24px, not 48px */
+.projhome-v3 > .projhome-v3-sticky + * { margin-top: -24px; }
 
 /* Hybrid taskbar — 40px side padding to align with the canvas below */
 [data-theme="hybrid"] .taskbar { padding: 0 40px; }
@@ -581,40 +595,54 @@
 .projhome-v3 .section-h { margin: 0; }
 .projhome-v3 .kpi-grid { margin-top: 0; margin-bottom: 0; }
 .projhome-v3 .labor-prompt { margin-top: 0; }
-/* KPI cards inside .projhome-v3 use 4px radii to match v3 */
-.projhome-v3 .kpi { border-radius: var(--v3-r-card); }
-/* Labor-rates prompt card — 4px radius, dashed dark-raisin border, no legacy blue */
+/* KPI cards inside .projhome-v3 — 4px radius, #D6D5D9 stroke */
+.projhome-v3 .kpi { border-radius: var(--v3-r-card); border: 1px solid #D6D5D9; }
+/* Labor-rates prompt card — keep the legacy blue treatment but 4px radius */
 .projhome-v3 .labor-prompt {
   border-radius: var(--v3-r-card);
   margin: 0;
-  background: var(--v3-off-white);
-  border: 1px dashed var(--v3-border-mid);
   padding: 36px 24px;
-  color: var(--v3-dark-raisin);
 }
-.projhome-v3 .labor-prompt:hover { background: var(--v3-seasalt); border-color: var(--v3-golden-gate); }
-.projhome-v3 .labor-prompt.drag { background: rgba(232, 70, 0, 0.06); border-color: var(--v3-golden-gate); }
-.projhome-v3 .labor-prompt-title { color: var(--v3-dark-raisin); font-family: var(--font-display); font-weight: 700; font-size: 14px; }
-.projhome-v3 .labor-prompt-title .mi { color: var(--v3-golden-gate); }
-.projhome-v3 .labor-prompt p { color: var(--v3-lavender-grey); font-size: 12px; line-height: 1.5; max-width: 560px; }
-.projhome-v3 .labor-prompt-cta {
+/* Any misc .card children in v3 → 4px radius, #D6D5D9 stroke */
+.projhome-v3 .card { border-radius: var(--v3-r-card); border-color: #D6D5D9; }
+.projhome-v3 .pin-card { border-radius: var(--v3-r-card); border-color: #D6D5D9; }
+/* Runs table stroke */
+.projhome-v3 .v3-runs-table { border-color: #D6D5D9; }
+.projhome-v3 .v3-runs-header,
+.projhome-v3 .v3-runs-row { border-bottom-color: #D6D5D9; }
+.projhome-v3 .v3-drawing-card { border-color: #D6D5D9; }
+
+/* Ghost icon-only buttons in the taskbar — Archive + Notifications match Share */
+.taskbar-icon-btn {
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--v3-r-card);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: var(--v3-r-pill);
-  border: 1px solid var(--v3-border-mid);
-  background: transparent;
+  justify-content: center;
   color: var(--v3-dark-raisin);
-  font-family: inherit;
-  font-size: 12px;
   cursor: pointer;
+  transition: background 120ms, color 120ms;
+  position: relative;
 }
-.projhome-v3 .labor-prompt-cta .mi { color: var(--v3-golden-gate); }
-.projhome-v3 .labor-prompt-dismiss { color: var(--v3-lavender-grey); }
-/* Any misc .card children in v3 → 4px radius */
-.projhome-v3 .card { border-radius: var(--v3-r-card); }
-.projhome-v3 .pin-card { border-radius: var(--v3-r-card); }
+.taskbar-icon-btn:hover { color: var(--v3-golden-gate); background: rgba(232, 70, 0, 0.08); }
+.taskbar-icon-btn .taskbar-notify-dot {
+  position: absolute;
+  top: 2px; right: 2px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--v3-golden-gate);
+  color: var(--v3-off-white);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--v3-off-white);
+}
 
 /* Header block — kind eyebrow + big project name + inline meta + revision selector */
 .projhome-v3-header {
@@ -654,12 +682,14 @@
 .projhome-v3-header-title-info {
   display: inline-flex;
   align-items: center;
-  color: var(--v3-lavender-grey);
+  color: var(--v3-dark-raisin);
   cursor: help;
+  background: none;
 }
+.projhome-v3-header-title-info .mi { color: var(--v3-dark-raisin); }
 .projhome-v3-header-address {
   font-size: 13px;
-  color: var(--v3-lavender-grey);
+  color: var(--v3-dark-raisin);
   margin: 0;
 }
 .projhome-v3-header-right {
@@ -698,10 +728,11 @@
 }
 .projhome-v3-tab:hover { color: var(--v3-dark-raisin); }
 .projhome-v3-tab.active {
-  color: var(--v3-dark-raisin);
+  color: var(--v3-golden-gate);
   border-bottom-color: var(--v3-golden-gate);
   font-weight: 700;
 }
+.projhome-v3-tab.active .mi { color: var(--v3-golden-gate); }
 .projhome-v3-tab-count {
   display: inline-flex;
   align-items: center;
@@ -824,13 +855,27 @@
   padding: 0;
 }
 
-/* Skill card — white card with #D6D5D9 stroke, orange CTA footer */
+/* Section-h → grid gap is 16px, not the parent's 48px */
+.projhome-v3-section { gap: 16px; }
+
+/* Skill card — white card with #D6D5D9 stroke, orange CTA footer.
+   Horizontal scroll with cards running to the edge of the viewport so the
+   user knows there's more off-screen. */
 .projhome-v3-skills {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-right: 40px;
+  margin-right: -40px;
+  scrollbar-width: none;
 }
-.projhome-v3-skills.is-three { grid-template-columns: repeat(3, 1fr); }
+.projhome-v3-skills::-webkit-scrollbar { display: none; }
+.projhome-v3-skills > .v3-skill-card {
+  flex: 0 0 320px;
+  scroll-snap-align: start;
+}
+.projhome-v3-skills.is-three { }
 .v3-skill-card {
   background: var(--v3-off-white);
   border: 1px solid #D6D5D9;
@@ -840,6 +885,7 @@
   flex-direction: column;
   cursor: pointer;
   transition: transform 120ms, box-shadow 120ms, border-color 120ms;
+  min-width: 0;
 }
 .v3-skill-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(39, 38, 53, 0.10); }
 .v3-skill-card-body {
@@ -924,11 +970,21 @@
 .v3-skill-card-foot-arrow .mi { font-size: 20px; }
 .v3-skill-card:hover .v3-skill-card-foot-arrow { transform: translateX(6px); }
 
-/* Drawing card — image slot + content with chip + title + footer */
+/* Drawing card — image slot + content with chip + title + footer.
+   Horizontal scroll with cards running to the edge of the canvas. */
 .projhome-v3-drawings {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-right: 40px;
+  margin-right: -40px;
+  scrollbar-width: none;
+}
+.projhome-v3-drawings::-webkit-scrollbar { display: none; }
+.projhome-v3-drawings > .v3-drawing-card {
+  flex: 0 0 220px;
+  scroll-snap-align: start;
 }
 .v3-drawing-card {
   background: var(--v3-off-white);
@@ -1080,6 +1136,16 @@
 
 /* Form-row labels */
 .form-row label { font-family: var(--font-display); color: var(--v3-dark-raisin); }
+
+/* Boxed elements with light fill — canonical stroke = #D6D5D9 */
+.v3-kpi-card,
+.v3-project-card,
+.v3-drawing-card,
+.v3-runs-table { border-color: #D6D5D9; }
+.v3-runs-header, .v3-runs-row { border-bottom-color: #D6D5D9; }
+
+/* Hide the legacy .badge.b-working — user request, no more "working" badges anywhere. */
+.badge.b-working { display: none !important; }
 
 /* ============================================================
    END V3 REDESIGN block
