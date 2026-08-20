@@ -584,83 +584,67 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             name === "Trade Scoping" ? "trades" :
             null;
           return (
-            <div style={{ marginBottom: 28 }}>
-              <div className="card no-pad">
-                <table className="bc-table">
-                  <thead>
-                    <tr>
-                      <th>Skill</th>
-                      <th>Status</th>
-                      <th>When</th>
-                      <th>Duration</th>
-                      <th className="num">Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleRuns.map(r => {
-                      const isBid = r.skill === "Bid Level Analysis" && r.ai && r.ai.winner;
-                      return (
-                        <tr key={r.id}
-                            style={{ cursor: "pointer" }}
-                            onClick={() => {
-                              const tab = r.status === "done" ? skillToTab(r.skill) : null;
-                              if (tab && onOpenTab) onOpenTab(tab);
-                            }}>
-                          <td>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(39,38,53,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <Icon name={skillIcon(r.skill)} size={18} style={{ opacity: 0.55 }} />
-                              </div>
-                              <div style={{ minWidth: 0 }}>
-                                <div className="item-title">{r.skill}</div>
-                                {r.skill === "Bid Level Analysis" && r.ai && r.ai.division && (
-                                  <div style={{ fontSize: 11, color: "var(--bc-muted)", marginTop: 2 }}>
-                                    {r.ai.division}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            {r.status === "done"
-                              ? <span className="badge b-done"><Icon name="check_circle" size={11} />Approved</span>
-                              : <span className="badge b-working"><span className="dot" />{Math.round((r.progress || 0) * 100)}%</span>
-                            }
-                          </td>
-                          <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.when}</span></td>
-                          <td><span style={{ fontFamily: "var(--font-ui)", fontSize: 12, color: "var(--bc-muted)" }}>{r.duration}</span></td>
-                          <td className="num">
-                            {isBid ? (
-                              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, lineHeight: 1.35 }}>
-                                <b>{r.ai.winner}</b>
-                                <span style={{ fontSize: 11.5, color: "var(--bc-muted)", fontWeight: 500 }}>
-                                  {r.ai.bid} bid
-                                  {r.ai.savings && <> · <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b></>}
-                                </span>
-                              </div>
-                            ) : (
-                              <>
-                                {r.ai && r.ai.total && <b>{r.ai.total}</b>}
-                                {r.ai && r.ai.issues != null && <b>{r.ai.issues} issues</b>}
-                                {r.ai && r.ai.savings && !r.ai.winner && <b style={{ color: "var(--tiffany-400)" }}>−{r.ai.savings}</b>}
-                                {!r.ai && "N/A"}
-                              </>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                <button className="link-btn" onClick={() => setHomeTab("history")}>
-                  View Skills History
-                  {hiddenCount > 0 && <span style={{ color: "var(--bc-muted)", fontWeight: 500, marginLeft: 4 }}>({hiddenCount} more)</span>}
-                  <Icon name="arrow_forward" size={14} />
+            <section className="projhome-v3-section">
+              <div className="projhome-v3-section-h">
+                <span className="projhome-v3-section-h-icon"><Icon name="auto_awesome" size={24} /></span>
+                <h3>Recent skill runs</h3>
+                <button className="projhome-v3-section-see-all" onClick={() => setHomeTab("history")}>
+                  View skills history{hiddenCount > 0 ? ` (${hiddenCount} more)` : ""}
                 </button>
               </div>
-            </div>
+              <div className="v3-runs-table" style={{ gridTemplateColumns: "1.6fr 100px 1fr 1fr 1fr" }}>
+                <div className="v3-runs-header" style={{ gridTemplateColumns: "1.6fr 100px 1fr 1fr 1fr" }}>
+                  <div>Skill</div>
+                  <div>Status</div>
+                  <div>When</div>
+                  <div>Duration</div>
+                  <div>Results</div>
+                </div>
+                {visibleRuns.map(r => {
+                  const isBid = r.skill === "Bid Level Analysis" && r.ai && r.ai.winner;
+                  return (
+                    <div key={r.id} className="v3-runs-row" style={{ gridTemplateColumns: "1.6fr 100px 1fr 1fr 1fr" }}
+                         onClick={() => {
+                           const tab = r.status === "done" ? skillToTab(r.skill) : null;
+                           if (tab && onOpenTab) onOpenTab(tab);
+                         }}>
+                      <div className="v3-runs-cell-skill">
+                        <div className="v3-runs-cell-skill-icon"><Icon name={skillIcon(r.skill)} size={12} /></div>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="v3-runs-cell-skill-name">{r.skill}</div>
+                          {r.skill === "Bid Level Analysis" && r.ai && r.ai.division && (
+                            <div style={{ fontSize: 11, color: "var(--v3-lavender-grey)", marginTop: 2 }}>{r.ai.division}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        {r.status === "done"
+                          ? <span className="v3-chip is-sm v3-chip-complete">Approved</span>
+                          : <span className="v3-chip is-sm v3-chip-progress">{Math.round((r.progress || 0) * 100)}%</span>
+                        }
+                      </div>
+                      <div className="v3-runs-cell-when">{r.when}</div>
+                      <div className="v3-runs-cell-when">{r.duration}</div>
+                      <div className="v3-runs-cell-result">
+                        {isBid ? (
+                          <>
+                            <span>{r.ai.winner}</span>
+                            <div className="v3-runs-cell-result-sub">
+                              {r.ai.bid} bid{r.ai.savings && <> · <b style={{ color: "var(--v3-chip-complete-fg)" }}>−{r.ai.savings}</b></>}
+                            </div>
+                          </>
+                        ) : (
+                          r.ai && r.ai.total ? r.ai.total :
+                          r.ai && r.ai.issues != null ? `${r.ai.issues} issues` :
+                          r.ai && r.ai.savings ? <span style={{ color: "var(--v3-chip-complete-fg)" }}>−{r.ai.savings}</span> :
+                          "—"
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           );
         })()}
 
@@ -668,52 +652,49 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             Top 6 most-viewed sheets stand in for true visit recency until
             we wire up a real lastVisitedAt timestamp. The full browseable
             list (with trade filters + sort) lives on the Drawings tab. */}
-        <div className="projhome-v3-section-h">
-          <span className="projhome-v3-section-h-icon"><Icon name="architecture" size={24} /></span>
-          <h3>Recently viewed drawings</h3>
-        </div>
         {(() => {
-          const recentDrawings = drawings.slice().sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
+          const recentDrawings = drawings.slice().sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5);
+          const totalMarkups = recentDrawings.reduce((a, d) => a + d.markups, 0);
           return (
-            <>
-              <div style={{ fontSize: 11, color: "var(--bc-muted)", marginBottom: 12 }}>
-                {recentDrawings.length} of {drawings.length} sheets · {recentDrawings.reduce((a, d) => a + d.markups, 0)} AI markups
-              </div>
-              <div className="drawings-strip" style={{ marginBottom: 12 }}>
-                {recentDrawings.map((d) =>
-                <div key={d.id} className="drawing-card" onClick={() => onOpenDrawing ? onOpenDrawing(d.id) : onOpenTab("files")}>
-                  <div className="drawing-thumb">
-                    <DrawingThumb kind={d.thumb} color={d.color} markups={d.markups} />
-                    <div className="markup-pill"><Icon name="auto_awesome" size={11} />{d.markups}</div>
-                    {d.status === "flagged" && <div className="flag-pill-abs"><Icon name="flag" size={10} />Flagged</div>}
-                  </div>
-                  <div className="drawing-meta">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                      <span className="code">{d.id}</span>
-                      <span className="trade-tag">{d.trade}</span>
-                    </div>
-                    <span className="title">{d.title}</span>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginTop: 2 }}>
-                      <span className="scale">{d.scale}</span>
-                      <span className="views"><Icon name="visibility" size={10} />{d.views}</span>
-                    </div>
-                  </div>
-                </div>
-                )}
-                {recentDrawings.length === 0 &&
-                <div style={{ gridColumn: "1 / -1", padding: "32px 16px", textAlign: "center", color: "var(--bc-muted)", fontSize: 13, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12 }}>
-                  No drawings have been visited yet for this project.
-                </div>
-                }
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
-                <button className="link-btn" onClick={() => setHomeTab("drawings")}>
+            <section className="projhome-v3-section">
+              <div className="projhome-v3-section-h">
+                <span className="projhome-v3-section-h-icon"><Icon name="architecture" size={24} /></span>
+                <h3>Recently viewed drawings</h3>
+                <span className="projhome-v3-section-meta">
+                  <span>{recentDrawings.length} of {drawings.length} sheets</span>
+                  <span>·</span>
+                  <span>{totalMarkups} AI markups</span>
+                </span>
+                <button className="projhome-v3-section-see-all" onClick={() => setHomeTab("drawings")}>
                   View all drawings
-                  {drawings.length > recentDrawings.length && <span style={{ color: "var(--bc-muted)", fontWeight: 500, marginLeft: 4 }}>({drawings.length - recentDrawings.length} more)</span>}
-                  <Icon name="arrow_forward" size={14} />
                 </button>
               </div>
-            </>
+              <div className="projhome-v3-drawings">
+                {recentDrawings.map((d) => (
+                  <div key={d.id} className="v3-drawing-card" onClick={() => onOpenDrawing ? onOpenDrawing(d.id) : onOpenTab("files")}>
+                    <div className="v3-drawing-card-image">
+                      <DrawingThumb kind={d.thumb} color={d.color} markups={d.markups} />
+                    </div>
+                    <div className="v3-drawing-card-content">
+                      <div className="v3-drawing-card-topline">
+                        <span className="v3-drawing-card-id">{d.id}</span>
+                        <span className="v3-chip is-sm v3-chip-estimating">{d.trade}</span>
+                      </div>
+                      <span className="v3-drawing-card-title">{d.title}</span>
+                      <div className="v3-drawing-card-footer">
+                        <span>{d.scale}</span>
+                        <span><b>{d.markups}</b> markups</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {recentDrawings.length === 0 && (
+                  <div style={{ gridColumn: "1 / -1", padding: "32px 16px", textAlign: "center", color: "var(--v3-lavender-grey)", fontSize: 13, border: "1px dashed var(--v3-border-mid)", borderRadius: "var(--v3-r-card)" }}>
+                    No drawings have been viewed yet for this project.
+                  </div>
+                )}
+              </div>
+            </section>
           );
         })()}
         </>}

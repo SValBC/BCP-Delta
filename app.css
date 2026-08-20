@@ -583,8 +583,35 @@
 .projhome-v3 .labor-prompt { margin-top: 0; }
 /* KPI cards inside .projhome-v3 use 4px radii to match v3 */
 .projhome-v3 .kpi { border-radius: var(--v3-r-card); }
-/* Labor-rates prompt card — 4px radius + no vertical margins inside v3 */
-.projhome-v3 .labor-prompt { border-radius: var(--v3-r-card); margin: 0; }
+/* Labor-rates prompt card — 4px radius, dashed dark-raisin border, no legacy blue */
+.projhome-v3 .labor-prompt {
+  border-radius: var(--v3-r-card);
+  margin: 0;
+  background: var(--v3-off-white);
+  border: 1px dashed var(--v3-border-mid);
+  padding: 36px 24px;
+  color: var(--v3-dark-raisin);
+}
+.projhome-v3 .labor-prompt:hover { background: var(--v3-seasalt); border-color: var(--v3-golden-gate); }
+.projhome-v3 .labor-prompt.drag { background: rgba(232, 70, 0, 0.06); border-color: var(--v3-golden-gate); }
+.projhome-v3 .labor-prompt-title { color: var(--v3-dark-raisin); font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+.projhome-v3 .labor-prompt-title .mi { color: var(--v3-golden-gate); }
+.projhome-v3 .labor-prompt p { color: var(--v3-lavender-grey); font-size: 12px; line-height: 1.5; max-width: 560px; }
+.projhome-v3 .labor-prompt-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--v3-r-pill);
+  border: 1px solid var(--v3-border-mid);
+  background: transparent;
+  color: var(--v3-dark-raisin);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.projhome-v3 .labor-prompt-cta .mi { color: var(--v3-golden-gate); }
+.projhome-v3 .labor-prompt-dismiss { color: var(--v3-lavender-grey); }
 /* Any misc .card children in v3 → 4px radius */
 .projhome-v3 .card { border-radius: var(--v3-r-card); }
 .projhome-v3 .pin-card { border-radius: var(--v3-r-card); }
