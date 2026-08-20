@@ -472,11 +472,12 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           );
         })()}
 
+        <section className="projhome-v3-section">
         <div className="projhome-v3-section-h">
           <span className="projhome-v3-section-h-icon"><Icon name="auto_awesome" size={24} /></span>
           <h3>Recommended skills to run</h3>
         </div>
-        <div data-tour-id="project-run-skill" className="projhome-v3-skills is-three" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+        <div data-tour-id="project-run-skill" className="projhome-v3-skills">
           {[
           { id: "rfc", title: "Clarifications & Potential RFIs", icon: "rule", desc: "Performs thorough document analysis across all project files, identifying inconsistencies, errors, and optimization opportunities. Creates detailed reports highlighting potential issues and improvements to enhance project quality and efficiency.", lastRun: null, success: false },
           { id: "trades", title: "Trade Scoping", icon: "groups", desc: "Compiles every trade referenced across your uploaded documentation and drafts a scope of work for each, ready to attach to bid invitations. Feeds directly into the trade-invite workflow so bids go out the door faster.", lastRun: null, success: false },
@@ -547,6 +548,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             );
           })}
         </div>
+        </section>
 
         {/* RECENT SKILL RUNS — approved runs only. Master-visible history
             for this project; the runner's own drafts show up on their

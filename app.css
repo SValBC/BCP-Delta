@@ -522,29 +522,37 @@
 .v3-runs-cell-result { font-size: 14px; font-weight: 700; color: var(--v3-dark-raisin); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v3-runs-cell-result-sub { font-size: 11px; color: var(--v3-lavender-grey); font-weight: 400; margin-top: 2px; }
 /* ---------- PROJECT HOME — v3 ---------------------------------- */
+/* Canvas has no vertical padding when in projhome mode so the sticky
+   header can pin flush against the top of the scroll area (right below the
+   taskbar). Vertical padding is delegated to .projhome-v3 itself. */
+.canvas.projhome-v3-canvas { padding-top: 0; padding-bottom: 0; }
+
 .projhome-v3 {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 32px 40px 32px;
+  padding: 0 40px 32px;
   display: flex;
   flex-direction: column;
   gap: 48px;
   width: 100%;
 }
-/* Sticky group: header + sub-tabs. Scrolling starts below the tabs. */
+/* Sticky group: header + sub-tabs pin to the top of the scroll area.
+   Adds 32px of top padding so there's breathing room from the taskbar,
+   then 24px of bottom padding to the first scrolling section. The
+   off-white background covers scrolling content behind the sticky. */
 .projhome-v3-sticky {
   position: sticky;
   top: 0;
   z-index: 5;
   background: var(--v3-off-white);
-  padding: 32px 40px 0;
-  margin: -32px -40px 0;
+  padding: 32px 0 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-/* First section after the sticky group only needs 24px, not 48px */
-.projhome-v3 > .projhome-v3-sticky + * { margin-top: -24px; }
+/* First scrolling section directly under sticky only needs 24px total gap
+   (already provided by sticky's bottom padding). Cancel the 48px gap. */
+.projhome-v3 > .projhome-v3-sticky + * { margin-top: -48px; }
 
 /* Hybrid taskbar — 40px side padding to align with the canvas below */
 [data-theme="hybrid"] .taskbar { padding: 0 40px; }
@@ -856,7 +864,8 @@
 }
 
 /* Section-h → grid gap is 16px, not the parent's 48px */
-.projhome-v3-section { gap: 16px; }
+.projhome-v3-section { gap: 16px; margin: 0; }
+.projhome-v3-section > .projhome-v3-section-h { margin: 0; padding: 0; }
 
 /* Skill card — white card with #D6D5D9 stroke, orange CTA footer.
    Horizontal scroll with cards running to the edge of the viewport so the
