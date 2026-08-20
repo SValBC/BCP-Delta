@@ -96,10 +96,10 @@
   align-items: flex-end;
   gap: 8px;
 }
-[data-theme="hybrid"] .tabbar-scroll { padding-top: 0; align-items: flex-end; }
+[data-theme="hybrid"] .tabbar-scroll { padding-top: 0; align-items: stretch; }
 [data-theme="hybrid"] .tabbar .tab {
   border-radius: 4px 4px 0 0;
-  height: 32px;
+  height: 40px;
   min-width: 150px;
   background: var(--v3-tab-inactive-bg);
   color: rgba(253, 253, 253, 0.75);
@@ -109,6 +109,9 @@
   background: var(--v3-off-white);
   color: var(--v3-dark-raisin);
 }
+/* Hide the tab bar while the FUX intro / onboarding is running — it only
+   materializes once the user lands on the Home screen. */
+[data-theme="hybrid"] .app[data-fux-panels-hidden="true"] .tabbar { display: none; }
 /* Sidebar collapse — 32x32 button pinned to the tabbar's top-left corner so
    its top aligns with the panels. Dark-raisin fill with a translucent white
    stroke matches the rest of the rail chrome. Symmetric spacing: 8px .app-grid

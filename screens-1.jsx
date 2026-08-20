@@ -630,26 +630,25 @@ function HomeScreen({ ctx, projects, runs, onPin, pinnedSet, onOpenProject, onOp
               </h1>
             </div>
 
-            {/* Ask Cody bar — orange-outlined pill with sparkle + placeholder + send */}
-            {!isFresh && (
-              <div className="home-v3-ask-cody" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
-                <span className="home-v3-ask-cody-spark"><CodyMark size={16} /></span>
-                <input
-                  type="text"
-                  placeholder="Ask Cody anything or pick a quick action below."
-                  value={greetPrompt}
-                  onChange={(e) => setGreetPrompt(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
-                />
-                <button
-                  className="home-v3-ask-cody-btn"
-                  disabled={!greetPrompt.trim()}
-                  onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
-                  title="Send to Cody">
-                  <Icon name="arrow_forward" size={20} />
-                </button>
-              </div>
-            )}
+            {/* Ask Cody bar — orange-outlined pill with sparkle + placeholder + send.
+                Shown in both fresh (post-FUX Home landing) and normal modes. */}
+            <div className="home-v3-ask-cody" onClick={(e) => { const ta = e.currentTarget.querySelector("input"); ta && ta.focus(); }}>
+              <span className="home-v3-ask-cody-spark"><CodyMark size={16} /></span>
+              <input
+                type="text"
+                placeholder="Ask Cody anything or pick a quick action below."
+                value={greetPrompt}
+                onChange={(e) => setGreetPrompt(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitGreetPrompt(); } }}
+              />
+              <button
+                className="home-v3-ask-cody-btn"
+                disabled={!greetPrompt.trim()}
+                onClick={(e) => { e.stopPropagation(); submitGreetPrompt(); }}
+                title="Send to Cody">
+                <Icon name="arrow_forward" size={20} />
+              </button>
+            </div>
 
             {/* Quick actions — primary "Create a new project" is gradient, others outlined */}
             <div className="home-v3-quick-actions">
