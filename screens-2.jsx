@@ -140,12 +140,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         { useSwitcher: true, bold: true }]
         }
         actions={
-        <>
-            <PinButton pinId={project.id} pinnedSet={pinnedSet} onPin={onPin} />
-            <ShareDropdown options={[
-              { label: "Email", icon: "email", onClick: () => {} },
-            ]} />
-          </>
+          <button className="taskbar-share-btn" title="Share" onClick={() => {}}>
+            <Icon name="ios_share" size={20} />
+          </button>
         }
         onAskAI={onAskAI}
         switcher={projectSwitcher} />
@@ -165,6 +162,12 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 value={edits && edits["project:" + project.id + ":name"] && edits["project:" + project.id + ":name"].value}
                 onChange={(k, o, v) => recordEdit && recordEdit(k, o, v, "Project name")}
               />
+              <button
+                className={"projhome-v3-header-pin " + (pinnedSet && pinnedSet.has(project.id) ? "is-pinned" : "")}
+                onClick={() => onPin && onPin(project.id)}
+                title={pinnedSet && pinnedSet.has(project.id) ? "Unpin project" : "Pin project"}>
+                <Icon name="push_pin" size={18} />
+              </button>
               {project.scope &&
               <div className="scope-tip projhome-v3-header-title-info" tabIndex="0">
                 <Icon name="info" size={18} />
@@ -309,7 +312,6 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         {!laborDismissed && (
           <div
             className={"labor-prompt " + (laborDrag ? "drag" : "")}
-            style={{ marginTop: 64 }}
             onClick={() => !laborFile && laborInputRef.current && laborInputRef.current.click()}
             onDragOver={(e) => { if (!laborFile) { e.preventDefault(); setLaborDrag(true); } }}
             onDragLeave={() => setLaborDrag(false)}
@@ -408,7 +410,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
           );
 
           return (
-            <div className="kpi-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 64, marginBottom: 28 }}>
+            <div className="kpi-grid projhome-v3-kpis" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
               {/* ROM ESTIMATE */}
               {romRan ? (
                 <div {...clickableProps("estimation", "ROM Estimate")}>
@@ -549,7 +551,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
                 </div>
                 <div className="v3-skill-card-foot">
                   <span>{footLabel}</span>
-                  <Icon name="arrow_forward" size={20} />
+                  <span className="v3-skill-card-foot-arrow"><Icon name="arrow_forward" size={20} /></span>
                 </div>
               </div>
             );
@@ -666,9 +668,9 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             Top 6 most-viewed sheets stand in for true visit recency until
             we wire up a real lastVisitedAt timestamp. The full browseable
             list (with trade filters + sort) lives on the Drawings tab. */}
-        <div className="section-h" style={{ marginTop: 64 }}>
-          <Icon name="architecture" size={16} style={{ color: "var(--orange-500)" }} />
-          <h3>Recently Visited Drawings</h3>
+        <div className="projhome-v3-section-h">
+          <span className="projhome-v3-section-h-icon"><Icon name="architecture" size={24} /></span>
+          <h3>Recently viewed drawings</h3>
         </div>
         {(() => {
           const recentDrawings = drawings.slice().sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 6);
