@@ -295,7 +295,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
         {homeTab === "labor" && <ProjectLaborTab project={project} />}
         {homeTab === "history" && <ProjectHistoryTab project={project} onOpenTab={onOpenTab} />}
 
-        {homeTab === "overview" && <>
+        {homeTab === "overview" && <div className="projhome-v3-overview">
         {/* Cody's brief removed for now — user request. */}
 
         {/* LABOR RATES PROMPT — dismissible, drag/drop the whole card, blue theme */}
@@ -689,7 +689,7 @@ function ProjectHomeScreen({ project, onOpenTab, onOpenTabInNewTab, onAskAI, onO
             </section>
           );
         })()}
-        </>}
+        </div>}
 
        </div>
       </div>

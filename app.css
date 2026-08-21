@@ -551,9 +551,17 @@
   flex-direction: column;
   gap: 20px;
 }
-/* First scrolling section under sticky: 24px total gap (parent's 48px
-   flex-gap - 24px negative margin). */
-.projhome-v3 > .projhome-v3-sticky + * { margin-top: -24px; }
+/* Default for any tab body rendered directly under the sticky group —
+   cancel the parent's 48px gap so tab content sits flush with the sub-tabs. */
+.projhome-v3 > .projhome-v3-sticky + * { margin-top: -48px; }
+/* Overview keeps a 24px gap from sub-tabs and provides its own internal
+   48px section rhythm. */
+.projhome-v3-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  margin-top: -24px !important;
+}
 
 /* Hybrid taskbar — 40px side padding to align with the canvas below */
 [data-theme="hybrid"] .taskbar { padding: 0 40px; }
