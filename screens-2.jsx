@@ -890,7 +890,7 @@ function BidTrackerTab({ project, onOpenTab, onOpenTabInNewTab, onCtxMenu }) {
   const open = (newTab) => (newTab ? onOpenTabInNewTab : onOpenTab) && (newTab ? onOpenTabInNewTab : onOpenTab)("bid");
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>{sessions.length} bid leveling session{sessions.length === 1 ? "" : "s"} run for this project</div>
       </div>
@@ -1513,7 +1513,7 @@ function ProjectDrawingsTab({ project, onOpenDrawing }) {
   const totalTakeoffs = visible.reduce((sum, d) => sum + (d.markups || 0), 0);
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       <MasterFloorplan projectId={project.id} />
 
       {/* Filter row */}
@@ -1722,7 +1722,7 @@ function ProjectTakeoffsTab({ project, onOpenDrawing, divisionFormat, divisionFo
   for (const i of visible) totalsByDiv[i.division] = (totalsByDiv[i.division] || 0) + 1;
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       {/* Filter row — trade dropdown, confidence chips, search */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -2011,7 +2011,7 @@ function ProjectLaborTab({ project }) {
   // Newly created projects render just the toggle + upload zone.
   if (project.isNew) {
     return (
-      <div style={{ marginTop: 24 }}>
+      <div>
         <ProjectRatesHeader activeType={activeType} setActiveType={setActiveType} />
         <div className="rates-drop" onClick={simulateUpload}
              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("drag"); }}
@@ -2029,7 +2029,7 @@ function ProjectLaborTab({ project }) {
   }
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       <ProjectRatesHeader activeType={activeType} setActiveType={setActiveType} />
 
       {!currentUpload ? (
@@ -2231,7 +2231,7 @@ function ProjectHistoryTab({ project, onOpenTab }) {
   };
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 16, flexWrap: "wrap" }}>
         <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>
           {visibleRuns.length} of {sortedRuns.length} skill {sortedRuns.length === 1 ? "run" : "runs"}
