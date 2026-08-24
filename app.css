@@ -533,7 +533,7 @@
   padding: 0 40px 32px;
   display: flex;
   flex-direction: column;
-  gap: 48px;
+  gap: 32px;
   width: 100%;
 }
 /* Sticky group: header + sub-tabs pin to the top of the scroll area.
@@ -551,14 +551,14 @@
   flex-direction: column;
   gap: 20px;
 }
-/* Every tab body under the sticky group gets a consistent 24px gap
-   (parent's 48px flex-gap minus 24px negative margin). */
-.projhome-v3 > .projhome-v3-sticky + * { margin-top: -24px; }
-/* Overview owns its own 48px internal section rhythm since it's a wrapper. */
+/* 32px gap everywhere below the sticky group — sub-tabs → first content
+   and section → section on every tab. Parent's 32px flex-gap handles it
+   directly; no negative-margin trick needed. */
+.projhome-v3 > .projhome-v3-sticky + * { margin-top: 0; }
 .projhome-v3-overview {
   display: flex;
   flex-direction: column;
-  gap: 48px;
+  gap: 32px;
 }
 
 /* Hybrid taskbar — 40px side padding to align with the canvas below */
