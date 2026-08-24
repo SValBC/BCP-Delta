@@ -818,7 +818,7 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
   }
 
   return (
-    <div style={{ marginTop: 24 }}>
+    <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>{fbp.length} files across {revisions.length} revision{revisions.length === 1 ? "" : "s"}</div>
         <button className="btn"><Icon name="upload" size={16} />Upload files</button>
