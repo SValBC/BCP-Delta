@@ -1153,6 +1153,102 @@
 /* Form-row labels */
 .form-row label { font-family: var(--font-display); color: var(--v3-dark-raisin); }
 
+/* Project Home > Files — drop zone + upload queue */
+.files-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--v3-off-white);
+  border: 1px dashed var(--v3-border-mid);
+  border-radius: var(--v3-r-card);
+  cursor: pointer;
+  color: var(--v3-dark-raisin);
+  transition: background 140ms, border-color 140ms;
+}
+.files-dropzone:hover,
+.files-dropzone.is-dragging {
+  border-color: var(--v3-golden-gate);
+  background: rgba(232, 70, 0, 0.04);
+}
+.files-dropzone > .mi {
+  color: var(--v3-golden-gate);
+  flex-shrink: 0;
+}
+.files-dropzone-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.files-dropzone-text b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--v3-dark-raisin);
+}
+.files-dropzone-browse { color: var(--v3-golden-gate); text-decoration: underline; }
+.files-dropzone-text span:last-child { font-size: 12px; color: var(--v3-lavender-grey); }
+
+.files-uploads-queue {
+  margin-top: 12px;
+  background: var(--v3-seasalt);
+  border: 1px solid #D6D5D9;
+  border-radius: var(--v3-r-card);
+  padding: 12px 16px;
+}
+.files-uploads-queue-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--v3-dark-raisin);
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.files-uploads-queue-clear {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--v3-golden-gate);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.files-uploads-queue-clear:hover { background: rgba(232, 70, 0, 0.08); }
+.files-uploads-queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.files-uploads-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--v3-off-white);
+  border: 1px solid var(--v3-border);
+  font-size: 12px;
+}
+.files-uploads-queue-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  color: var(--v3-dark-raisin);
+}
+.files-uploads-queue-size {
+  font-size: 11px;
+  color: var(--v3-lavender-grey);
+  font-family: var(--font-data, var(--font-display));
+}
+
 /* Boxed elements with light fill — canonical stroke = #D6D5D9 */
 .v3-kpi-card,
 .v3-project-card,

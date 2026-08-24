@@ -807,6 +807,40 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
   const [expanded, setExpanded] = uS2(initialExpanded);
   const toggleRev = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
+  // Files-tab drop zone — accepts drag-and-drop or click-to-browse. This is
+  // demo-only: uploaded files are held in local state and shown as a
+  // "just added" chip in the queue below the drop zone; nothing persists.
+  const [dragging, setDragging] = uS2(false);
+  const [pendingUploads, setPendingUploads] = uS2([]);
+  const filesInputRef = uR2(null);
+  const inferType = (name) => {
+    const ext = (name.split(".").pop() || "").toLowerCase();
+    return ext || "file";
+  };
+  const acceptFiles = (list) => {
+    const arr = Array.from(list || []);
+    if (!arr.length) return;
+    const added = arr.map(f => ({
+      id: "upload-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+      name: f.name || "unnamed",
+      size: Math.max(1, Math.round((f.size || 0) / 1024)) + " KB",
+      ftype: inferType(f.name || ""),
+      uploaded: "Just now",
+      uploadedBy: "You"
+    }));
+    setPendingUploads(prev => [...added, ...prev]);
+  };
+  const onFilesDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    if (e.dataTransfer && e.dataTransfer.files) acceptFiles(e.dataTransfer.files);
+  };
+  const onFilesPick = (e) => {
+    acceptFiles(e.target.files);
+    e.target.value = "";
+  };
+  const openBrowse = () => filesInputRef.current && filesInputRef.current.click();
+
   if (fbp.length === 0) {
     return (
       <div style={{ marginTop: 24, border: "1px dashed rgba(39,38,53,0.15)", borderRadius: 12, padding: 40, textAlign: "center", color: "var(--bc-muted)" }}>
@@ -818,10 +852,49 @@ function ProjectFilesTab({ project, onOpenDrawing }) {
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+    <div className="projhome-v3-files">
+      {/* Drop zone — drag files anywhere on the zone or click to browse. */}
+      <div
+        className={"files-dropzone " + (dragging ? "is-dragging" : "") + (pendingUploads.length ? "has-uploads" : "")}
+        onClick={openBrowse}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={(e) => { if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget)) setDragging(false); }}
+        onDrop={onFilesDrop}
+        role="button"
+        aria-label="Drop files to upload or click to browse">
+        <input ref={filesInputRef} type="file" multiple style={{ display: "none" }} onChange={onFilesPick} />
+        <Icon name="cloud_upload" size={28} />
+        <div className="files-dropzone-text">
+          <b>Drop files here, or <span className="files-dropzone-browse">click to browse</span></b>
+          <span>Compatible: PDF, DWG, XLSX, DOCX, PNG, JPG</span>
+        </div>
+      </div>
+      {pendingUploads.length > 0 && (
+        <div className="files-uploads-queue">
+          <div className="files-uploads-queue-h">
+            <Icon name="check_circle" size={14} style={{ color: "var(--tiffany-400)" }} />
+            <span>{pendingUploads.length} file{pendingUploads.length === 1 ? "" : "s"} queued for upload</span>
+            <button className="files-uploads-queue-clear" onClick={() => setPendingUploads([])}>Clear</button>
+          </div>
+          <ul className="files-uploads-queue-list">
+            {pendingUploads.map(u => {
+              const ft = ftypeIcon(u.ftype);
+              return (
+                <li key={u.id} className="files-uploads-queue-item">
+                  <span className={"files-ftype-icon files-ftype-" + ft.tone}><Icon name={ft.icon} size={16} /></span>
+                  <span className="files-uploads-queue-name">{u.name}</span>
+                  <span className="files-uploads-queue-size">{u.size}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "24px 0 16px" }}>
         <div style={{ fontSize: 12, color: "var(--bc-muted)" }}>{fbp.length} files across {revisions.length} revision{revisions.length === 1 ? "" : "s"}</div>
-        <button className="btn"><Icon name="upload" size={16} />Upload files</button>
+        <button className="btn" onClick={openBrowse}><Icon name="upload" size={16} />Upload files</button>
       </div>
       <div className="files-tree">
         {revisions.map(r => {
